@@ -162,16 +162,81 @@ class ProductTools:
         return await self.client.post(f"{BASE}/batch/create", body)
 
     async def create_classification_relationship(self, args: dict[str, Any]) -> Any:
-        """POST /classification-relationship/create — ⚠️ Vincula classificações a produtos em lote."""
+        """POST /classification-relationship/create — ⚠️ Vincula classificações a produtos em lote.
+        Se algum produto já tiver a classificação (AlreadyExist), faz update automaticamente."""
         type_code  = args["typeCode"]
         class_code = str(args["classificationCode"])
         ref_id     = args.get("referenceId", 0)
-        products = [
-            {
-                "productCode": int(pc),
-                "referenceId": ref_id,
-                "classifications": [{"typeCode": type_code, "code": class_code}],
+
+        def build_products(codes: list) -> list:
+            return [
+                {
+                    "productCode": int(pc),
+                    "referenceId": ref_id,
+                    "classifications": [{"typeCode": type_code, "code": class_code}],
+                }
+                for pc in codes
+            ]
+
+        all_codes = list(args["productCodeList"])
+
+        # Tenta criar todos
+        try:
+            return await self.client.post(
+                f"{BASE}/classification-relationship/create",
+                {"products": build_products(all_codes)},
+            )
+        except Exception as create_err:
+            err_str = str(create_err)
+            # Separa os que já existem dos que não existem
+            import re
+            already_codes = set(
+                int(m) for m in re.findall(r"ProductCode (\d+) TypeCode \d+ already exist", err_str)
+            )
+            new_codes = [c for c in all_codes if int(c) not in already_codes]
+
+            results: dict[str, Any] = {}
+
+            # Cria os novos
+            if new_codes:
+                try:
+                    results["created"] = await self.client.post(
+                        f"{BASE}/classification-relationship/create",
+                        {"products": build_products(new_codes)},
+                    )
+                except Exception as e:
+                    results["created_error"] = str(e)
+
+            # Atualiza os que já existiam
+            if already_codes:
+                try:
+                    results["updated"] = await self.client.post(
+                        f"{BASE}/classification-relationship/update",
+                        {"products": build_products(list(already_codes))},
+                    )
+                except Exception as e:
+                    results["updated_error"] = str(e)
+
+            results["summary"] = {
+                "total": len(all_codes),
+                "created": len(new_codes),
+                "updated": len(already_codes),
             }
-            for pc in args["productCodeList"]
-        ]
-        return await self.client.post(f"{BASE}/classification-relationship/create", {"products": products})
+            return results
+
+    async def create_product_value(self, args: dict[str, Any]) -> Any:
+        """POST /values/create — ⚠️ Inclui preço ou custo de produto."""
+        value_item: dict[str, Any] = {
+            "branchCode": args["branchCode"],
+            "valueCode": args["valueCode"],
+            "value": args["value"],
+        }
+        if args.get("valueType") is not None:
+            value_item["valueType"] = args["valueType"]
+        body = {
+            "products": [{
+                "productCode": args["productCode"],
+                "values": [value_item],
+            }]
+        }
+        return await self.client.post(f"{BASE}/values/create", body)
