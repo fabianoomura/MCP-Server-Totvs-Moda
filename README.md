@@ -236,6 +236,7 @@ Ao iniciar, o servidor executa automaticamente uma carga de dados de referência
 
 | Chave | Origem | Conteúdo |
 |-------|--------|----------|
+| `branches` | extraído de `management/v2/users` | Filiais únicas com `branchCode` e `branchName` |
 | `operations` | `general/v2/operations` | Todas as operações (entrada/saída) ativas e inativas |
 | `paymentConditions` | `general/v2/payment-conditions` | Condições de pagamento disponíveis |
 | `paymentPlans` | `general/v2/payment-plans` | Planos de pagamento |
@@ -247,6 +248,10 @@ Ao iniciar, o servidor executa automaticamente uma carga de dados de referência
 | `users` | `management/v2/users` | Usuários cadastrados (e seus `branchCode`) |
 | `priceTypes` | `product/v2/prices/search` | Tipos de preço ativos (código + nome) |
 | `costTypes` | `product/v2/costs/search` | Tipos de custo ativos (código + nome) |
+
+### Como `branches` é construído
+
+O TOTVS Moda não possui um endpoint de listagem de filiais sem parâmetros. O servidor extrai os `branchCode` únicos da lista de usuários (`management/v2/users`), que retornam com o campo `branchCode` associado. Os valores são deduplicados e ordenados, formando a lista `branches`.
 
 ### Como `priceTypes` e `costTypes` são descobertos
 
