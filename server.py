@@ -20,6 +20,7 @@ from mcp.server import NotificationOptions, Server
 from mcp.server.models import InitializationOptions
 
 from totvs_client import TotvsClient
+import context_cache
 from tools.sales_order import SalesOrderTools
 from tools.product import ProductTools
 from tools.person import PersonTools
@@ -98,7 +99,7 @@ TOOLS: list[types.Tool] = [
             "customerCpfCnpjList":{"type":"array","items":{"type":"string"},"description":"CPF/CNPJ dos clientes"},
             "customerCodeList":{"type":"array","items":{"type":"integer"}},
             "orderStatusList":{"type":"array","items":{"type":"string"},"description":"Digitado,Confirmado,Cancelado,Bloqueado,Faturado,EmFaturamento,Pendente,Encerrado"},
-            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Filiais (MOOUI: [1])"},
+            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos das filiais"},
             "operationCodeList":{"type":"array","items":{"type":"integer"}},
             "startBillingForecastDate":{"type":"string"},"endBillingForecastDate":{"type":"string"},
             "expand":{"type":"string","description":"items,invoices,shippingAddress,observations,classifications,discounts,commissioneds,counts"},
@@ -106,45 +107,45 @@ TOOLS: list[types.Tool] = [
             "order":{"type":"string","description":"Ex: -orderCode"},
         }}),
     types.Tool(name="totvs_get_order_invoices", description="NF-e vinculadas a um pedido de venda.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"orderCode":{"type":"integer"}},"required":["branchCode","orderCode"]}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"orderCode":{"type":"integer"}},"required":["branchCode","orderCode"]}),
     types.Tool(name="totvs_get_pending_items", description="Itens pendentes de faturamento em um pedido.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"orderCode":{"type":"integer"}},"required":["branchCode","orderCode"]}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"orderCode":{"type":"integer"}},"required":["branchCode","orderCode"]}),
     types.Tool(name="totvs_get_billing_suggestions", description="Sugestões de faturamento do TOTVS.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"orderCode":{"type":"integer"}},"required":["branchCode"]}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"orderCode":{"type":"integer"}},"required":["branchCode"]}),
     types.Tool(name="totvs_cancel_order", description="⚠️ ESCRITA — Cancela pedido de venda (irreversível).",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"orderCode":{"type":"integer"},"cancellationReason":{"type":"string"}},"required":["branchCode","orderCode"]}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"orderCode":{"type":"integer"},"cancellationReason":{"type":"string"}},"required":["branchCode","orderCode"]}),
     types.Tool(name="totvs_change_order_status", description="⚠️ ESCRITA — Altera situação do pedido.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"orderCode":{"type":"integer"},"status":{"type":"string","enum":["Digitado","Confirmado","Cancelado","Bloqueado","Faturado","EmFaturamento","Pendente","Encerrado"]}},"required":["branchCode","orderCode","status"]}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"orderCode":{"type":"integer"},"status":{"type":"string","enum":["Digitado","Confirmado","Cancelado","Bloqueado","Faturado","EmFaturamento","Pendente","Encerrado"]}},"required":["branchCode","orderCode","status"]}),
     types.Tool(name="totvs_update_order_items_price", description="⚠️ ESCRITA — Altera preço de itens do pedido.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"orderCode":{"type":"integer"},"items":{"type":"array","items":{"type":"object","properties":{"itemSequential":{"type":"integer"},"price":{"type":"number"}},"required":["itemSequential","price"]}}},"required":["branchCode","orderCode","items"]}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"orderCode":{"type":"integer"},"items":{"type":"array","items":{"type":"object","properties":{"itemSequential":{"type":"integer"},"price":{"type":"number"}},"required":["itemSequential","price"]}}},"required":["branchCode","orderCode","items"]}),
 
     # ── PRODUCT ──────────────────────────────────────────────────────────────
     types.Tool(name="totvs_search_products", description="Busca produtos por filtro. Retorna referência, grade, cor, coleção, estampa.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"productCodeList":{"type":"array","items":{"type":"integer"}},"referenceCodeList":{"type":"array","items":{"type":"string"}},"categoryCodeList":{"type":"array","items":{"type":"integer"}},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"productCodeList":{"type":"array","items":{"type":"integer"}},"referenceCodeList":{"type":"array","items":{"type":"string"}},"categoryCodeList":{"type":"array","items":{"type":"integer"}},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
     types.Tool(name="totvs_get_product", description="Dados completos de um produto/pack pelo código.",
-        inputSchema={"type":"object","properties":{"code":{"type":"integer"},"branchCode":{"type":"integer","default":1}},"required":["code"]}),
+        inputSchema={"type":"object","properties":{"code":{"type":"integer"},"branchCode":{"type":"integer","description":"Código da filial"}},"required":["code"]}),
     types.Tool(name="totvs_search_product_balances", description="Saldos de estoque por produto. Retorna disponível, reservado, total por filial/depósito.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"productCodeList":{"type":"array","items":{"type":"integer"}},"referenceCodeList":{"type":"array","items":{"type":"string"}},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"productCodeList":{"type":"array","items":{"type":"integer"}},"referenceCodeList":{"type":"array","items":{"type":"string"}},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
     types.Tool(name="totvs_search_product_prices", description="Preços de produtos por filtro, opcionalmente por tabela de preço.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"productCodeList":{"type":"array","items":{"type":"integer"}},"referenceCodeList":{"type":"array","items":{"type":"string"}},"priceTableCodeList":{"type":"array","items":{"type":"integer"}},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"productCodeList":{"type":"array","items":{"type":"integer"}},"referenceCodeList":{"type":"array","items":{"type":"string"}},"priceTableCodeList":{"type":"array","items":{"type":"integer"}},"priceCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos numéricos de tipo de preço (ex: [1])"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
     types.Tool(name="totvs_search_price_tables", description="Preços baseados em tabela de preço.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"priceTableCode":{"type":"integer"}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"priceTableCode":{"type":"integer"}}}),
     types.Tool(name="totvs_search_product_references", description="Referências de produtos com grade, cor e composição.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"referenceCodeList":{"type":"array","items":{"type":"string"}},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"referenceCodeList":{"type":"array","items":{"type":"string"}},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
     types.Tool(name="totvs_get_product_grid", description="Grades (tamanhos) disponíveis no TOTVS.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"}}}),
     types.Tool(name="totvs_search_product_colors", description="Cores de produtos.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"colorCodeList":{"type":"array","items":{"type":"integer"}}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"colorCodeList":{"type":"array","items":{"type":"integer"}}}}),
     types.Tool(name="totvs_search_product_batch", description="Lotes de produto.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"productCodeList":{"type":"array","items":{"type":"integer"}}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"productCodeList":{"type":"array","items":{"type":"integer"}}}}),
     types.Tool(name="totvs_get_kardex_movement", description="Movimentação kardex (entradas/saídas) de produto.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"productCode":{"type":"integer"},"startDate":{"type":"string"},"endDate":{"type":"string"}},"required":["branchCode","productCode"]}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"productCode":{"type":"integer"},"startDate":{"type":"string"},"endDate":{"type":"string"}},"required":["branchCode","productCode"]}),
     types.Tool(name="totvs_search_product_compositions", description="Composições de produto (ficha técnica).",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"productCodeList":{"type":"array","items":{"type":"integer"}}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"productCodeList":{"type":"array","items":{"type":"integer"}}}}),
     types.Tool(name="totvs_update_product_price", description="⚠️ ESCRITA — Altera preço ou custo de produto.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"productCode":{"type":"integer"},"price":{"type":"number"},"priceTableCode":{"type":"integer"}},"required":["branchCode","productCode"]}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"productCode":{"type":"integer"},"price":{"type":"number"},"priceTableCode":{"type":"integer"}},"required":["branchCode","productCode"]}),
     types.Tool(name="totvs_update_promotion_price", description="⚠️ ESCRITA — Altera preço de promoção de produto.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"productCode":{"type":"integer"},"promotionPrice":{"type":"number"},"startDate":{"type":"string"},"endDate":{"type":"string"}},"required":["branchCode","productCode","promotionPrice"]}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"productCode":{"type":"integer"},"promotionPrice":{"type":"number"},"startDate":{"type":"string"},"endDate":{"type":"string"}},"required":["branchCode","productCode","promotionPrice"]}),
 
     # ── PERSON ───────────────────────────────────────────────────────────────
     types.Tool(name="totvs_search_individual_customers", description="Busca clientes pessoa física por CPF, nome ou código.",
@@ -154,83 +155,83 @@ TOOLS: list[types.Tool] = [
     types.Tool(name="totvs_get_customer_bonus_balance", description="Saldo de bônus/desconto de um cliente.",
         inputSchema={"type":"object","properties":{"customerCode":{"type":"integer"},"cpfCnpj":{"type":"string"}}}),
     types.Tool(name="totvs_get_person_statistics", description="Estatísticas do cliente: total comprado, ticket médio, frequência.",
-        inputSchema={"type":"object","properties":{"customerCode":{"type":"integer"},"branchCode":{"type":"integer","description":"MOOUI: 1"}},"required":["customerCode"]}),
+        inputSchema={"type":"object","properties":{"customerCode":{"type":"integer"},"branchCode":{"type":"integer","description":"Código da filial"}},"required":["customerCode"]}),
     types.Tool(name="totvs_create_or_update_individual_customer", description="⚠️ ESCRITA — Cria ou atualiza cliente PF no TOTVS.",
-        inputSchema={"type":"object","properties":{"cpf":{"type":"string"},"name":{"type":"string"},"email":{"type":"string"},"phone":{"type":"string"},"birthDate":{"type":"string"},"branchCode":{"type":"integer","description":"MOOUI: 1"}},"required":["cpf","name"]}),
+        inputSchema={"type":"object","properties":{"cpf":{"type":"string"},"name":{"type":"string"},"email":{"type":"string"},"phone":{"type":"string"},"birthDate":{"type":"string"},"branchCode":{"type":"integer","description":"Código da filial"}},"required":["cpf","name"]}),
 
     # ── ACCOUNTS RECEIVABLE ───────────────────────────────────────────────────
     types.Tool(name="totvs_search_customer_financial_balance", description="Limite financeiro e saldo do cliente.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"customerCode":{"type":"integer"},"cpfCnpj":{"type":"string"}},"required":["branchCode"]}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"customerCode":{"type":"integer"},"cpfCnpj":{"type":"string"}},"required":["branchCode"]}),
     types.Tool(name="totvs_search_receivable_documents", description="Documentos de contas a receber (faturas, duplicatas) com filtros de vencimento e status.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"customerCode":{"type":"integer"},"cpfCnpj":{"type":"string"},"startDueDate":{"type":"string"},"endDueDate":{"type":"string"},"status":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}},"required":["branchCode"]}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"customerCode":{"type":"integer"},"cpfCnpj":{"type":"string"},"startDueDate":{"type":"string"},"endDueDate":{"type":"string"},"status":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}},"required":["branchCode"]}),
     types.Tool(name="totvs_get_bank_slip", description="Base64 do boleto bancário de uma fatura.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"invoiceCode":{"type":"integer"}},"required":["branchCode","invoiceCode"]}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"invoiceCode":{"type":"integer"}},"required":["branchCode","invoiceCode"]}),
     types.Tool(name="totvs_get_payment_link", description="Link de pagamento PIX de uma fatura.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"invoiceCode":{"type":"integer"}},"required":["branchCode","invoiceCode"]}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"invoiceCode":{"type":"integer"}},"required":["branchCode","invoiceCode"]}),
 
     # ── FISCAL ───────────────────────────────────────────────────────────────
     types.Tool(name="totvs_search_fiscal_invoices", description="Busca NF-e por período, cliente ou chave de acesso.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"startIssueDate":{"type":"string"},"endIssueDate":{"type":"string"},"customerCpfCnpj":{"type":"string"},"accessKeyList":{"type":"array","items":{"type":"string"}},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}},"required":["branchCode"]}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startIssueDate":{"type":"string"},"endIssueDate":{"type":"string"},"customerCpfCnpj":{"type":"string"},"accessKeyList":{"type":"array","items":{"type":"string"}},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}},"required":["branchCode"]}),
     types.Tool(name="totvs_get_nfe_xml", description="XML completo de uma NF-e pela chave de acesso (44 dígitos).",
         inputSchema={"type":"object","properties":{"accessKey":{"type":"string"}},"required":["accessKey"]}),
     types.Tool(name="totvs_get_danfe", description="DANFE em base64 (PDF) de uma NF-e.",
         inputSchema={"type":"object","properties":{"xmlContent":{"type":"string"},"accessKey":{"type":"string"}}}),
     types.Tool(name="totvs_search_invoice_products", description="Produtos de NF-e por período.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"startIssueDate":{"type":"string"},"endIssueDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}},"required":["branchCode"]}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startIssueDate":{"type":"string"},"endIssueDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}},"required":["branchCode"]}),
     types.Tool(name="totvs_get_cost_center", description="Centros de custo disponíveis.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"}}}),
 
     # ── ANALYTICS ────────────────────────────────────────────────────────────
     types.Tool(name="totvs_search_fiscal_movement", description="Movimentação fiscal geral (vendas, devoluções, NF-e) por período.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"startDate":{"type":"string"},"endDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
     types.Tool(name="totvs_search_product_fiscal_movement", description="Produtos na movimentação fiscal. Análise de vendas por produto/período.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"startDate":{"type":"string"},"endDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
     types.Tool(name="totvs_search_best_selling_products", description="Ranking dos produtos mais vendidos no e-commerce.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"startDate":{"type":"string"},"endDate":{"type":"string"},"limit":{"type":"integer"}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"limit":{"type":"integer"}}}),
     types.Tool(name="totvs_search_sales_by_hour", description="Vendas por hora do dia. Identifica pico de vendas.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"startDate":{"type":"string"},"endDate":{"type":"string"}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"}}}),
     types.Tool(name="totvs_search_sales_by_weekday", description="Vendas por dia da semana no período.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"startDate":{"type":"string"},"endDate":{"type":"string"}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"}}}),
     types.Tool(name="totvs_search_total_receivable", description="Totais de contas a receber do painel financeiro.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"startDate":{"type":"string"},"endDate":{"type":"string"}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"}}}),
     types.Tool(name="totvs_search_total_payable", description="Totais de contas a pagar do painel financeiro.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"startDate":{"type":"string"},"endDate":{"type":"string"}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"}}}),
     types.Tool(name="totvs_search_top_customers", description="Top 5 clientes que mais compraram no período.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"startDate":{"type":"string"},"endDate":{"type":"string"}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"}}}),
     types.Tool(name="totvs_search_top_debtors", description="Top 5 clientes com maior atraso.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"}},"required":["branchCode"]}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"}},"required":["branchCode"]}),
     types.Tool(name="totvs_search_financial_income_statement", description="DRF — Demonstrativo de Resultado Financeiro.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"startDate":{"type":"string"},"endDate":{"type":"string"}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"}}}),
 
     # ── GENERAL ──────────────────────────────────────────────────────────────
     types.Tool(name="totvs_get_payment_conditions", description="Condições de pagamento disponíveis.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"}}}),
     types.Tool(name="totvs_get_operations", description="Operações de venda disponíveis.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"}}}),
     types.Tool(name="totvs_simulate_payment_plan", description="Simula cálculo de plano de pagamento.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"paymentPlanCode":{"type":"integer"},"totalAmount":{"type":"number"}},"required":["branchCode","paymentPlanCode","totalAmount"]}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"paymentPlanCode":{"type":"integer"},"totalAmount":{"type":"number"}},"required":["branchCode","paymentPlanCode","totalAmount"]}),
     types.Tool(name="totvs_search_devolutions", description="Devoluções por estágio.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"stage":{"type":"string"}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"stage":{"type":"string"}}}),
 
     # ── ACCOUNT PAYABLE ───────────────────────────────────────────────────────
     types.Tool(name="totvs_search_payable_duplicates", description="Duplicatas de contas a pagar.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"supplierCode":{"type":"integer"},"startDueDate":{"type":"string"},"endDueDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}},"required":["branchCode"]}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"supplierCode":{"type":"integer"},"startDueDate":{"type":"string"},"endDueDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}},"required":["branchCode"]}),
     types.Tool(name="totvs_search_commissions_paid", description="Fechamento de comissão por período e representante.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"startDate":{"type":"string"},"endDate":{"type":"string"},"representativeCode":{"type":"integer"}},"required":["branchCode"]}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"representativeCode":{"type":"integer"}},"required":["branchCode"]}),
 
     # ── PURCHASE ORDER ────────────────────────────────────────────────────────
     types.Tool(name="totvs_search_purchase_orders", description="Pedidos de compra por filtro.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"startDate":{"type":"string"},"endDate":{"type":"string"},"statusList":{"type":"array","items":{"type":"string"}},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"statusList":{"type":"array","items":{"type":"string"}},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
 
     # ── SELLER ────────────────────────────────────────────────────────────────
     types.Tool(name="totvs_search_sellers", description="Lista vendedores e empresas vinculadas.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"sellerCodeList":{"type":"array","items":{"type":"integer"}},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"sellerCodeList":{"type":"array","items":{"type":"integer"}},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
 
     # ── VOUCHER ───────────────────────────────────────────────────────────────
     types.Tool(name="totvs_search_voucher", description="Consulta vouchers/cupons.",
-        inputSchema={"type":"object","properties":{"voucherCode":{"type":"string"},"customerCode":{"type":"integer"},"branchCode":{"type":"integer","description":"MOOUI: 1"}}}),
+        inputSchema={"type":"object","properties":{"voucherCode":{"type":"string"},"customerCode":{"type":"integer"},"branchCode":{"type":"integer","description":"Código da filial"}}}),
     types.Tool(name="totvs_create_voucher", description="⚠️ ESCRITA — Cria voucher/cupom.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"value":{"type":"number"},"expirationDate":{"type":"string"},"customerCode":{"type":"integer"}},"required":["branchCode","value"]}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"value":{"type":"number"},"expirationDate":{"type":"string"},"customerCode":{"type":"integer"}},"required":["branchCode","value"]}),
 
     # ── MANAGEMENT ────────────────────────────────────────────────────────────
     types.Tool(name="totvs_get_users", description="Lista usuários do TOTVS Moda.",
@@ -238,7 +239,7 @@ TOOLS: list[types.Tool] = [
     types.Tool(name="totvs_get_global_parameters", description="Parâmetros corporativos do TOTVS.",
         inputSchema={"type":"object","properties":{}}),
     types.Tool(name="totvs_get_branch_parameters", description="Parâmetros por empresa/filial.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"}}}),
 
     # ── GLOBAL / LOCATION ─────────────────────────────────────────────────────
     types.Tool(name="totvs_get_cep", description="Endereço completo pelo CEP.",
@@ -246,7 +247,11 @@ TOOLS: list[types.Tool] = [
 
     # ── PRODUCTION ORDER ──────────────────────────────────────────────────────
     types.Tool(name="totvs_search_production_orders", description="Ordens de produção por filtro.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"MOOUI: 1"},"startDate":{"type":"string"},"endDate":{"type":"string"},"statusList":{"type":"array","items":{"type":"string"}},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"statusList":{"type":"array","items":{"type":"string"}},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
+
+    # ── CONTEXT ───────────────────────────────────────────────────────────────
+    types.Tool(name="totvs_get_context", description="Retorna dados de referência carregados na inicialização: filiais, operações, condições de pagamento, tabelas de preço, classificações, categorias, grades e unidades de medida. Use antes de criar/alterar registros para obter os códigos corretos.",
+        inputSchema={"type":"object","properties":{}}),
 ]
 
 
@@ -315,6 +320,7 @@ ROUTING: dict[str, tuple[str, str]] = {
     "totvs_get_branch_parameters":               ("management", "get_branch_parameters"),
     "totvs_get_cep":                             ("global", "get_cep"),
     "totvs_search_production_orders":            ("production_order", "search_production_orders"),
+    "totvs_get_context":                         None,  # handled inline
 }
 
 
@@ -326,6 +332,12 @@ async def handle_list_tools() -> list[types.Tool]:
 @server.call_tool()
 async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[types.TextContent]:
     logger.info(f"Tool: {name}")
+
+    # ── context tool ──────────────────────────────────────────────────────────
+    if name == "totvs_get_context":
+        if not context_cache.is_loaded():
+            await context_cache.load(get_client())
+        return [types.TextContent(type="text", text=json.dumps(context_cache.get(), ensure_ascii=False, indent=2))]
 
     route = ROUTING.get(name)
     if not route:
@@ -344,6 +356,10 @@ async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[types.T
 
 async def main() -> None:
     logger.info(f"TOTVS Moda MCP Server v2.0 — {len(TOOLS)} tools | {len(get_modules())} módulos")
+    try:
+        await context_cache.load(get_client())
+    except Exception as e:
+        logger.warning(f"Falha ao carregar contexto na inicialização: {e}")
     async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
         await server.run(
             read_stream, write_stream,

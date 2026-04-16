@@ -39,7 +39,23 @@ class ProductTools:
 
     async def search_prices(self, args: dict[str, Any]) -> Any:
         """POST /prices/search — Preços de produtos por filtro geral."""
-        body = {k: v for k, v in args.items() if v is not None}
+        filter_fields = {"branchCode", "productCodeList", "referenceCodeList", "priceTableCodeList"}
+        price_codes = args.get("priceCodeList")
+        if not price_codes:
+            raise ValueError("priceCodeList é obrigatório. Informe os códigos numéricos de tipo de preço (ex: [1]).")
+        prices_option = {
+            "branchCode": args.get("branchCode"),
+            "priceCodeList": [int(c) for c in price_codes],
+            "page": args.get("page", 1),
+            "pageSize": args.get("pageSize", 100),
+        }
+        prices_option = {k: v for k, v in prices_option.items() if v is not None}
+        body = {
+            "filter": {k: v for k, v in args.items() if k in filter_fields and v is not None},
+            "option": {
+                "prices": [prices_option],
+            },
+        }
         return await self.client.post(f"{BASE}/prices/search", body)
 
     async def search_price_tables(self, args: dict[str, Any]) -> Any:
@@ -110,7 +126,8 @@ class ProductTools:
 
     async def update_product_price(self, args: dict[str, Any]) -> Any:
         """POST /values/update — ⚠️ Altera preço ou custo de produto."""
-        body = {k: v for k, v in args.items() if v is not None}
+        product = {k: v for k, v in args.items() if v is not None}
+        body = {"Products": [product]}
         return await self.client.post(f"{BASE}/values/update", body)
 
     async def update_promotion_price(self, args: dict[str, Any]) -> Any:
