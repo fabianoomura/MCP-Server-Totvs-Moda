@@ -156,6 +156,15 @@ TOTVS_CLIENT_ID=seu_client_id
 TOTVS_CLIENT_SECRET=sua_client_secret
 TOTVS_USERNAME=seu_usuario
 TOTVS_PASSWORD=sua_senha
+
+# Filiais gerenciadas (separadas por vírgula)
+TOTVS_BRANCH_CODES=1
+
+# Analytics (painel de vendas, ranking e-commerce). Desabilite se não usar.
+TOTVS_ENABLE_ANALYTICS=true
+
+# TLS: defina "false" APENAS se o servidor usar certificado autoassinado
+TOTVS_TLS_VERIFY=true
 ```
 
 ---
@@ -329,6 +338,30 @@ MCP-Server-Totvs-Moda/
 ├── .env.example
 └── README.md
 ```
+
+---
+
+## Segurança
+
+### TLS / Verificação de Certificado
+
+Por padrão, o cliente valida o certificado TLS do servidor TOTVS (`TOTVS_TLS_VERIFY=true`).  
+Se o seu servidor usa um **certificado autoassinado** (comum em ambientes on-premise), defina:
+
+```env
+TOTVS_TLS_VERIFY=false
+```
+
+> Use `false` apenas em redes internas confiáveis. Com `true`, um atacante na mesma rede não consegue interceptar as credenciais OAuth2 em trânsito.
+
+### Logs de Debug
+
+O servidor nunca registra o corpo das requisições POST nos logs, evitando exposição de dados pessoais (CPF, CNPJ, senhas) mesmo quando o nível de log está em `DEBUG`.
+
+### Credenciais
+
+- Nunca commite o arquivo `.env` — ele está no `.gitignore` por padrão.
+- Use um usuário TOTVS dedicado para integração com permissões mínimas necessárias.
 
 ---
 
