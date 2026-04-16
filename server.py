@@ -88,6 +88,18 @@ def get_modules() -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# Feature flags (env vars)
+# ---------------------------------------------------------------------------
+
+# Set TOTVS_ENABLE_ANALYTICS=false para desabilitar todos os tools do módulo
+# analytics (movimentação fiscal, painel financeiro, painel de vendedor, e-commerce).
+# Útil quando a empresa não contrata/utiliza esse módulo.
+ANALYTICS_ENABLED: bool = os.getenv("TOTVS_ENABLE_ANALYTICS", "true").lower() not in ("false", "0", "no")
+
+if not ANALYTICS_ENABLED:
+    logger.info("Analytics module DISABLED (TOTVS_ENABLE_ANALYTICS=false)")
+
+# ---------------------------------------------------------------------------
 # Tools
 # ---------------------------------------------------------------------------
 
@@ -469,7 +481,8 @@ TOOLS: list[types.Tool] = [
             "manifestationType":{"type":"string","description":"Tipo de manifestação"}
         },"required":["branchCode","accessKey","manifestationType"]}),
 
-    # ── ANALYTICS ────────────────────────────────────────────────────────────
+    # ── ANALYTICS (condicional — TOTVS_ENABLE_ANALYTICS) ─────────────────────
+    *([] if not ANALYTICS_ENABLED else [
     types.Tool(name="totvs_search_fiscal_movement", description="Movimentação fiscal geral (vendas, devoluções, NF-e) por período.",
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string","description":"Data inicial ISO 8601"},"endDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
     types.Tool(name="totvs_search_product_fiscal_movement", description="Produtos na movimentação fiscal. Análise de vendas por produto/período.",
@@ -547,6 +560,7 @@ TOOLS: list[types.Tool] = [
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"sellerCode":{"type":"integer"}}}),
     types.Tool(name="totvs_search_customer_purchased_products", description="Produtos comprados por um cliente (painel de vendedor).",
         inputSchema={"type":"object","properties":{"customerCode":{"type":"integer"},"customerCpfCnpj":{"type":"string"},"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"}}}),
+    ]),  # end analytics block
 
     # ── GENERAL ──────────────────────────────────────────────────────────────
     types.Tool(name="totvs_get_payment_conditions", description="Condições de pagamento disponíveis.",
@@ -879,7 +893,7 @@ ROUTING: dict[str, tuple[str, str]] = {
     "totvs_get_disabled_invoices":               ("fiscal", "get_disabled_invoices"),
     "totvs_print_transaction":                   ("fiscal", "print_transaction"),
     "totvs_create_nfe_manifestation":            ("fiscal", "create_manifestation"),
-    "totvs_search_fiscal_movement":                  ("analytics", "search_fiscal_movement"),
+    **({"totvs_search_fiscal_movement":                  ("analytics", "search_fiscal_movement"),
     "totvs_search_product_fiscal_movement":          ("analytics", "search_product_fiscal_movement"),
     "totvs_search_person_fiscal_movement":           ("analytics", "search_person_fiscal_movement"),
     "totvs_search_seller_fiscal_movement":           ("analytics", "search_seller_fiscal_movement"),
@@ -902,6 +916,7 @@ ROUTING: dict[str, tuple[str, str]] = {
     "totvs_search_seller_period_birthday":           ("analytics", "search_seller_period_birthday"),
     "totvs_search_seller_sales_target":              ("analytics", "search_seller_sales_target"),
     "totvs_search_customer_purchased_products":      ("analytics", "search_customer_purchased_products"),
+    } if ANALYTICS_ENABLED else {}),
     "totvs_get_payment_conditions":              ("general", "get_payment_conditions"),
     "totvs_get_operations":                      ("general", "get_operations"),
     "totvs_simulate_payment_plan":               ("general", "simulate_payment_plan"),
