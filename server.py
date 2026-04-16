@@ -206,8 +206,8 @@ TOOLS: list[types.Tool] = [
     # ── GENERAL ──────────────────────────────────────────────────────────────
     types.Tool(name="totvs_get_payment_conditions", description="Condições de pagamento disponíveis.",
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"}}}),
-    types.Tool(name="totvs_get_operations", description="Operações de venda disponíveis.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"}}}),
+    types.Tool(name="totvs_get_operations", description="Operações disponíveis (entrada/saída). Requer ao menos um filtro.",
+        inputSchema={"type":"object","properties":{"operationCodeList":{"type":"array","items":{"type":"integer"}},"operationTypeList":{"type":"array","items":{"type":"string"},"description":"E - Entrada, S - Saída"},"startChangeDate":{"type":"string"},"endChangeDate":{"type":"string"},"isInactive":{"type":"boolean","description":"true=inativas, false=ativas"},"pageSize":{"type":"integer","default":1000}}}),
     types.Tool(name="totvs_simulate_payment_plan", description="Simula cálculo de plano de pagamento.",
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"paymentPlanCode":{"type":"integer"},"totalAmount":{"type":"number"}},"required":["branchCode","paymentPlanCode","totalAmount"]}),
     types.Tool(name="totvs_search_devolutions", description="Consulta dados de devolução por código.",
