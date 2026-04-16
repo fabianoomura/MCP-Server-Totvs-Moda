@@ -210,8 +210,8 @@ TOOLS: list[types.Tool] = [
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"}}}),
     types.Tool(name="totvs_simulate_payment_plan", description="Simula cálculo de plano de pagamento.",
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"paymentPlanCode":{"type":"integer"},"totalAmount":{"type":"number"}},"required":["branchCode","paymentPlanCode","totalAmount"]}),
-    types.Tool(name="totvs_search_devolutions", description="Devoluções por estágio.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"stage":{"type":"string"}}}),
+    types.Tool(name="totvs_search_devolutions", description="Consulta dados de devolução por código.",
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"devolutionCode":{"type":"integer"},"expand":{"type":"string","description":"classifications, items"}},"required":["branchCode","devolutionCode"]}),
 
     # ── ACCOUNT PAYABLE ───────────────────────────────────────────────────────
     types.Tool(name="totvs_search_payable_duplicates", description="Duplicatas de contas a pagar.",

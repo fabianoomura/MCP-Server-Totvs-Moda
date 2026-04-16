@@ -33,6 +33,7 @@ async def load(client: Any) -> None:
     # general/v2 — sem parâmetros obrigatórios
     operations     = await safe_get(f"{BASE_GENERAL}/operations")
     pay_conditions = await safe_get(f"{BASE_GENERAL}/payment-conditions")
+    pay_plans      = await safe_get(f"{BASE_GENERAL}/payment-plans")
 
     # product/v2
     price_headers   = await safe_get(f"{BASE_PRODUCT}/price-tables-headers")
@@ -47,6 +48,7 @@ async def load(client: Any) -> None:
     _cache = {
         "operations":        operations,
         "paymentConditions": pay_conditions,
+        "paymentPlans":      pay_plans,
         "priceTables":       price_headers,
         "classifications":   classifications,
         "categories":        categories,
