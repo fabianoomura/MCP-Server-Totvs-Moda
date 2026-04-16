@@ -59,8 +59,31 @@ class ProductTools:
         return await self.client.post(f"{BASE}/prices/search", body)
 
     async def search_price_tables(self, args: dict[str, Any]) -> Any:
-        """POST /price-tables/search — Preços baseados em tabela de preço."""
-        body = {k: v for k, v in args.items() if v is not None}
+        """POST /price-tables/search — Preços baseados em tabela de preço.
+        option.branchCodeList e option.priceTableCode são obrigatórios."""
+        filter_fields = {
+            "productCodeList", "referenceCodeList", "productName", "groupCodeList",
+            "startProductCode", "endProductCode", "classifications",
+        }
+        branch_codes = args.get("branchCodeList") or ([args["branchCode"]] if args.get("branchCode") else None)
+        if not branch_codes:
+            raise ValueError("branchCode ou branchCodeList é obrigatório.")
+        price_table_code = args.get("priceTableCode")
+        if not price_table_code:
+            raise ValueError("priceTableCode é obrigatório.")
+        body: dict[str, Any] = {
+            "filter": {k: v for k, v in args.items() if k in filter_fields and v is not None},
+            "option": {
+                "branchCodeList": branch_codes,
+                "priceTableCode": int(price_table_code),
+            },
+        }
+        if args.get("page"):
+            body["page"] = args["page"]
+        if args.get("pageSize"):
+            body["pageSize"] = args["pageSize"]
+        if args.get("order"):
+            body["order"] = args["order"]
         return await self.client.post(f"{BASE}/price-tables/search", body)
 
     async def get_price_tables_headers(self, args: dict[str, Any]) -> Any:
