@@ -164,23 +164,12 @@ Abra a paleta de comandos (`Ctrl+Shift+P`), busque **"MCP: Open User Configurati
         "TOTVS_CLIENT_ID": "seu_client_id",
         "TOTVS_CLIENT_SECRET": "sua_client_secret",
         "TOTVS_USERNAME": "seu_usuario",
-        "TOTVS_PASSWORD": "sua_senha"
+        "TOTVS_PASSWORD": "sua_senha",
+        "TOTVS_BRANCH_CODES": "1"
       }
     }
   }
 }
-```
-
-## Uso com Claude Code (CLI)
-
-```bash
-claude mcp add --transport stdio --scope user totvs-moda \
-  -e TOTVS_BASE_URL=https://seu-servidor-totvs:9443 \
-  -e TOTVS_CLIENT_ID=seu_client_id \
-  -e TOTVS_CLIENT_SECRET=sua_client_secret \
-  -e TOTVS_USERNAME=seu_usuario \
-  -e TOTVS_PASSWORD=sua_senha \
-  -- python /caminho/para/server.py
 ```
 
 ## Uso com Claude Desktop
@@ -201,7 +190,8 @@ Adicione ao seu `claude_desktop_config.json`:
         "TOTVS_CLIENT_ID": "seu_client_id",
         "TOTVS_CLIENT_SECRET": "sua_client_secret",
         "TOTVS_USERNAME": "seu_usuario",
-        "TOTVS_PASSWORD": "sua_senha"
+        "TOTVS_PASSWORD": "sua_senha",
+        "TOTVS_BRANCH_CODES": "1"
       }
     }
   }
