@@ -160,3 +160,18 @@ class ProductTools:
         """POST /batch/create — ⚠️ Inclui lote e item de lote de produto."""
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/batch/create", body)
+
+    async def create_classification_relationship(self, args: dict[str, Any]) -> Any:
+        """POST /classification-relationship/create — ⚠️ Vincula classificações a produtos em lote."""
+        type_code  = args["typeCode"]
+        class_code = str(args["classificationCode"])
+        ref_id     = args.get("referenceId", 0)
+        products = [
+            {
+                "productCode": int(pc),
+                "referenceId": ref_id,
+                "classifications": [{"typeCode": type_code, "code": class_code}],
+            }
+            for pc in args["productCodeList"]
+        ]
+        return await self.client.post(f"{BASE}/classification-relationship/create", {"products": products})
