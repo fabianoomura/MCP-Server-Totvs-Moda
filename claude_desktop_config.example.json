@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "totvs-moda": {
+      "command": "python",
+      "args": ["/caminho/para/totvs-moda-mcp/server.py"],
+      "env": {
+        "TOTVS_BASE_URL": "https://seu-servidor-totvs:9443",
+        "TOTVS_CLIENT_ID": "seu_client_id",
+        "TOTVS_CLIENT_SECRET": "",
+        "TOTVS_USERNAME": "",
+        "TOTVS_PASSWORD": ""
+      }
+    }
+  }
+}

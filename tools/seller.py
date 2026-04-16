@@ -1,0 +1,32 @@
+"""Seller Tools — /api/totvsmoda/seller/v2/"""
+import logging
+from typing import Any
+from totvs_client import TotvsClient
+
+logger = logging.getLogger("totvs-moda-mcp.seller")
+BASE = "/api/totvsmoda/seller/v2"
+
+
+class SellerTools:
+    def __init__(self, client: TotvsClient) -> None:
+        self.client = client
+
+    async def search_sellers(self, args: dict[str, Any]) -> Any:
+        """POST /search — Lista vendedores, empresas e clientes."""
+        body = {k: v for k, v in args.items() if v is not None}
+        return await self.client.post(f"{BASE}/search", body)
+
+    async def get_operational_area(self, args: dict[str, Any]) -> Any:
+        """GET /operational-area — Regiões de atuação de vendedores."""
+        params = {k: v for k, v in args.items() if v is not None}
+        return await self.client.get(f"{BASE}/operational-area", params=params or None)
+
+    async def get_operational_area_by_cep(self, args: dict[str, Any]) -> Any:
+        """GET /operational-area-cep — Regiões de atuação por CEP."""
+        params = {k: v for k, v in args.items() if v is not None}
+        return await self.client.get(f"{BASE}/operational-area-cep", params=params or None)
+
+    async def get_operational_area_by_city(self, args: dict[str, Any]) -> Any:
+        """GET /operational-area-city — Regiões de atuação por cidade."""
+        params = {k: v for k, v in args.items() if v is not None}
+        return await self.client.get(f"{BASE}/operational-area-city", params=params or None)
