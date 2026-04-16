@@ -105,6 +105,11 @@ Este projeto preenche essa lacuna, permitindo que times usem IA diretamente sobr
 | `totvs_get_cep` | GET | `/general/v2/ceps/{cep}` | Consulta endereço por CEP |
 | `totvs_search_sellers` | POST | `/seller/v2/search` | Vendedores |
 
+### Contexto
+| Tool | Descrição |
+|------|-----------|
+| `totvs_get_context` | Retorna todos os dados de referência carregados na inicialização (ver seção abaixo) |
+
 ---
 
 ## Pré-requisitos
@@ -223,6 +228,52 @@ Adicione ao seu `claude_desktop_config.json`:
 
 ---
 
+## Cache de contexto
+
+Ao iniciar, o servidor executa automaticamente uma carga de dados de referência do TOTVS e os mantém em memória. Isso evita chamadas repetitivas de lookup durante consultas, criações e alterações.
+
+### O que é carregado
+
+| Chave | Origem | Conteúdo |
+|-------|--------|----------|
+| `operations` | `general/v2/operations` | Todas as operações (entrada/saída) ativas e inativas |
+| `paymentConditions` | `general/v2/payment-conditions` | Condições de pagamento disponíveis |
+| `paymentPlans` | `general/v2/payment-plans` | Planos de pagamento |
+| `priceTables` | `product/v2/price-tables-headers` | Cabeçalhos das tabelas de preço |
+| `classifications` | `product/v2/classifications` | Classificações de produto |
+| `categories` | `product/v2/category` | Categorias de produto |
+| `grids` | `product/v2/grid` | Grades disponíveis (tamanhos) |
+| `measurementUnits` | `product/v2/measurement-unit` | Unidades de medida |
+| `users` | `management/v2/users` | Usuários cadastrados (e seus `branchCode`) |
+| `priceTypes` | `product/v2/prices/search` | Tipos de preço ativos (código + nome) |
+| `costTypes` | `product/v2/costs/search` | Tipos de custo ativos (código + nome) |
+
+### Como `priceTypes` e `costTypes` são descobertos
+
+O TOTVS Moda não expõe um endpoint dedicado para listar tipos de preço e custo. Na inicialização, o servidor adota a seguinte estratégia:
+
+1. Busca o **produto mais vendido nos últimos 30 dias** via `ecommerce-sales-order/v2/best-selling-products/search`.
+2. Se não houver vendas no período, faz um fallback para **qualquer produto** via `product/v2/products/search`.
+3. Com o `productCode` obtido, consulta preços passando `priceCodeList: [1..20]` — o TOTVS retorna apenas os tipos que existem, ignorando os inválidos.
+4. Os pares `{priceCode, priceName}` e `{costCode, costName}` extraídos são armazenados em `priceTypes` e `costTypes`.
+
+### Como usar o contexto
+
+Chame `totvs_get_context` antes de qualquer operação de escrita para obter os códigos corretos:
+
+```
+"Quais tipos de preço estão disponíveis?"
+→ totvs_get_context  →  priceTypes: [{priceCode: 1, priceName: "Preço de Venda"}, ...]
+```
+
+O resultado de `totvs_get_context` é o mesmo objeto em memória — não gera chamadas adicionais ao TOTVS enquanto o servidor estiver rodando.
+
+### Atualização do cache
+
+O cache é carregado uma vez na inicialização. Para recarregar sem reiniciar o servidor, basta chamar `totvs_get_context` — se ainda não estiver carregado, ele dispara o `load()` automaticamente.
+
+---
+
 ## Autenticação TOTVS
 
 O servidor usa o fluxo **OAuth2 Resource Owner Password Credentials (ROPC)**, padrão do TOTVS Moda API V2. O token é obtido automaticamente e renovado antes de expirar — nenhuma ação manual é necessária.
@@ -241,6 +292,7 @@ Tools marcadas com ⚠️ **modificam dados no TOTVS**. Use com atenção.
 MCP-Server-Totvs-Moda/
 ├── server.py                        # Entry point MCP (stdio)
 ├── totvs_client.py                  # HTTP client com OAuth2 auto-refresh
+├── context_cache.py                 # Cache de dados de referência (carregado na inicialização)
 ├── tools/
 │   ├── __init__.py
 │   ├── sales_order.py               # Pedidos de venda
