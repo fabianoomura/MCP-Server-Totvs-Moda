@@ -142,8 +142,8 @@ TOOLS: list[types.Tool] = [
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"productCode":{"type":"integer"},"startDate":{"type":"string"},"endDate":{"type":"string"}},"required":["branchCode","productCode"]}),
     types.Tool(name="totvs_search_product_compositions", description="Composições de produto (ficha técnica).",
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"productCodeList":{"type":"array","items":{"type":"integer"}}}}),
-    types.Tool(name="totvs_update_product_price", description="⚠️ ESCRITA — Altera preço ou custo de produto.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"productCode":{"type":"integer"},"price":{"type":"number"},"priceTableCode":{"type":"integer"}},"required":["branchCode","productCode"]}),
+    types.Tool(name="totvs_update_product_price", description="⚠️ ESCRITA — Altera preço ou custo de produto. Use totvs_get_context para obter priceTypes/costTypes com os códigos válidos. valueCode = priceCode; valueType = tipo numérico do preço/custo.",
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"productCode":{"type":"integer","description":"Código do produto"},"valueCode":{"type":"integer","description":"Código do tipo de preço ou custo (priceCode/costCode do contexto)"},"valueType":{"type":"integer","description":"Tipo do valor conforme enum da API (obtido via priceTypes/costTypes no contexto)"},"value":{"type":"number","description":"Novo valor"}},"required":["branchCode","productCode","valueCode","value"]}),
     types.Tool(name="totvs_update_promotion_price", description="⚠️ ESCRITA — Altera preço de promoção de produto.",
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"productCode":{"type":"integer"},"promotionPrice":{"type":"number"},"startDate":{"type":"string"},"endDate":{"type":"string"}},"required":["branchCode","productCode","promotionPrice"]}),
 

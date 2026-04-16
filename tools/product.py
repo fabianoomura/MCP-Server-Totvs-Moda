@@ -39,7 +39,7 @@ class ProductTools:
 
     async def search_prices(self, args: dict[str, Any]) -> Any:
         """POST /prices/search — Preços de produtos por filtro geral."""
-        filter_fields = {"branchCode", "productCodeList", "referenceCodeList", "priceTableCodeList"}
+        filter_fields = {"productCodeList", "referenceCodeList", "priceTableCodeList"}
         price_codes = args.get("priceCodeList")
         if not price_codes:
             raise ValueError("priceCodeList é obrigatório. Informe os códigos numéricos de tipo de preço (ex: [1]).")
@@ -126,8 +126,19 @@ class ProductTools:
 
     async def update_product_price(self, args: dict[str, Any]) -> Any:
         """POST /values/update — ⚠️ Altera preço ou custo de produto."""
-        product = {k: v for k, v in args.items() if v is not None}
-        body = {"Products": [product]}
+        value_item: dict[str, Any] = {
+            "branchCode": args["branchCode"],
+            "valueCode": args["valueCode"],
+            "value": args["value"],
+        }
+        if args.get("valueType") is not None:
+            value_item["valueType"] = args["valueType"]
+        body = {
+            "products": [{
+                "productCode": args["productCode"],
+                "values": [value_item],
+            }]
+        }
         return await self.client.post(f"{BASE}/values/update", body)
 
     async def update_promotion_price(self, args: dict[str, Any]) -> Any:
