@@ -31,7 +31,7 @@ async def load(client: Any) -> None:
     logger.info("Carregando contexto do TOTVS...")
 
     # general/v2 — sem parâmetros obrigatórios
-    operations     = await safe_get(f"{BASE_GENERAL}/operations", params={"StartChangeDate": "2000-01-01T00:00:00", "IsInactive": "false", "PageSize": 1000})
+    operations     = await safe_get(f"{BASE_GENERAL}/operations", params={"StartChangeDate": "2000-01-01T00:00:00", "EndChangeDate": "2099-12-31T23:59:59", "PageSize": 1000})
     pay_conditions = await safe_get(f"{BASE_GENERAL}/payment-conditions")
     pay_plans      = await safe_get(f"{BASE_GENERAL}/payment-plans")
 
