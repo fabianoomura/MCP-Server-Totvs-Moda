@@ -59,9 +59,15 @@ class TotvsClient:
         self._access_token: str | None = None
         self._token_expires_at: float = 0.0
 
+        # TLS verification: enabled by default.
+        # Set TOTVS_TLS_VERIFY=false only if the server uses a self-signed
+        # certificate and you accept the MITM risk on your network.
+        import os
+        tls_verify: bool = os.getenv("TOTVS_TLS_VERIFY", "true").lower() not in ("false", "0", "no")
+
         self._http = httpx.AsyncClient(
             timeout=timeout,
-            verify=False,  # Some TOTVS instances use self-signed certs
+            verify=tls_verify,
         )
 
     # ------------------------------------------------------------------
@@ -140,7 +146,7 @@ class TotvsClient:
     async def post(self, path: str, body: dict) -> Any:
         url = f"{self.base_url}{path}"
         headers = await self._headers()
-        logger.debug(f"POST {url} body={body}")
+        logger.debug(f"POST {url}")
 
         response = await self._http.post(url, headers=headers, json=body)
 
