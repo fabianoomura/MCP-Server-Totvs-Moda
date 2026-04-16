@@ -134,26 +134,24 @@ class SalesOrderTools:
     async def cancel_order(self, args: dict[str, Any]) -> Any:
         """
         POST /orders/cancel
-        Cancela um pedido de venda.
+        Cancela um pedido de venda. reasonCancellationCode é obrigatório (integer).
         """
         body: dict[str, Any] = {
             "branchCode": args["branchCode"],
             "orderCode": args["orderCode"],
+            "reasonCancellationCode": args["reasonCancellationCode"],
         }
-        if "cancellationReason" in args:
-            body["cancellationReason"] = args["cancellationReason"]
-
         return await self.client.post(f"{BASE}/orders/cancel", body)
 
     async def change_order_status(self, args: dict[str, Any]) -> Any:
         """
         POST /orders/change-status
-        Altera a situação de um pedido de venda.
+        Altera a situação de um pedido de venda. newStatus é obrigatório.
         """
         body = {
             "branchCode": args["branchCode"],
             "orderCode": args["orderCode"],
-            "status": args["status"],
+            "newStatus": args["newStatus"],
         }
         return await self.client.post(f"{BASE}/orders/change-status", body)
 

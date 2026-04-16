@@ -2,7 +2,7 @@
 TOTVS Moda MCP Server v2.0
 ===========================
 MCP server completo para API V2 do TOTVS Moda.
-16 módulos | 60+ tools | OAuth2 ROPC
+16 módulos | 135 tools | OAuth2 ROPC
 
 Author: ATL4S
 """
@@ -33,6 +33,8 @@ from tools.purchase_order import PurchaseOrderTools
 from tools.seller import SellerTools
 from tools.voucher import VoucherTools
 from tools.other_modules import ManagementTools, GlobalTools, ProductionOrderTools
+from tools.data_package import DataPackageTools
+from tools.image import ImageTools
 
 logging.basicConfig(
     level=logging.INFO,
@@ -79,6 +81,8 @@ def get_modules() -> dict[str, Any]:
             "management":          ManagementTools(c),
             "global":              GlobalTools(c),
             "production_order":    ProductionOrderTools(c),
+            "data_package":        DataPackageTools(c),
+            "image":               ImageTools(c),
         }
     return _modules
 
@@ -113,11 +117,40 @@ TOOLS: list[types.Tool] = [
     types.Tool(name="totvs_get_billing_suggestions", description="Sugestões de faturamento do TOTVS.",
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"orderCode":{"type":"integer"}},"required":["branchCode"]}),
     types.Tool(name="totvs_cancel_order", description="⚠️ ESCRITA — Cancela pedido de venda (irreversível).",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"orderCode":{"type":"integer"},"cancellationReason":{"type":"string"}},"required":["branchCode","orderCode"]}),
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer","description":"Código da filial"},
+            "orderCode":{"type":"integer"},
+            "reasonCancellationCode":{"type":"integer","description":"Código do motivo de cancelamento (obrigatório)"}
+        },"required":["branchCode","orderCode","reasonCancellationCode"]}),
     types.Tool(name="totvs_change_order_status", description="⚠️ ESCRITA — Altera situação do pedido.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"orderCode":{"type":"integer"},"status":{"type":"string","enum":["Digitado","Confirmado","Cancelado","Bloqueado","Faturado","EmFaturamento","Pendente","Encerrado"]}},"required":["branchCode","orderCode","status"]}),
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer","description":"Código da filial"},
+            "orderCode":{"type":"integer"},
+            "newStatus":{"type":"string","description":"Nova situação do pedido (obrigatório)"}
+        },"required":["branchCode","orderCode","newStatus"]}),
     types.Tool(name="totvs_update_order_items_price", description="⚠️ ESCRITA — Altera preço de itens do pedido.",
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"orderCode":{"type":"integer"},"items":{"type":"array","items":{"type":"object","properties":{"itemSequential":{"type":"integer"},"price":{"type":"number"}},"required":["itemSequential","price"]}}},"required":["branchCode","orderCode","items"]}),
+    types.Tool(name="totvs_create_order", description="⚠️ Cria um pedido de venda B2C.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},"customerCode":{"type":"integer"},
+            "operationCode":{"type":"integer"},"paymentConditionCode":{"type":"integer"},
+            "items":{"type":"array","items":{"type":"object"}},
+            "orderDate":{"type":"string"}
+        },"required":["branchCode","customerCode","operationCode","items"]}),
+    types.Tool(name="totvs_update_order_header", description="⚠️ Altera dados de capa (cabeçalho) do pedido.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},"orderCode":{"type":"integer"},
+            "paymentConditionCode":{"type":"integer"},"representativeCode":{"type":"integer"},
+            "observation":{"type":"string"}
+        },"required":["branchCode","orderCode"]}),
+    types.Tool(name="totvs_get_order_classifications", description="Classificações de pedido disponíveis para uma filial.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer","description":"Código da filial (obrigatório)"}
+        },"required":["branchCode"]}),
+    types.Tool(name="totvs_get_discount_types", description="Tipos de desconto disponíveis para pedido de venda.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer","description":"Código da filial (obrigatório)"}
+        },"required":["branchCode"]}),
 
     # ── PRODUCT ──────────────────────────────────────────────────────────────
     types.Tool(name="totvs_search_products", description="Busca produtos por filtro. Retorna referência, grade, cor, coleção, estampa.",
@@ -172,6 +205,44 @@ TOOLS: list[types.Tool] = [
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"productCode":{"type":"integer","description":"Código do produto"},"valueCode":{"type":"integer","description":"Código do tipo de preço ou custo (priceCode/costCode do contexto)"},"valueType":{"type":"integer","description":"Tipo do valor conforme enum da API (obtido via priceTypes/costTypes no contexto)"},"value":{"type":"number","description":"Novo valor"}},"required":["branchCode","productCode","valueCode","value"]}),
     types.Tool(name="totvs_update_promotion_price", description="⚠️ ESCRITA — Altera preço de promoção de produto.",
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"productCode":{"type":"integer"},"promotionPrice":{"type":"number"},"startDate":{"type":"string"},"endDate":{"type":"string"}},"required":["branchCode","productCode","promotionPrice"]}),
+    types.Tool(name="totvs_search_product_codes", description="Lista de produtos com filtro — retorna apenas código e dados básicos.",
+        inputSchema={"type":"object","properties":{
+            "productCodeList":{"type":"array","items":{"type":"integer"}},
+            "referenceCodeList":{"type":"array","items":{"type":"string"}},
+            "page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}
+        }}),
+    types.Tool(name="totvs_search_product_costs", description="Custos de produtos por filtro.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},"productCodeList":{"type":"array","items":{"type":"integer"}},
+            "referenceCodeList":{"type":"array","items":{"type":"string"}},
+            "costCodeList":{"type":"array","items":{"type":"integer"}},
+            "page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}
+        }}),
+    types.Tool(name="totvs_get_product_category", description="Categorias de produtos disponíveis.",
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer"}}}),
+    types.Tool(name="totvs_get_product_classifications", description="Classificações de produtos e seus tipos.",
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer"}}}),
+    types.Tool(name="totvs_get_measurement_units", description="Unidades de medida disponíveis.",
+        inputSchema={"type":"object","properties":{}}),
+    types.Tool(name="totvs_search_omni_changed_balances", description="Saldos de estoque alterados para sincronização omni-channel.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},"startChangeDate":{"type":"string"},"endChangeDate":{"type":"string"},
+            "page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}
+        }}),
+    types.Tool(name="totvs_update_product_data", description="⚠️ Altera dados gerais de um produto.",
+        inputSchema={"type":"object","properties":{
+            "productCode":{"type":"integer"},"branchCode":{"type":"integer"},
+            "description":{"type":"string"},"isActive":{"type":"boolean"}
+        },"required":["productCode","branchCode"]}),
+    types.Tool(name="totvs_create_product_barcode", description="⚠️ Inclui código de barras para produto.",
+        inputSchema={"type":"object","properties":{
+            "productCode":{"type":"integer"},"barcode":{"type":"string"},"barcodeType":{"type":"string"}
+        },"required":["productCode","barcode"]}),
+    types.Tool(name="totvs_create_product_batch", description="⚠️ Inclui lote e item de lote de produto.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},"productCode":{"type":"integer"},
+            "batchCode":{"type":"string"},"quantity":{"type":"number"}
+        },"required":["branchCode","productCode","batchCode"]}),
 
     # ── PERSON ───────────────────────────────────────────────────────────────
     types.Tool(name="totvs_search_individual_customers", description="Busca clientes pessoa física por CPF, nome ou código.",
@@ -184,33 +255,236 @@ TOOLS: list[types.Tool] = [
         inputSchema={"type":"object","properties":{"customerCode":{"type":"integer"},"branchCode":{"type":"integer","description":"Código da filial"}},"required":["customerCode"]}),
     types.Tool(name="totvs_create_or_update_individual_customer", description="⚠️ ESCRITA — Cria ou atualiza cliente PF no TOTVS.",
         inputSchema={"type":"object","properties":{"cpf":{"type":"string"},"name":{"type":"string"},"email":{"type":"string"},"phone":{"type":"string"},"birthDate":{"type":"string"},"branchCode":{"type":"integer","description":"Código da filial"}},"required":["cpf","name"]}),
+    types.Tool(name="totvs_create_or_update_legal_customer", description="⚠️ Cria ou atualiza cliente PJ no TOTVS.",
+        inputSchema={"type":"object","properties":{
+            "cnpj":{"type":"string"},"corporateName":{"type":"string"},
+            "fantasyName":{"type":"string"},"email":{"type":"string"},
+            "branchCode":{"type":"integer"}
+        },"required":["cnpj","corporateName"]}),
+    types.Tool(name="totvs_get_branches_list", description="Lista todas as filiais/empresas cadastradas.",
+        inputSchema={"type":"object","properties":{}}),
+    types.Tool(name="totvs_search_representatives", description="Busca representantes comerciais.",
+        inputSchema={"type":"object","properties":{
+            "representativeCodeList":{"type":"array","items":{"type":"integer"}},
+            "cpfCnpjList":{"type":"array","items":{"type":"string"}},
+            "name":{"type":"string"},
+            "page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}
+        }}),
+    types.Tool(name="totvs_get_person_classifications", description="Classificações de pessoa disponíveis.",
+        inputSchema={"type":"object","properties":{}}),
+    types.Tool(name="totvs_get_email_types", description="Tipos de e-mail disponíveis para cadastro de pessoa.",
+        inputSchema={"type":"object","properties":{}}),
+    types.Tool(name="totvs_get_phone_types", description="Tipos de telefone disponíveis para cadastro de pessoa.",
+        inputSchema={"type":"object","properties":{}}),
+    types.Tool(name="totvs_consume_bonus", description="⚠️ Consome bônus/desconto de cliente.",
+        inputSchema={"type":"object","properties":{
+            "customerCode":{"type":"integer"},"branchCode":{"type":"integer"},
+            "value":{"type":"number"}
+        },"required":["customerCode","branchCode","value"]}),
+    types.Tool(name="totvs_create_person_message", description="⚠️ Inclui mensagem/observação para uma pessoa.",
+        inputSchema={"type":"object","properties":{
+            "personCode":{"type":"integer"},"message":{"type":"string"}
+        },"required":["personCode","message"]}),
 
     # ── ACCOUNTS RECEIVABLE ───────────────────────────────────────────────────
-    types.Tool(name="totvs_search_customer_financial_balance", description="Limite financeiro e saldo do cliente.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"customerCode":{"type":"integer"},"cpfCnpj":{"type":"string"}},"required":["branchCode"]}),
-    types.Tool(name="totvs_search_receivable_documents", description="Documentos de contas a receber (faturas, duplicatas) com filtros de vencimento e status.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"customerCode":{"type":"integer"},"cpfCnpj":{"type":"string"},"startDueDate":{"type":"string"},"endDueDate":{"type":"string"},"status":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}},"required":["branchCode"]}),
-    types.Tool(name="totvs_get_bank_slip", description="Base64 do boleto bancário de uma fatura.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"invoiceCode":{"type":"integer"}},"required":["branchCode","invoiceCode"]}),
+    types.Tool(name="totvs_search_customer_financial_balance", description="Limite financeiro e saldo do cliente por filial. Retorna limite, faturas em aberto, crédito de devolução, adiantamento e outros.",
+        inputSchema={"type":"object","properties":{
+            "customerCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos dos clientes"},
+            "customerCpfCnpjList":{"type":"array","items":{"type":"string"},"description":"CPF/CNPJ dos clientes"},
+            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Filiais para retorno dos saldos"},
+            "isLimit":{"type":"boolean","description":"Retornar limite de crédito"},
+            "isOpenInvoice":{"type":"boolean","description":"Retornar faturas em aberto"},
+            "isRefundCredit":{"type":"boolean","description":"Retornar crédito de devolução"},
+            "isAdvanceAmount":{"type":"boolean","description":"Retornar adiantamento"},
+            "isDofni":{"type":"boolean","description":"Retornar DOFNI"},
+            "isConsigned":{"type":"boolean","description":"Retornar consignado"},
+            "isInvoiceBehindSchedule":{"type":"boolean","description":"Retornar faturas em atraso"},
+            "isSalesOrderAdvance":{"type":"boolean","description":"Retornar adiantamento de pedido de venda"},
+            "startChangeDate":{"type":"string","description":"Data de alteração inicial (ISO 8601)"},
+            "endChangeDate":{"type":"string","description":"Data de alteração final"},
+            "page":{"type":"integer","default":1},
+            "pageSize":{"type":"integer","default":500},
+        }}),
+    types.Tool(name="totvs_search_receivable_documents", description="Documentos de contas a receber com filtros de vencimento, pagamento, status e tipo. Suporta expand para cheque, fatura, comissionados e valores calculados.",
+        inputSchema={"type":"object","properties":{
+            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos das filiais"},
+            "customerCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos dos clientes"},
+            "customerCpfCnpjList":{"type":"array","items":{"type":"string"},"description":"CPF/CNPJ dos clientes"},
+            "startExpiredDate":{"type":"string","description":"Vencimento inicial (ISO 8601)"},
+            "endExpiredDate":{"type":"string","description":"Vencimento final"},
+            "startPaymentDate":{"type":"string","description":"Data pagamento inicial"},
+            "endPaymentDate":{"type":"string","description":"Data pagamento final"},
+            "startIssueDate":{"type":"string","description":"Data emissão inicial"},
+            "endIssueDate":{"type":"string","description":"Data emissão final"},
+            "startChangeDate":{"type":"string","description":"Data alteração inicial"},
+            "endChangeDate":{"type":"string","description":"Data alteração final"},
+            "statusList":{"type":"array","items":{"type":"integer"},"description":"Status: 1=Normal, 2=Devolvido, 3=Cancelado, 4=Quebrado"},
+            "documentTypeList":{"type":"array","items":{"type":"integer"},"description":"Tipos de documento"},
+            "hasOpenInvoices":{"type":"boolean","description":"Apenas faturas em aberto"},
+            "receivableCodeList":{"type":"array","items":{"type":"number"},"description":"Códigos das faturas"},
+            "commissionedCode":{"type":"integer","description":"Código do comissionado"},
+            "commissionedCpfCnpj":{"type":"string","description":"CPF/CNPJ do comissionado"},
+            "expand":{"type":"string","description":"Expansão: check, invoice, commissioneds, calculateValue"},
+            "order":{"type":"string","description":"Ordenação: branchCode, customerCode, receivableCode, installmentCode, maxChangeFilterDate"},
+            "page":{"type":"integer","default":1},
+            "pageSize":{"type":"integer","default":100},
+        }}),
+    types.Tool(name="totvs_get_bank_slip", description="Base64 do boleto bancário de uma fatura. Requer código da fatura, parcela e cliente.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer","description":"Código da filial"},
+            "customerCode":{"type":"integer","description":"Código do cliente"},
+            "customerCpfCnpj":{"type":"string","description":"CPF/CNPJ do cliente (alternativa ao customerCode)"},
+            "receivableCode":{"type":"integer","description":"Código da fatura (receivableCode)"},
+            "installmentNumber":{"type":"integer","description":"Número da parcela da fatura"},
+        },"required":["branchCode","customerCode","receivableCode","installmentNumber"]}),
     types.Tool(name="totvs_get_payment_link", description="Link de pagamento PIX de uma fatura.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"invoiceCode":{"type":"integer"}},"required":["branchCode","invoiceCode"]}),
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer","description":"Código da filial"},
+            "customerCode":{"type":"integer","description":"Código do cliente"},
+            "customerCpfCnpj":{"type":"string","description":"CPF/CNPJ do cliente"},
+            "receivableCode":{"type":"integer","description":"Código da fatura"},
+            "installmentNumber":{"type":"integer","description":"Número da parcela"},
+        },"required":["branchCode","receivableCode","installmentNumber"]}),
+    types.Tool(name="totvs_get_gift_check_balances", description="Consulta saldo de cheque presente por cliente, número do cheque ou código de barras.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer","description":"Código da filial (obrigatório se não informar barCode)"},
+            "customerCode":{"type":"integer","description":"Código do cliente"},
+            "customerCpfCnpj":{"type":"string","description":"CPF/CNPJ do cliente"},
+            "checkNumber":{"type":"integer","description":"Número do cheque (obrigatório se não informar barCode)"},
+            "barCode":{"type":"string","description":"Código de barras do cheque (quando informado, não passar branchCode/checkNumber)"},
+            "page":{"type":"integer","default":1},
+            "pageSize":{"type":"integer","default":100},
+        }}),
+    types.Tool(name="totvs_change_charge_type", description="⚠️ ESCRITA — Altera tipo de cobrança de uma fatura a receber.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer","description":"Código da filial da fatura"},
+            "customerCode":{"type":"integer","description":"Código do cliente"},
+            "customerCpfCnpj":{"type":"string","description":"CPF/CNPJ do cliente"},
+            "receivableCode":{"type":"integer","description":"Código da fatura"},
+            "installmentCode":{"type":"integer","description":"Código da parcela"},
+            "chargeType":{"type":"integer","description":"Tipo de cobrança"},
+            "observation":{"type":"string","description":"Observação a ser gravada no log"},
+        },"required":["branchCode","customerCode","receivableCode","installmentCode","chargeType"]}),
+    types.Tool(name="totvs_create_gift_check", description="⚠️ ESCRITA — Inclui cheque presente para cliente.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer","description":"Código da filial"},
+            "customerCode":{"type":"integer","description":"Código do cliente"},
+            "customerCpfCnpj":{"type":"string","description":"CPF/CNPJ do cliente"},
+            "value":{"type":"number","description":"Valor do cheque"},
+            "nominated":{"type":"string","description":"Nominal (max 80 chars)"},
+            "barCode":{"type":"string","description":"Código de barras (max 40, somente números)"},
+            "issueDate":{"type":"string","description":"Data de emissão (ISO 8601)"},
+            "expiredDate":{"type":"string","description":"Data de validade"},
+        },"required":["branchCode","customerCode","value","nominated","barCode"]}),
 
     # ── FISCAL ───────────────────────────────────────────────────────────────
-    types.Tool(name="totvs_search_fiscal_invoices", description="Busca NF-e por período, cliente ou chave de acesso.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startIssueDate":{"type":"string"},"endIssueDate":{"type":"string"},"customerCpfCnpj":{"type":"string"},"accessKeyList":{"type":"array","items":{"type":"string"}},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}},"required":["branchCode"]}),
+    types.Tool(name="totvs_search_fiscal_invoices", description="Busca NF-e por período, cliente, status ou chave de acesso. Suporta expand para itens, pagamentos e observações.",
+        inputSchema={"type":"object","properties":{
+            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Lista de filiais (obrigatório)"},
+            "invoiceSequenceList":{"type":"array","items":{"type":"integer"}},
+            "invoiceCodeList":{"type":"array","items":{"type":"integer"}},
+            "operationType":{"type":"string","description":"E=Entrada, S=Saída"},
+            "origin":{"type":"string"},
+            "invoiceStatusList":{"type":"array","items":{"type":"string"}},
+            "personCodeList":{"type":"array","items":{"type":"integer"}},
+            "operationCodeList":{"type":"array","items":{"type":"integer"}},
+            "documentTypeCodeList":{"type":"array","items":{"type":"integer"}},
+            "personCpfCnpjList":{"type":"array","items":{"type":"string"}},
+            "startIssueDate":{"type":"string","description":"ISO 8601"},
+            "endIssueDate":{"type":"string"},
+            "serialCodeList":{"type":"array","items":{"type":"string"}},
+            "eletronicInvoiceStatusList":{"type":"array","items":{"type":"string"}},
+            "startChangeDate":{"type":"string"},"endChangeDate":{"type":"string"},
+            "amountLastDays":{"type":"integer"},
+            "transactionBranchCode":{"type":"integer"},"transactionCode":{"type":"integer"},"transactionDate":{"type":"string"},
+            "expand":{"type":"array","items":{"type":"string"},"description":"invoiceItems, payments, observations"},
+            "order":{"type":"array","items":{"type":"object"}},
+            "page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}
+        },"required":["branchCodeList"]}),
     types.Tool(name="totvs_get_nfe_xml", description="XML completo de uma NF-e pela chave de acesso (44 dígitos).",
         inputSchema={"type":"object","properties":{"accessKey":{"type":"string"}},"required":["accessKey"]}),
-    types.Tool(name="totvs_get_danfe", description="DANFE em base64 (PDF) de uma NF-e.",
-        inputSchema={"type":"object","properties":{"xmlContent":{"type":"string"},"accessKey":{"type":"string"}}}),
-    types.Tool(name="totvs_search_invoice_products", description="Produtos de NF-e por período.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startIssueDate":{"type":"string"},"endIssueDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}},"required":["branchCode"]}),
-    types.Tool(name="totvs_get_cost_center", description="Centros de custo disponíveis.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"}}}),
+    types.Tool(name="totvs_get_invoice_item_detail", description="Detalhe de itens de NF-e (preço, desconto, impostos).",
+        inputSchema={"type":"object","properties":{
+            "BranchCode":{"type":"integer"},"InvoiceCode":{"type":"integer"},
+            "SerialCode":{"type":"string"},"InvoiceSequence":{"type":"integer"},
+            "OperationType":{"type":"string","description":"E=Entrada, S=Saída"}
+        }}),
+    types.Tool(name="totvs_get_danfe", description="DANFE em base64 (PDF) de uma NF-e a partir do XML.",
+        inputSchema={"type":"object","properties":{
+            "mainInvoiceXml":{"type":"string","description":"Conteúdo XML da NF-e"},
+            "nfeDocumentType":{"type":"string","description":"Tipo de documento NF-e"}
+        },"required":["mainInvoiceXml"]}),
+    types.Tool(name="totvs_search_invoice_products", description="Produtos de NF-e por período, referência ou operação.",
+        inputSchema={"type":"object","properties":{
+            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Lista de filiais (obrigatório)"},
+            "ProductCodeList":{"type":"array","items":{"type":"integer"}},
+            "BatchBarCodeList":{"type":"array","items":{"type":"string"}},
+            "invoiceCodeList":{"type":"array","items":{"type":"integer"}},
+            "operationType":{"type":"string","description":"E=Entrada, S=Saída"},
+            "modality":{"type":"string"},
+            "origin":{"type":"string"},
+            "invoiceStatusList":{"type":"array","items":{"type":"string"}},
+            "personCodeList":{"type":"array","items":{"type":"integer"}},
+            "operationCodeList":{"type":"array","items":{"type":"integer"}},
+            "personCpfCnpjList":{"type":"array","items":{"type":"string"}},
+            "startIssueDate":{"type":"string"},"endIssueDate":{"type":"string"},
+            "acessKeyList":{"type":"array","items":{"type":"string"}},
+            "order":{"type":"array","items":{"type":"object"}},
+            "page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}
+        },"required":["branchCodeList"]}),
+    types.Tool(name="totvs_get_cost_center", description="Centros de custo por período de alteração.",
+        inputSchema={"type":"object","properties":{
+            "startChangeDate":{"type":"string","description":"Data inicial ISO 8601 (obrigatório)"},
+            "endChangeDate":{"type":"string","description":"Data final ISO 8601 (obrigatório)"},
+            "isInactive":{"type":"boolean"},
+            "page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}
+        },"required":["startChangeDate","endChangeDate"]}),
+    types.Tool(name="totvs_get_digital_certificates", description="Dados de certificados digitais de uma filial.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer","description":"Código da filial (obrigatório)"},
+            "environmentType":{"type":"string","description":"P=Produção, H=Homologação (obrigatório)"}
+        },"required":["branchCode","environmentType"]}),
+    types.Tool(name="totvs_get_pending_conditional_products", description="Saldo de produtos em condicional (consignação) pendentes por pessoa.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer","description":"Código da filial (obrigatório)"},
+            "onlyPendingItem":{"type":"boolean","default":True,"description":"Apenas itens com saldo pendente"},
+            "personCode":{"type":"integer"},"personCpfCnpj":{"type":"string"}
+        },"required":["branchCode"]}),
+    types.Tool(name="totvs_get_disabled_invoices", description="NF-e inutilizadas por período e filial.",
+        inputSchema={"type":"object","properties":{
+            "startDate":{"type":"string","description":"Data inicial ISO 8601 (obrigatório)"},
+            "endDate":{"type":"string","description":"Data final ISO 8601 (obrigatório)"},
+            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Lista de filiais (obrigatório)"},
+            "page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100},
+            "order":{"type":"array","items":{"type":"object"}}
+        },"required":["startDate","endDate","branchCodeList"]}),
+    types.Tool(name="totvs_print_transaction", description="Impressão de transação fiscal em PDF (base64).",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},"transactionCode":{"type":"integer"},
+            "transactionDate":{"type":"string"}
+        }}),
+    types.Tool(name="totvs_create_nfe_manifestation", description="⚠️ Manifestação do destinatário de NF-e (ciência, confirmação, desconhecimento, não realização).",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},"accessKey":{"type":"string"},
+            "manifestationType":{"type":"string","description":"Tipo de manifestação"}
+        },"required":["branchCode","accessKey","manifestationType"]}),
 
     # ── ANALYTICS ────────────────────────────────────────────────────────────
     types.Tool(name="totvs_search_fiscal_movement", description="Movimentação fiscal geral (vendas, devoluções, NF-e) por período.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string","description":"Data inicial ISO 8601"},"endDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
     types.Tool(name="totvs_search_product_fiscal_movement", description="Produtos na movimentação fiscal. Análise de vendas por produto/período.",
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string","description":"Data inicial ISO 8601"},"endDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
+    types.Tool(name="totvs_search_person_fiscal_movement", description="Pessoa (cliente/fornecedor) na movimentação fiscal por período.",
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string","description":"Data inicial ISO 8601"},"endDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
+    types.Tool(name="totvs_search_seller_fiscal_movement", description="Vendedor na movimentação fiscal por período.",
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
+    types.Tool(name="totvs_search_payment_fiscal_movement", description="Condição de pagamento na movimentação fiscal por período.",
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
+    types.Tool(name="totvs_search_representative_fiscal_movement", description="Representante na movimentação fiscal por período.",
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
+    types.Tool(name="totvs_search_buyer_fiscal_movement", description="Comprador na movimentação fiscal por período.",
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
+    types.Tool(name="totvs_search_operation_fiscal_movement", description="Operação na movimentação fiscal por período.",
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
     types.Tool(name="totvs_search_best_selling_products", description="Ranking dos produtos mais vendidos no e-commerce.",
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"limit":{"type":"integer"}}}),
@@ -218,16 +492,61 @@ TOOLS: list[types.Tool] = [
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"}}}),
     types.Tool(name="totvs_search_sales_by_weekday", description="Vendas por dia da semana no período.",
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"}}}),
-    types.Tool(name="totvs_search_total_receivable", description="Totais de contas a receber do painel financeiro.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"}}}),
+    types.Tool(name="totvs_search_total_receivable", description="Totais de contas a receber do painel financeiro. Usa branchCodeList (array) e startDate/endDate.",
+        inputSchema={"type":"object","properties":{
+            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos das filiais (preferencial)"},
+            "branchCode":{"type":"integer","description":"Código da filial (alternativa a branchCodeList)"},
+            "startDate":{"type":"string","description":"Data inicial ISO 8601 (datemin)"},
+            "endDate":{"type":"string","description":"Data final ISO 8601 (datemax)"},
+        }}),
     types.Tool(name="totvs_search_total_payable", description="Totais de contas a pagar do painel financeiro.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"}}}),
+        inputSchema={"type":"object","properties":{
+            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos das filiais"},
+            "branchCode":{"type":"integer","description":"Código da filial (alternativa)"},
+            "startDate":{"type":"string","description":"Data inicial ISO 8601"},
+            "endDate":{"type":"string","description":"Data final ISO 8601"},
+        }}),
     types.Tool(name="totvs_search_top_customers", description="Top 5 clientes que mais compraram no período.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"}}}),
+        inputSchema={"type":"object","properties":{
+            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos das filiais"},
+            "branchCode":{"type":"integer","description":"Código da filial (alternativa)"},
+            "startDate":{"type":"string","description":"Data inicial ISO 8601"},
+            "endDate":{"type":"string","description":"Data final ISO 8601"},
+        }}),
     types.Tool(name="totvs_search_top_debtors", description="Top 5 clientes com maior atraso.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"}},"required":["branchCode"]}),
+        inputSchema={"type":"object","properties":{
+            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos das filiais"},
+            "branchCode":{"type":"integer","description":"Código da filial (alternativa)"},
+        }}),
     types.Tool(name="totvs_search_financial_income_statement", description="DRF — Demonstrativo de Resultado Financeiro.",
+        inputSchema={"type":"object","properties":{
+            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos das filiais"},
+            "branchCode":{"type":"integer","description":"Código da filial (alternativa)"},
+            "startDate":{"type":"string","description":"Data inicial ISO 8601"},
+            "endDate":{"type":"string","description":"Data final ISO 8601"},
+        }}),
+    types.Tool(name="totvs_search_biweekly", description="Total a pagar e receber quinzenal do painel financeiro.",
+        inputSchema={"type":"object","properties":{
+            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos das filiais"},
+            "branchCode":{"type":"integer","description":"Código da filial (alternativa)"},
+        }}),
+    types.Tool(name="totvs_search_top_suppliers", description="Maiores fornecedores por valor pago no período.",
+        inputSchema={"type":"object","properties":{
+            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos das filiais"},
+            "branchCode":{"type":"integer","description":"Código da filial (alternativa)"},
+            "startDate":{"type":"string","description":"Data inicial ISO 8601"},
+            "endDate":{"type":"string","description":"Data final ISO 8601"},
+        }}),
+    types.Tool(name="totvs_search_seller_panel_totals", description="Totais do painel de vendedor: vendas, devoluções, ticket médio.",
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"}}}),
+    types.Tool(name="totvs_search_seller_top_customers", description="Melhores clientes do vendedor no período.",
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"sellerCode":{"type":"integer"}}}),
+    types.Tool(name="totvs_search_seller_period_birthday", description="Aniversariantes do período vinculados ao vendedor.",
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"sellerCode":{"type":"integer"}}}),
+    types.Tool(name="totvs_search_seller_sales_target", description="Meta de vendas do vendedor no período.",
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"sellerCode":{"type":"integer"}}}),
+    types.Tool(name="totvs_search_customer_purchased_products", description="Produtos comprados por um cliente (painel de vendedor).",
+        inputSchema={"type":"object","properties":{"customerCode":{"type":"integer"},"customerCpfCnpj":{"type":"string"},"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"}}}),
 
     # ── GENERAL ──────────────────────────────────────────────────────────────
     types.Tool(name="totvs_get_payment_conditions", description="Condições de pagamento disponíveis.",
@@ -238,20 +557,123 @@ TOOLS: list[types.Tool] = [
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"paymentPlanCode":{"type":"integer"},"totalAmount":{"type":"number"}},"required":["branchCode","paymentPlanCode","totalAmount"]}),
     types.Tool(name="totvs_search_devolutions", description="Consulta dados de devolução por código.",
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"devolutionCode":{"type":"integer"},"expand":{"type":"string","description":"classifications, items"}},"required":["branchCode","devolutionCode"]}),
+    types.Tool(name="totvs_get_payment_plans", description="Planos de pagamento ativos disponíveis.",
+        inputSchema={"type":"object","properties":{}}),
+    types.Tool(name="totvs_get_transactions", description="Dados de uma transação por filial e código.",
+        inputSchema={"type":"object","properties":{
+            "BranchCode":{"type":"integer"},"TransactionCode":{"type":"integer"},
+            "TransactionDate":{"type":"string"}
+        }}),
+    types.Tool(name="totvs_get_classifications", description="Classificações de produto disponíveis.",
+        inputSchema={"type":"object","properties":{}}),
+    types.Tool(name="totvs_create_devolution", description="⚠️ Grava dados de devolução.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},"devolutionCode":{"type":"integer"},
+            "stage":{"type":"string"}
+        },"required":["branchCode","devolutionCode"]}),
+    types.Tool(name="totvs_create_transaction", description="⚠️ Inclui uma transação.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},"transactionCode":{"type":"integer"},
+            "transactionDate":{"type":"string"}
+        },"required":["branchCode","transactionCode"]}),
+    types.Tool(name="totvs_create_product_count", description="⚠️ Cria contagem de produtos no estoque.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},"products":{"type":"array","items":{"type":"object"}}
+        },"required":["branchCode","products"]}),
 
     # ── ACCOUNT PAYABLE ───────────────────────────────────────────────────────
-    types.Tool(name="totvs_search_payable_duplicates", description="Duplicatas de contas a pagar.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"supplierCode":{"type":"integer"},"startDueDate":{"type":"string"},"endDueDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}},"required":["branchCode"]}),
-    types.Tool(name="totvs_search_commissions_paid", description="Fechamento de comissão por período e representante.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"representativeCode":{"type":"integer"}},"required":["branchCode"]}),
+    types.Tool(name="totvs_search_payable_duplicates", description="Consulta duplicatas de contas a pagar com filtros flexíveis de vencimento, emissão, fornecedor e status.",
+        inputSchema={"type":"object","properties":{
+            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos das filiais (obrigatório)"},
+            "duplicateCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos das duplicatas"},
+            "supplierCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos dos fornecedores"},
+            "bearerCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos dos portadores"},
+            "startIssueDate":{"type":"string","description":"Data emissão inicial (ISO 8601)"},
+            "endIssueDate":{"type":"string","description":"Data emissão final"},
+            "startExpiredDate":{"type":"string","description":"Data vencimento inicial"},
+            "endExpiredDate":{"type":"string","description":"Data vencimento final"},
+            "startSettlementDate":{"type":"string","description":"Data liquidação inicial"},
+            "endSettlementDate":{"type":"string","description":"Data liquidação final"},
+            "startArrivalDate":{"type":"string","description":"Data chegada inicial"},
+            "endArrivalDate":{"type":"string","description":"Data chegada final"},
+            "startChangeDate":{"type":"string","description":"Data alteração inicial"},
+            "endChangeDate":{"type":"string","description":"Data alteração final"},
+            "status":{"type":"string","description":"Status: Grouped, Canceled, Retorned, CommissionSettled, Normal, Broken"},
+            "documentTypeList":{"type":"array","items":{"type":"integer"},"description":"Tipos de documento (1=Duplicata, 2=NotaFiscal, 7=Fatura...)"},
+            "order":{"type":"string","description":"Ordenação: productCode, maxChangeFilterDate"},
+            "page":{"type":"integer","default":1},
+            "pageSize":{"type":"integer","default":100},
+        },"required":["branchCodeList"]}),
+    types.Tool(name="totvs_search_commissions_paid", description="Fechamento de comissão por período e representante/comissionado.",
+        inputSchema={"type":"object","properties":{
+            "closingCompanyCode":{"type":"integer","description":"Código da empresa de fechamento de comissão (obrigatório)"},
+            "closingCode":{"type":"integer","description":"Número do fechamento de comissão"},
+            "startClosingDate":{"type":"string","description":"Data inicial do fechamento (ISO 8601)"},
+            "endClosingDate":{"type":"string","description":"Data final do fechamento"},
+            "commissionedCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos dos comissionados"},
+            "commissionedCpfCnpjList":{"type":"array","items":{"type":"string"},"description":"CPF/CNPJ dos comissionados"},
+            "expand":{"type":"string","description":"Expansão: accountMovements"},
+            "order":{"type":"string","description":"Ordenação: closingDate, commissionedCode"},
+            "page":{"type":"integer","default":1},
+            "pageSize":{"type":"integer","default":100},
+        },"required":["closingCompanyCode"]}),
+    types.Tool(name="totvs_create_duplicate", description="⚠️ ESCRITA — Inclui duplicata a pagar. Requer CNPJ da empresa, CPF/CNPJ do fornecedor, código da duplicata e lista de parcelas.",
+        inputSchema={"type":"object","properties":{
+            "branchCnpj":{"type":"string","description":"CNPJ da empresa (max 14 chars)"},
+            "supplierCpfCnpj":{"type":"string","description":"CPF ou CNPJ do fornecedor (max 14 chars)"},
+            "duplicateCode":{"type":"integer","description":"Código da duplicata (max 10 chars)"},
+            "installments":{"type":"array","description":"Lista de parcelas","items":{"type":"object","properties":{
+                "installmentCode":{"type":"integer","description":"Número da parcela (max 3)"},
+                "bearerCode":{"type":"integer","description":"Código do portador (max 4)"},
+                "issueDate":{"type":"string","description":"Data de emissão (ISO 8601)"},
+                "dueDate":{"type":"string","description":"Data de vencimento"},
+                "arrivalDate":{"type":"string","description":"Data de chegada"},
+                "document":{"type":"integer","description":"Tipo documento: 1=Duplicata, 2=NotaFiscal, 7=Fatura, 15=Recibo..."},
+                "prevision":{"type":"integer","description":"Tipo previsão: 1=Previsto, 2=Real, 3=Consignação"},
+                "stage":{"type":"integer","description":"Estágio: 1=NF não conferida, 2=Liberado pagamento, 5=NF aceita, 20=Pagto banco, 90=Encerrado"},
+                "duplicateValue":{"type":"number","description":"Valor da parcela"},
+                "expenses":{"type":"array","description":"Lista de despesas","items":{"type":"object","properties":{
+                    "expenseCode":{"type":"integer"},"costCenterCode":{"type":"integer"},"proratedPercentage":{"type":"number"}
+                },"required":["expenseCode","costCenterCode","proratedPercentage"]}},
+            },"required":["installmentCode","bearerCode","issueDate","dueDate","arrivalDate","document","prevision","stage","duplicateValue","expenses"]}},
+        },"required":["branchCnpj","supplierCpfCnpj","duplicateCode","installments"]}),
 
     # ── PURCHASE ORDER ────────────────────────────────────────────────────────
     types.Tool(name="totvs_search_purchase_orders", description="Pedidos de compra por filtro.",
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"statusList":{"type":"array","items":{"type":"string"}},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
+    types.Tool(name="totvs_create_purchase_order", description="⚠️ Inclui pedido de compra.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},"supplierCode":{"type":"integer"},
+            "operationCode":{"type":"integer"},"items":{"type":"array","items":{"type":"object"}},
+            "orderDate":{"type":"string"}
+        },"required":["branchCode","supplierCode","operationCode","items"]}),
+    types.Tool(name="totvs_cancel_purchase_order", description="⚠️ Cancela pedido de compra.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},"orderCode":{"type":"integer"},
+            "reasonCancellationCode":{"type":"integer"}
+        },"required":["branchCode","orderCode"]}),
+    types.Tool(name="totvs_change_purchase_order_status", description="⚠️ Altera situação do pedido de compra.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},"orderCode":{"type":"integer"},
+            "newStatus":{"type":"string"}
+        },"required":["branchCode","orderCode","newStatus"]}),
 
     # ── SELLER ────────────────────────────────────────────────────────────────
     types.Tool(name="totvs_search_sellers", description="Lista vendedores e empresas vinculadas.",
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"sellerCodeList":{"type":"array","items":{"type":"integer"}},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
+    types.Tool(name="totvs_get_seller_operational_area", description="Regiões de atuação de vendedores.",
+        inputSchema={"type":"object","properties":{
+            "sellerCode":{"type":"integer"},"branchCode":{"type":"integer"}
+        }}),
+    types.Tool(name="totvs_get_seller_area_by_cep", description="Vendedor responsável por um CEP.",
+        inputSchema={"type":"object","properties":{
+            "cep":{"type":"string","description":"CEP (somente dígitos)"},
+            "branchCode":{"type":"integer"}
+        },"required":["cep"]}),
+    types.Tool(name="totvs_get_seller_area_by_city", description="Vendedor responsável por uma cidade.",
+        inputSchema={"type":"object","properties":{
+            "cityCode":{"type":"integer"},"branchCode":{"type":"integer"}
+        },"required":["cityCode"]}),
 
     # ── VOUCHER ───────────────────────────────────────────────────────────────
     types.Tool(name="totvs_search_voucher", description="Consulta vouchers/cupons.",
@@ -262,18 +684,122 @@ TOOLS: list[types.Tool] = [
     # ── MANAGEMENT ────────────────────────────────────────────────────────────
     types.Tool(name="totvs_get_users", description="Lista usuários do TOTVS Moda.",
         inputSchema={"type":"object","properties":{}}),
-    types.Tool(name="totvs_get_global_parameters", description="Parâmetros corporativos do TOTVS.",
-        inputSchema={"type":"object","properties":{}}),
-    types.Tool(name="totvs_get_branch_parameters", description="Parâmetros por empresa/filial.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"}}}),
+    types.Tool(name="totvs_get_global_parameters", description="Parâmetros corporativos do TOTVS por código.",
+        inputSchema={"type":"object","properties":{
+            "parameterCodeList":{"type":"array","items":{"type":"string"},"description":"Códigos dos parâmetros (obrigatório)"}
+        },"required":["parameterCodeList"]}),
+    types.Tool(name="totvs_get_branch_parameters", description="Parâmetros de filial por código.",
+        inputSchema={"type":"object","properties":{
+            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos das filiais (obrigatório)"},
+            "parameterCodeList":{"type":"array","items":{"type":"string"},"description":"Códigos dos parâmetros (obrigatório)"}
+        },"required":["branchCodeList","parameterCodeList"]}),
 
     # ── GLOBAL / LOCATION ─────────────────────────────────────────────────────
     types.Tool(name="totvs_get_cep", description="Endereço completo pelo CEP.",
         inputSchema={"type":"object","properties":{"cep":{"type":"string","description":"Somente dígitos ex: 86020040"}},"required":["cep"]}),
+    types.Tool(name="totvs_get_countries", description="Lista de países disponíveis.",
+        inputSchema={"type":"object","properties":{}}),
+    types.Tool(name="totvs_get_states", description="Lista de estados/UFs.",
+        inputSchema={"type":"object","properties":{"countryCode":{"type":"string"}}}),
+    types.Tool(name="totvs_get_cities", description="Lista de cidades.",
+        inputSchema={"type":"object","properties":{"stateCode":{"type":"string"},"countryCode":{"type":"string"}}}),
 
     # ── PRODUCTION ORDER ──────────────────────────────────────────────────────
     types.Tool(name="totvs_search_production_orders", description="Ordens de produção por filtro.",
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"statusList":{"type":"array","items":{"type":"string"}},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
+    types.Tool(name="totvs_get_pending_material_consumption", description="Fichas de consumo de matéria-prima pendentes em ordens de produção.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},"orderCode":{"type":"integer"},
+            "startDate":{"type":"string"},"endDate":{"type":"string"},
+            "page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}
+        }}),
+    types.Tool(name="totvs_create_material_movement", description="⚠️ Movimentação de matéria-prima em ordem de produção.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},"orderCode":{"type":"integer"},
+            "movementDate":{"type":"string"},"items":{"type":"array","items":{"type":"object"}}
+        },"required":["branchCode","orderCode","movementDate","items"]}),
+
+    # ── IMAGE ─────────────────────────────────────────────────────────────────
+    types.Tool(name="totvs_get_product_images", description="Imagens de um produto por código de referência.",
+        inputSchema={"type":"object","properties":{
+            "referenceCode":{"type":"string","description":"Código de referência do produto (obrigatório)"},
+            "branchCode":{"type":"integer"}
+        },"required":["referenceCode"]}),
+    types.Tool(name="totvs_upload_product_image", description="⚠️ Upload de imagem de produto em base64.",
+        inputSchema={"type":"object","properties":{
+            "referenceCode":{"type":"string","description":"Código de referência (obrigatório)"},
+            "imageBase64":{"type":"string","description":"Imagem em base64 (obrigatório)"},
+            "branchCode":{"type":"integer"},
+            "imageType":{"type":"string","description":"Tipo da imagem"},
+            "order":{"type":"integer","description":"Ordem de exibição"},
+            "colorCode":{"type":"string","description":"Código da cor"}
+        },"required":["referenceCode","imageBase64"]}),
+    types.Tool(name="totvs_delete_product_image", description="⚠️ Remove imagem de produto.",
+        inputSchema={"type":"object","properties":{
+            "referenceCode":{"type":"string","description":"Código de referência (obrigatório)"},
+            "imageType":{"type":"string"},"order":{"type":"integer"}
+        },"required":["referenceCode"]}),
+
+    # ── VOUCHER (extras) ──────────────────────────────────────────────────────
+    types.Tool(name="totvs_update_voucher", description="⚠️ Altera dados de um voucher existente.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},"voucherCode":{"type":"integer"},
+            "value":{"type":"number"},"expirationDate":{"type":"string"}
+        },"required":["branchCode","voucherCode"]}),
+    types.Tool(name="totvs_create_customer_vouchers", description="⚠️ Cria vouchers em lote para uma lista de clientes.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},"customerCodeList":{"type":"array","items":{"type":"integer"}},
+            "value":{"type":"number"},"expirationDate":{"type":"string"}
+        },"required":["branchCode","customerCodeList","value"]}),
+
+    # ── DATA PACKAGE ─────────────────────────────────────────────────────────
+    types.Tool(name="totvs_list_input_packages", description="Lista pacotes de importação de dados (data-package). Filtra por destinatário, status, modelo e período.",
+        inputSchema={"type":"object","properties":{
+            "Target":{"type":"string","description":"Identificador do destinatário"},
+            "Status":{"type":"string","description":"Status: Active, Rejected, Finished, RestrictionFinished, Canceled"},
+            "ModelCode":{"type":"integer","description":"Código do modelo de pacote"},
+            "ModelCodeList":{"type":"array","items":{"type":"integer"},"description":"Lista de códigos de modelo"},
+            "Source":{"type":"string","description":"Identificador da origem"},
+            "InitialInsertDate":{"type":"string","description":"Data inicial de inclusão (ISO 8601)"},
+            "FinalInsertDate":{"type":"string","description":"Data final de inclusão"},
+            "InitialMovementDate":{"type":"string","description":"Data inicial de movimento"},
+            "FinalMovementDate":{"type":"string","description":"Data final de movimento"},
+            "Page":{"type":"integer","default":1},
+            "PageSize":{"type":"integer","default":1000},
+            "Order":{"type":"string"},
+        }}),
+    types.Tool(name="totvs_get_package", description="Retorna informações de um pacote de dados pelo ID.",
+        inputSchema={"type":"object","properties":{"packageId":{"type":"string","description":"Identificador único do pacote"}},"required":["packageId"]}),
+    types.Tool(name="totvs_get_package_content", description="Retorna o conteúdo (Base64) de um pacote de dados pelo ID.",
+        inputSchema={"type":"object","properties":{"packageId":{"type":"string","description":"Identificador único do pacote"}},"required":["packageId"]}),
+    types.Tool(name="totvs_list_output_packages", description="Lista pacotes de exportação de dados. Requer identificador do destinatário (target).",
+        inputSchema={"type":"object","properties":{
+            "target":{"type":"string","description":"Identificador do destinatário (obrigatório)"},
+            "ModelCode":{"type":"integer","description":"Código do modelo de pacote"},
+            "ModelCodeList":{"type":"array","items":{"type":"integer"}},
+            "Source":{"type":"string","description":"Identificador da origem"},
+            "InitialInsertDate":{"type":"string","description":"Data inicial de inclusão (ISO 8601)"},
+            "FinalInsertDate":{"type":"string","description":"Data final de inclusão"},
+            "InitialMovementDate":{"type":"string","description":"Data inicial de movimento"},
+            "FinalMovementDate":{"type":"string","description":"Data final de movimento"},
+            "Page":{"type":"integer","default":1},
+            "PageSize":{"type":"integer","default":1000},
+        },"required":["target"]}),
+    types.Tool(name="totvs_create_input_package", description="⚠️ ESCRITA — Inclui pacote de dados para importação. O conteúdo deve estar em Base64.",
+        inputSchema={"type":"object","properties":{
+            "modelCode":{"type":"integer","description":"Código do modelo de pacote"},
+            "source":{"type":"string","description":"Identificador da origem"},
+            "target":{"type":"string","description":"Identificador do destinatário"},
+            "movementDate":{"type":"string","description":"Data de movimento (ISO 8601)"},
+            "content":{"type":"string","description":"Conteúdo do pacote em Base64"},
+            "id":{"type":"string","description":"ID único do pacote (gerado automaticamente se omitido)"},
+            "name":{"type":"string","description":"Descrição adicional"},
+            "priority":{"type":"integer","description":"Prioridade (menor = mais prioritário)"},
+        },"required":["modelCode","source","target","movementDate","content"]}),
+    types.Tool(name="totvs_receive_output_package", description="⚠️ ESCRITA — Marca pacote de exportação como recebido.",
+        inputSchema={"type":"object","properties":{"packageId":{"type":"string","description":"ID do pacote"}},"required":["packageId"]}),
+    types.Tool(name="totvs_reactivate_package", description="⚠️ ESCRITA — Reativa pacote rejeitado, mudando situação para 'Em andamento'.",
+        inputSchema={"type":"object","properties":{"packageId":{"type":"string","description":"ID do pacote rejeitado"}},"required":["packageId"]}),
 
     # ── CONTEXT ───────────────────────────────────────────────────────────────
     types.Tool(name="totvs_get_context", description="Retorna dados de referência carregados na inicialização: filiais, operações, condições de pagamento, tabelas de preço, classificações, categorias, grades e unidades de medida. Use antes de criar/alterar registros para obter os códigos corretos.",
@@ -293,6 +819,10 @@ ROUTING: dict[str, tuple[str, str]] = {
     "totvs_cancel_order":                        ("sales_order", "cancel_order"),
     "totvs_change_order_status":                 ("sales_order", "change_order_status"),
     "totvs_update_order_items_price":            ("sales_order", "update_order_items_price"),
+    "totvs_create_order":                        ("sales_order", "create_order"),
+    "totvs_update_order_header":                 ("sales_order", "update_order_header"),
+    "totvs_get_order_classifications":           ("sales_order", "get_classifications"),
+    "totvs_get_discount_types":                  ("sales_order", "get_discount_types"),
     "totvs_search_products":                     ("product", "search_products"),
     "totvs_get_product":                         ("product", "get_product"),
     "totvs_search_product_balances":             ("product", "search_balances"),
@@ -309,45 +839,114 @@ ROUTING: dict[str, tuple[str, str]] = {
     "totvs_create_product_value":                 ("product", "create_product_value"),
     "totvs_update_product_price":                ("product", "update_product_price"),
     "totvs_update_promotion_price":              ("product", "update_promotion_price"),
+    "totvs_search_product_codes":                ("product", "search_product_codes"),
+    "totvs_search_product_costs":                ("product", "search_costs"),
+    "totvs_get_product_category":                ("product", "get_category"),
+    "totvs_get_product_classifications":         ("product", "get_classifications"),
+    "totvs_get_measurement_units":               ("product", "get_measurement_units"),
+    "totvs_search_omni_changed_balances":        ("product", "search_omni_changed_balances"),
+    "totvs_update_product_data":                 ("product", "update_product_data"),
+    "totvs_create_product_barcode":              ("product", "create_barcode"),
+    "totvs_create_product_batch":                ("product", "create_batch"),
     "totvs_search_individual_customers":         ("person", "search_individuals"),
     "totvs_search_legal_customers":              ("person", "search_legal_entities"),
     "totvs_get_customer_bonus_balance":          ("person", "list_bonus_balance"),
     "totvs_get_person_statistics":               ("person", "get_person_statistics"),
     "totvs_create_or_update_individual_customer":("person", "create_or_update_individual_customer"),
+    "totvs_create_or_update_legal_customer":     ("person", "create_or_update_legal_customer"),
+    "totvs_get_branches_list":                   ("person", "get_branches_list"),
+    "totvs_search_representatives":              ("person", "search_representatives"),
+    "totvs_get_person_classifications":          ("person", "get_classifications"),
+    "totvs_get_email_types":                     ("person", "get_email_types"),
+    "totvs_get_phone_types":                     ("person", "get_phone_types"),
+    "totvs_consume_bonus":                       ("person", "consume_bonus"),
+    "totvs_create_person_message":               ("person", "create_message"),
     "totvs_search_customer_financial_balance":   ("accounts_receivable", "search_customer_financial_balance"),
     "totvs_search_receivable_documents":         ("accounts_receivable", "search_documents"),
     "totvs_get_bank_slip":                       ("accounts_receivable", "get_bank_slip"),
     "totvs_get_payment_link":                    ("accounts_receivable", "get_payment_link"),
+    "totvs_get_gift_check_balances":             ("accounts_receivable", "get_gift_check_balances"),
+    "totvs_change_charge_type":                  ("accounts_receivable", "change_charge_type"),
+    "totvs_create_gift_check":                   ("accounts_receivable", "create_gift_check"),
     "totvs_search_fiscal_invoices":              ("fiscal", "search_invoices"),
     "totvs_get_nfe_xml":                         ("fiscal", "get_xml_content"),
+    "totvs_get_invoice_item_detail":             ("fiscal", "get_invoice_item_detail"),
     "totvs_get_danfe":                           ("fiscal", "get_danfe"),
     "totvs_search_invoice_products":             ("fiscal", "search_invoice_products"),
     "totvs_get_cost_center":                     ("fiscal", "get_cost_center"),
-    "totvs_search_fiscal_movement":              ("analytics", "search_fiscal_movement"),
-    "totvs_search_product_fiscal_movement":      ("analytics", "search_product_fiscal_movement"),
-    "totvs_search_best_selling_products":        ("analytics", "search_best_selling_products"),
-    "totvs_search_sales_by_hour":                ("analytics", "search_sales_quantity_hour"),
-    "totvs_search_sales_by_weekday":             ("analytics", "search_sales_quantity_weekday"),
-    "totvs_search_total_receivable":             ("analytics", "search_total_receivable"),
-    "totvs_search_total_payable":                ("analytics", "search_total_payable"),
-    "totvs_search_top_customers":                ("analytics", "search_ranking_customer_biggers"),
-    "totvs_search_top_debtors":                  ("analytics", "search_ranking_customer_debtors"),
-    "totvs_search_financial_income_statement":   ("analytics", "search_financial_income_statement"),
+    "totvs_get_digital_certificates":            ("fiscal", "get_digital_certificates"),
+    "totvs_get_pending_conditional_products":    ("fiscal", "get_pending_conditional_products"),
+    "totvs_get_disabled_invoices":               ("fiscal", "get_disabled_invoices"),
+    "totvs_print_transaction":                   ("fiscal", "print_transaction"),
+    "totvs_create_nfe_manifestation":            ("fiscal", "create_manifestation"),
+    "totvs_search_fiscal_movement":                  ("analytics", "search_fiscal_movement"),
+    "totvs_search_product_fiscal_movement":          ("analytics", "search_product_fiscal_movement"),
+    "totvs_search_person_fiscal_movement":           ("analytics", "search_person_fiscal_movement"),
+    "totvs_search_seller_fiscal_movement":           ("analytics", "search_seller_fiscal_movement"),
+    "totvs_search_payment_fiscal_movement":          ("analytics", "search_payment_fiscal_movement"),
+    "totvs_search_representative_fiscal_movement":   ("analytics", "search_representative_fiscal_movement"),
+    "totvs_search_buyer_fiscal_movement":            ("analytics", "search_buyer_fiscal_movement"),
+    "totvs_search_operation_fiscal_movement":        ("analytics", "search_operation_fiscal_movement"),
+    "totvs_search_best_selling_products":            ("analytics", "search_best_selling_products"),
+    "totvs_search_sales_by_hour":                    ("analytics", "search_sales_quantity_hour"),
+    "totvs_search_sales_by_weekday":                 ("analytics", "search_sales_quantity_weekday"),
+    "totvs_search_total_receivable":                 ("analytics", "search_total_receivable"),
+    "totvs_search_total_payable":                    ("analytics", "search_total_payable"),
+    "totvs_search_top_customers":                    ("analytics", "search_ranking_customer_biggers"),
+    "totvs_search_top_debtors":                      ("analytics", "search_ranking_customer_debtors"),
+    "totvs_search_financial_income_statement":       ("analytics", "search_financial_income_statement"),
+    "totvs_search_biweekly":                         ("analytics", "search_biweekly"),
+    "totvs_search_top_suppliers":                    ("analytics", "search_ranking_supplier_biggers"),
+    "totvs_search_seller_panel_totals":              ("analytics", "search_seller_panel_totals"),
+    "totvs_search_seller_top_customers":             ("analytics", "search_seller_top_customers"),
+    "totvs_search_seller_period_birthday":           ("analytics", "search_seller_period_birthday"),
+    "totvs_search_seller_sales_target":              ("analytics", "search_seller_sales_target"),
+    "totvs_search_customer_purchased_products":      ("analytics", "search_customer_purchased_products"),
     "totvs_get_payment_conditions":              ("general", "get_payment_conditions"),
     "totvs_get_operations":                      ("general", "get_operations"),
     "totvs_simulate_payment_plan":               ("general", "simulate_payment_plan"),
     "totvs_search_devolutions":                  ("general", "search_devolutions"),
+    "totvs_get_payment_plans":                   ("general", "get_payment_plans"),
+    "totvs_get_transactions":                    ("general", "get_transactions"),
+    "totvs_get_classifications":                 ("general", "get_classifications"),
+    "totvs_create_devolution":                   ("general", "create_devolution"),
+    "totvs_create_transaction":                  ("general", "create_transaction"),
+    "totvs_create_product_count":                ("general", "create_product_count"),
     "totvs_search_payable_duplicates":           ("account_payable", "search_duplicates"),
     "totvs_search_commissions_paid":             ("account_payable", "search_commissions_paid"),
+    "totvs_create_duplicate":                    ("account_payable", "create_duplicate"),
     "totvs_search_purchase_orders":              ("purchase_order", "search_purchase_orders"),
+    "totvs_create_purchase_order":               ("purchase_order", "create_purchase_order"),
+    "totvs_cancel_purchase_order":               ("purchase_order", "cancel_purchase_order"),
+    "totvs_change_purchase_order_status":        ("purchase_order", "change_purchase_order_status"),
     "totvs_search_sellers":                      ("seller", "search_sellers"),
+    "totvs_get_seller_operational_area":         ("seller", "get_operational_area"),
+    "totvs_get_seller_area_by_cep":              ("seller", "get_operational_area_by_cep"),
+    "totvs_get_seller_area_by_city":             ("seller", "get_operational_area_by_city"),
     "totvs_search_voucher":                      ("voucher", "search_voucher"),
     "totvs_create_voucher":                      ("voucher", "create_voucher"),
     "totvs_get_users":                           ("management", "get_users"),
     "totvs_get_global_parameters":               ("management", "get_global_parameters"),
     "totvs_get_branch_parameters":               ("management", "get_branch_parameters"),
     "totvs_get_cep":                             ("global", "get_cep"),
+    "totvs_get_countries":                       ("global", "get_countries"),
+    "totvs_get_states":                          ("global", "get_states"),
+    "totvs_get_cities":                          ("global", "get_cities"),
     "totvs_search_production_orders":            ("production_order", "search_production_orders"),
+    "totvs_get_pending_material_consumption":    ("production_order", "get_pending_material_consumption"),
+    "totvs_create_material_movement":            ("production_order", "create_material_movement"),
+    "totvs_get_product_images":                  ("image", "get_product_images"),
+    "totvs_upload_product_image":                ("image", "upload_product_image"),
+    "totvs_delete_product_image":                ("image", "delete_product_image"),
+    "totvs_update_voucher":                      ("voucher", "update_voucher"),
+    "totvs_create_customer_vouchers":            ("voucher", "create_customer_vouchers"),
+    "totvs_list_input_packages":                 ("data_package", "list_input_packages"),
+    "totvs_get_package":                         ("data_package", "get_package"),
+    "totvs_get_package_content":                 ("data_package", "get_package_content"),
+    "totvs_list_output_packages":                ("data_package", "list_output_packages"),
+    "totvs_create_input_package":                ("data_package", "create_input_package"),
+    "totvs_receive_output_package":              ("data_package", "receive_output_package"),
+    "totvs_reactivate_package":                  ("data_package", "reactivate_package"),
     "totvs_get_context":                         None,  # handled inline
 }
 

@@ -168,8 +168,7 @@ Abra a paleta de comandos (`Ctrl+Shift+P`), busque **"MCP: Open User Configurati
 {
   "servers": {
     "totvs-moda": {
-      "command": "python",
-      "args": ["/caminho/absoluto/para/MCP-Server-Totvs-Moda/server.py"],
+      "command": "totvs-moda-mcp",
       "env": {
         "TOTVS_BASE_URL": "https://seu-servidor-totvs:9443",
         "TOTVS_CLIENT_ID": "seu_client_id",
@@ -182,6 +181,8 @@ Abra a paleta de comandos (`Ctrl+Shift+P`), busque **"MCP: Open User Configurati
   }
 }
 ```
+
+> Se instalar via repositório, use `"command": "python"` com `"args": ["/caminho/para/server.py"]`.
 
 ## Uso com Claude Desktop
 
@@ -194,8 +195,7 @@ Adicione ao seu `claude_desktop_config.json`:
 {
   "mcpServers": {
     "totvs-moda": {
-      "command": "python",
-      "args": ["/caminho/absoluto/para/MCP-Server-Totvs-Moda/server.py"],
+      "command": "totvs-moda-mcp",
       "env": {
         "TOTVS_BASE_URL": "https://seu-servidor-totvs:9443",
         "TOTVS_CLIENT_ID": "seu_client_id",
@@ -208,6 +208,8 @@ Adicione ao seu `claude_desktop_config.json`:
   }
 }
 ```
+
+> Se instalar via repositório, use `"command": "python"` com `"args": ["/caminho/para/server.py"]`.
 
 ---
 

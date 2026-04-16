@@ -1,35 +1,12 @@
-"""Voucher Tools — /api/totvsmoda/voucher/v2/"""
+"""
+Management, Location, and Production Order Tools
+=================================================
+"""
 import logging
 from typing import Any
 from totvs_client import TotvsClient
 
-logger = logging.getLogger("totvs-moda-mcp.voucher")
-BASE = "/api/totvsmoda/voucher/v2"
-
-
-class VoucherTools:
-    def __init__(self, client: TotvsClient) -> None:
-        self.client = client
-
-    async def search_voucher(self, args: dict[str, Any]) -> Any:
-        """GET /search — Consulta voucher."""
-        params = {k: v for k, v in args.items() if v is not None}
-        return await self.client.get(f"{BASE}/search", params=params or None)
-
-    async def create_voucher(self, args: dict[str, Any]) -> Any:
-        """POST /create — ⚠️ Inclui voucher."""
-        body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/create", body)
-
-    async def update_voucher(self, args: dict[str, Any]) -> Any:
-        """POST /update — ⚠️ Altera voucher."""
-        body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/update", body)
-
-    async def create_customer_vouchers(self, args: dict[str, Any]) -> Any:
-        """POST /customer/create — ⚠️ Cria vouchers para lista de clientes."""
-        body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/customer/create", body)
+logger = logging.getLogger("totvs-moda-mcp.other")
 
 
 """Management Tools — /api/totvsmoda/management/v2/"""
@@ -46,13 +23,17 @@ class ManagementTools:
         return await self.client.get(f"{self.BASE}/users", params=params or None)
 
     async def get_global_parameters(self, args: dict[str, Any]) -> Any:
-        """GET /global-parameter — Parâmetros corporativos."""
-        return await self.client.get(f"{self.BASE}/global-parameter")
+        """GET /global-parameter — Parâmetros corporativos. ParameterCodeList obrigatório."""
+        params: dict[str, Any] = {"ParameterCodeList": args["parameterCodeList"]}
+        return await self.client.get(f"{self.BASE}/global-parameter", params=params)
 
     async def get_branch_parameters(self, args: dict[str, Any]) -> Any:
-        """GET /branch-parameter — Parâmetros por empresa."""
-        params = {k: v for k, v in args.items() if v is not None}
-        return await self.client.get(f"{self.BASE}/branch-parameter", params=params or None)
+        """GET /branch-parameter — Parâmetros por empresa. BranchCodeList e ParameterCodeList obrigatórios."""
+        params: dict[str, Any] = {
+            "BranchCodeList": args["branchCodeList"],
+            "ParameterCodeList": args["parameterCodeList"],
+        }
+        return await self.client.get(f"{self.BASE}/branch-parameter", params=params)
 
 
 """Global / Location Tools — /api/totvsmoda/location/v2/"""
