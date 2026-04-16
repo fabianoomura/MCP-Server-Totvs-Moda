@@ -80,37 +80,35 @@ async def load(client: Any) -> None:
 
     best_selling = await safe_post(
         f"{BASE_ECOMMERCE}/best-selling-products/search",
-        {"startDate": start_date, "endDate": end_date, "pageSize": 1},
+        {"startDate": start_date, "endDate": end_date, "pageSize": 20},
     )
+    sample_product_codes: list[int] = []
     if best_selling and isinstance(best_selling, dict):
-        items = best_selling.get("items") or best_selling.get("Items") or []
-        if items:
-            pc = items[0].get("productCode") or items[0].get("ProductCode")
+        for item in (best_selling.get("items") or best_selling.get("Items") or []):
+            pc = item.get("productCode") or item.get("ProductCode")
             if pc:
-                sample_product_code = int(pc)
+                sample_product_codes.append(int(pc))
 
     # Fallback: qualquer produto do catálogo
-    if not sample_product_code:
-        any_product = await safe_post(f"{BASE_PRODUCT}/products/search", {"pageSize": 1})
+    if not sample_product_codes:
+        any_product = await safe_post(f"{BASE_PRODUCT}/products/search", {"pageSize": 20})
         if any_product and isinstance(any_product, dict):
-            items = any_product.get("items") or any_product.get("Items") or []
-            if items:
-                pc = items[0].get("productCode") or items[0].get("ProductCode")
+            for item in (any_product.get("items") or any_product.get("Items") or []):
+                pc = item.get("productCode") or item.get("ProductCode")
                 if pc:
-                    sample_product_code = int(pc)
+                    sample_product_codes.append(int(pc))
 
-    if sample_product_code:
-        logger.info(f"Descobrindo tipos de preço/custo via produto {sample_product_code} (filial {branch_code})...")
+    if sample_product_codes:
+        logger.info(f"Descobrindo tipos de preço/custo via {len(sample_product_codes)} produtos (filial {branch_code})...")
 
         # Consultar preços com range 1..20 para capturar todos os tipos cadastrados
         prices_data = await safe_post(f"{BASE_PRODUCT}/prices/search", {
-            "filter": {"productCodeList": [sample_product_code]},
+            "filter": {"productCodeList": sample_product_codes},
             "option": {"prices": [{"branchCode": branch_code, "priceCodeList": list(range(1, 21))}]},
         })
         if prices_data and isinstance(prices_data, dict):
             seen: set = set()
-            items = prices_data.get("items") or prices_data.get("Items") or []
-            for item in items:
+            for item in (prices_data.get("items") or prices_data.get("Items") or []):
                 for p in (item.get("prices") or item.get("Prices") or []):
                     code = p.get("priceCode") or p.get("PriceCode")
                     name = p.get("priceName") or p.get("PriceName") or ""
@@ -120,13 +118,12 @@ async def load(client: Any) -> None:
 
         # Consultar custos
         costs_data = await safe_post(f"{BASE_PRODUCT}/costs/search", {
-            "filter": {"productCodeList": [sample_product_code]},
+            "filter": {"productCodeList": sample_product_codes},
             "option": {"branchCode": branch_code},
         })
         if costs_data and isinstance(costs_data, dict):
             seen = set()
-            items = costs_data.get("items") or costs_data.get("Items") or []
-            for item in items:
+            for item in (costs_data.get("items") or costs_data.get("Items") or []):
                 for c in (item.get("costs") or item.get("Costs") or []):
                     code = c.get("costCode") or c.get("CostCode")
                     name = c.get("costName") or c.get("CostName") or ""

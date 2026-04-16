@@ -257,10 +257,10 @@ O valor é lido na inicialização e exposto como lista de inteiros em `branches
 
 O TOTVS Moda não expõe um endpoint dedicado para listar tipos de preço e custo. Na inicialização, o servidor adota a seguinte estratégia:
 
-1. Busca o **produto mais vendido nos últimos 30 dias** via `ecommerce-sales-order/v2/best-selling-products/search`.
-2. Se não houver vendas no período, faz um fallback para **qualquer produto** via `product/v2/products/search`.
-3. Com o `productCode` obtido, consulta preços passando `priceCodeList: [1..20]` — o TOTVS retorna apenas os tipos que existem, ignorando os inválidos.
-4. Os pares `{priceCode, priceName}` e `{costCode, costName}` extraídos são armazenados em `priceTypes` e `costTypes`.
+1. Busca os **20 produtos mais vendidos nos últimos 30 dias** via `ecommerce-sales-order/v2/best-selling-products/search`.
+2. Se não houver vendas no período, faz um fallback para **20 produtos quaisquer** via `product/v2/products/search`.
+3. Com a lista de `productCode` obtida, consulta preços passando `priceCodeList: [1..20]` — o TOTVS retorna apenas os tipos que existem, ignorando os inválidos.
+4. Os pares `{priceCode, priceName}` e `{costCode, costName}` extraídos (deduplicados) são armazenados em `priceTypes` e `costTypes`.
 
 ### Como usar o contexto
 
