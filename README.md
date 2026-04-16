@@ -236,7 +236,7 @@ Ao iniciar, o servidor executa automaticamente uma carga de dados de referência
 
 | Chave | Origem | Conteúdo |
 |-------|--------|----------|
-| `branches` | extraído de `management/v2/users` | Filiais únicas com `branchCode` e `branchName` |
+| `branches` | variável de ambiente `TOTVS_BRANCH_CODES` | Lista de códigos de filial configurados pelo usuário |
 | `operations` | `general/v2/operations` | Todas as operações (entrada/saída) ativas e inativas |
 | `paymentConditions` | `general/v2/payment-conditions` | Condições de pagamento disponíveis |
 | `paymentPlans` | `general/v2/payment-plans` | Planos de pagamento |
@@ -249,9 +249,19 @@ Ao iniciar, o servidor executa automaticamente uma carga de dados de referência
 | `priceTypes` | `product/v2/prices/search` | Tipos de preço ativos (código + nome) |
 | `costTypes` | `product/v2/costs/search` | Tipos de custo ativos (código + nome) |
 
-### Como `branches` é construído
+### Como `branches` é configurado
 
-O TOTVS Moda não possui um endpoint de listagem de filiais sem parâmetros. O servidor extrai os `branchCode` únicos da lista de usuários (`management/v2/users`), que retornam com o campo `branchCode` associado. Os valores são deduplicados e ordenados, formando a lista `branches`.
+O TOTVS Moda não possui um endpoint de listagem de filiais sem parâmetros. Por isso, as filiais são informadas diretamente no arquivo `.env` via `TOTVS_BRANCH_CODES`:
+
+```env
+# Uma filial
+TOTVS_BRANCH_CODES=1
+
+# Múltiplas filiais
+TOTVS_BRANCH_CODES=1,2,5
+```
+
+O valor é lido na inicialização e exposto como lista de inteiros em `branches`. O primeiro código da lista é usado como filial padrão nas consultas de descoberta de tipos de preço/custo.
 
 ### Como `priceTypes` e `costTypes` são descobertos
 

@@ -5,6 +5,7 @@ Carregado na inicialização do servidor. Busca dados de referência do TOTVS
 e armazena em memória para uso em consultas, criações e alterações.
 """
 import logging
+import os
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -54,19 +55,12 @@ async def load(client: Any) -> None:
     # management/v2/users
     users = await safe_get(f"{BASE_MANAGEMENT}/users", params={"PageSize": 1000})
 
-    # ── Filiais únicas extraídas dos usuários ─────────────────────────────────
-    branches: list[dict] = []
-    if users and isinstance(users, dict):
-        user_items = users.get("items") or users.get("Users") or []
-        seen_branches: set = set()
-        for u in user_items:
-            bc   = u.get("branchCode") or u.get("BranchCode")
-            name = u.get("branchName") or u.get("BranchName") or u.get("companyName") or u.get("CompanyName") or ""
-            if bc and bc not in seen_branches:
-                seen_branches.add(bc)
-                branches.append({"branchCode": bc, "branchName": name})
-        branches.sort(key=lambda x: x["branchCode"])
-        logger.info(f"Filiais detectadas via usuários: {[b['branchCode'] for b in branches]}")
+    # ── Filiais via variável de ambiente TOTVS_BRANCH_CODES ───────────────────
+    _raw = os.environ.get("TOTVS_BRANCH_CODES", "1")
+    branches: list[int] = [int(x.strip()) for x in _raw.split(",") if x.strip().isdigit()]
+    if not branches:
+        branches = [1]
+    logger.info(f"Filiais configuradas: {branches}")
 
     # ── Descoberta de tipos de preço e custo ──────────────────────────────────
     # Estratégia: pegar produto mais vendido nos últimos 30 dias (ou qualquer produto)
@@ -75,8 +69,7 @@ async def load(client: Any) -> None:
     price_types: list[dict] = []
     cost_types: list[dict]  = []
 
-    # Usar primeiro branchCode já extraído (ou 1 como fallback)
-    branch_code: int = branches[0]["branchCode"] if branches else 1
+    branch_code: int = branches[0]
 
     # Tentar pegar produto mais vendido nos últimos 30 dias
     today = datetime.now()
