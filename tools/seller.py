@@ -13,7 +13,10 @@ class SellerTools:
 
     async def search_sellers(self, args: dict[str, Any]) -> Any:
         """POST /search — Lista vendedores, empresas e clientes."""
-        body = {k: v for k, v in args.items() if v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        if args.get("order"):
+            body["order"] = args["order"]
         return await self.client.post(f"{BASE}/search", body)
 
     async def get_operational_area(self, args: dict[str, Any]) -> Any:

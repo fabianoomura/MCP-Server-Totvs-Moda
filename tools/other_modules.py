@@ -74,12 +74,18 @@ class ProductionOrderTools:
 
     async def search_production_orders(self, args: dict[str, Any]) -> Any:
         """POST /orders/search — Consulta ordens de produção."""
-        body = {k: v for k, v in args.items() if v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        if args.get("order"):
+            body["order"] = args["order"]
         return await self.client.post(f"{self.BASE}/orders/search", body)
 
     async def get_pending_material_consumption(self, args: dict[str, Any]) -> Any:
         """POST /pending-material-consumption — Fichas de consumo pendentes."""
-        body = {k: v for k, v in args.items() if v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        if args.get("order"):
+            body["order"] = args["order"]
         return await self.client.post(f"{self.BASE}/pending-material-consumption", body)
 
     async def create_material_movement(self, args: dict[str, Any]) -> Any:

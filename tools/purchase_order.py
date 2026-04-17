@@ -13,7 +13,16 @@ class PurchaseOrderTools:
 
     async def search_purchase_orders(self, args: dict[str, Any]) -> Any:
         """POST /search — Consulta pedidos de compra."""
-        body = {k: v for k, v in args.items() if v is not None}
+        flt: dict[str, Any] = {}
+        for field in ("branchCode", "orderCodeList", "startDate", "endDate", "statusList",
+                      "supplierCodeList", "operationCodeList"):
+            if args.get(field) is not None:
+                flt[field] = args[field]
+        body: dict[str, Any] = {
+            "filter": flt,
+            "page": args.get("page", 1),
+            "pageSize": args.get("pageSize", 100),
+        }
         return await self.client.post(f"{BASE}/search", body)
 
     async def create_purchase_order(self, args: dict[str, Any]) -> Any:

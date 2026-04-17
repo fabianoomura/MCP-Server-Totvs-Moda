@@ -18,7 +18,10 @@ class ProductTools:
 
     async def search_products(self, args: dict[str, Any]) -> Any:
         """POST /products/search — Busca produtos por filtro geral."""
-        body = {k: v for k, v in args.items() if v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        if args.get("order"):
+            body["order"] = args["order"]
         return await self.client.post(f"{BASE}/products/search", body)
 
     async def get_product(self, args: dict[str, Any]) -> Any:
@@ -29,12 +32,18 @@ class ProductTools:
 
     async def search_product_codes(self, args: dict[str, Any]) -> Any:
         """POST /product-codes/search — Lista de produtos por filtro geral."""
-        body = {k: v for k, v in args.items() if v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        if args.get("order"):
+            body["order"] = args["order"]
         return await self.client.post(f"{BASE}/product-codes/search", body)
 
     async def search_balances(self, args: dict[str, Any]) -> Any:
         """POST /balances/search — Saldos de estoque por filtro geral."""
-        body = {k: v for k, v in args.items() if v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        if args.get("order"):
+            body["order"] = args["order"]
         return await self.client.post(f"{BASE}/balances/search", body)
 
     async def search_prices(self, args: dict[str, Any]) -> Any:
@@ -93,12 +102,18 @@ class ProductTools:
 
     async def search_costs(self, args: dict[str, Any]) -> Any:
         """POST /costs/search — Custos de produtos."""
-        body = {k: v for k, v in args.items() if v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        if args.get("order"):
+            body["order"] = args["order"]
         return await self.client.post(f"{BASE}/costs/search", body)
 
     async def search_references(self, args: dict[str, Any]) -> Any:
         """POST /references/search — Dados de referências de produtos."""
-        body = {k: v for k, v in args.items() if v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        if args.get("order"):
+            body["order"] = args["order"]
         return await self.client.post(f"{BASE}/references/search", body)
 
     async def get_grid(self, args: dict[str, Any]) -> Any:
@@ -113,7 +128,10 @@ class ProductTools:
 
     async def search_colors(self, args: dict[str, Any]) -> Any:
         """POST /colors/search — Dados de cores."""
-        body = {k: v for k, v in args.items() if v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        if args.get("order"):
+            body["order"] = args["order"]
         return await self.client.post(f"{BASE}/colors/search", body)
 
     async def get_classifications(self, args: dict[str, Any]) -> Any:
@@ -123,7 +141,10 @@ class ProductTools:
 
     async def search_batch(self, args: dict[str, Any]) -> Any:
         """POST /batch/search — Dados de lote de produto."""
-        body = {k: v for k, v in args.items() if v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        if args.get("order"):
+            body["order"] = args["order"]
         return await self.client.post(f"{BASE}/batch/search", body)
 
     async def get_measurement_units(self, args: dict[str, Any]) -> Any:
@@ -137,12 +158,18 @@ class ProductTools:
 
     async def search_compositions(self, args: dict[str, Any]) -> Any:
         """POST /compositions — Composições de produto."""
-        body = {k: v for k, v in args.items() if v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        if args.get("order"):
+            body["order"] = args["order"]
         return await self.client.post(f"{BASE}/compositions", body)
 
     async def search_omni_changed_balances(self, args: dict[str, Any]) -> Any:
         """POST /omni-changed-balances — Saldos alterados (omni-channel)."""
-        body = {k: v for k, v in args.items() if v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        if args.get("order"):
+            body["order"] = args["order"]
         return await self.client.post(f"{BASE}/omni-changed-balances", body)
 
     # ── WRITE ──────────────────────────────────────────────────────────────

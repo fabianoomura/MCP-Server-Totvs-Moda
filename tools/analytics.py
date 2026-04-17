@@ -113,22 +113,34 @@ class AnalyticsTools:
 
     async def search_best_selling_products(self, args: dict[str, Any]) -> Any:
         """POST ecommerce/best-selling-products/search — Ranking dos mais vendidos."""
-        body = {k: v for k, v in args.items() if v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        if args.get("order"):
+            body["order"] = args["order"]
         return await self.client.post(f"{BASE_ECOMMERCE}/best-selling-products/search", body)
 
     async def search_sales_quantity_hour(self, args: dict[str, Any]) -> Any:
         """POST ecommerce/sales-quantity-hour/search — Vendas por hora no período."""
-        body = {k: v for k, v in args.items() if v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        if args.get("order"):
+            body["order"] = args["order"]
         return await self.client.post(f"{BASE_ECOMMERCE}/sales-quantity-hour/search", body)
 
     async def search_sales_quantity_weekday(self, args: dict[str, Any]) -> Any:
         """POST ecommerce/sales-quantity-weekday/search — Vendas por dia da semana."""
-        body = {k: v for k, v in args.items() if v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        if args.get("order"):
+            body["order"] = args["order"]
         return await self.client.post(f"{BASE_ECOMMERCE}/sales-quantity-weekday/search", body)
 
     async def search_orders_customer_quantity(self, args: dict[str, Any]) -> Any:
         """POST ecommerce/orders-customer-quantity/search — Vendas por quantidade de clientes."""
-        body = {k: v for k, v in args.items() if v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        if args.get("order"):
+            body["order"] = args["order"]
         return await self.client.post(f"{BASE_ECOMMERCE}/orders-customer-quantity/search", body)
 
     # ── Painel Financeiro ──────────────────────────────────────────────────
@@ -171,30 +183,48 @@ class AnalyticsTools:
 
     async def search_seller_panel_totals(self, args: dict[str, Any]) -> Any:
         """POST seller-panel/totals/search — Totais do painel de vendedor."""
-        body = {k: v for k, v in args.items() if v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        if args.get("order"):
+            body["order"] = args["order"]
         return await self.client.post(f"{BASE_SELLER}/totals/search", body)
 
     async def search_seller_top_customers(self, args: dict[str, Any]) -> Any:
         """POST seller-panel/seller/top-customers — Melhores clientes do vendedor."""
-        body = {k: v for k, v in args.items() if v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        if args.get("order"):
+            body["order"] = args["order"]
         return await self.client.post(f"{BASE_SELLER}/seller/top-customers", body)
 
     async def search_seller_period_birthday(self, args: dict[str, Any]) -> Any:
         """POST seller-panel/seller/period-birthday — Aniversariantes do período."""
-        body = {k: v for k, v in args.items() if v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        if args.get("order"):
+            body["order"] = args["order"]
         return await self.client.post(f"{BASE_SELLER}/seller/period-birthday", body)
 
     async def search_seller_sales_target(self, args: dict[str, Any]) -> Any:
         """POST seller-panel/sales-target/search — Meta do vendedor."""
-        body = {k: v for k, v in args.items() if v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        if args.get("order"):
+            body["order"] = args["order"]
         return await self.client.post(f"{BASE_SELLER}/sales-target/search", body)
 
     async def search_customer_purchased_products(self, args: dict[str, Any]) -> Any:
         """POST seller-panel/seller/customer-purchased-products — Produtos comprados pelo cliente."""
-        body = {k: v for k, v in args.items() if v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        if args.get("order"):
+            body["order"] = args["order"]
         return await self.client.post(f"{BASE_SELLER}/seller/customer-purchased-products", body)
 
     async def search_seller_pending_conditionals(self, args: dict[str, Any]) -> Any:
         """POST seller-panel/seller/pending-conditionals — Condicionais pendentes do vendedor."""
-        body = {k: v for k, v in args.items() if v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        if args.get("order"):
+            body["order"] = args["order"]
         return await self.client.post(f"{BASE_SELLER}/seller/pending-conditionals", body)
