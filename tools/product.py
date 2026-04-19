@@ -39,11 +39,28 @@ class ProductTools:
         return await self.client.post(f"{BASE}/product-codes/search", body)
 
     async def search_balances(self, args: dict[str, Any]) -> Any:
-        """POST /balances/search — Saldos de estoque por filtro geral."""
-        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
-        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        """POST /balances/search — Saldos de estoque por filtro geral.
+        option.balances[{branchCode, stockCodeList}] é obrigatório."""
+        filter_keys = {"productCodeList", "referenceCodeList", "productName", "groupCodeList",
+                       "startProductCode", "endProductCode", "classifications", "branchInfo",
+                       "hasStock", "change"}
+        flt = {k: v for k, v in args.items() if k in filter_keys and v is not None}
+        balance_option: dict[str, Any] = {
+            "branchCode": args.get("branchCode", 1),
+            "stockCodeList": args.get("stockCodeList", [1]),
+        }
+        if args.get("isSalesOrder") is not None:
+            balance_option["isSalesOrder"] = args["isSalesOrder"]
+        body: dict[str, Any] = {
+            "filter": flt,
+            "option": {"balances": [balance_option]},
+            "page": args.get("page", 1),
+            "pageSize": args.get("pageSize", 1000),
+        }
         if args.get("order"):
             body["order"] = args["order"]
+        if args.get("expand"):
+            body["expand"] = args["expand"]
         return await self.client.post(f"{BASE}/balances/search", body)
 
     async def search_prices(self, args: dict[str, Any]) -> Any:

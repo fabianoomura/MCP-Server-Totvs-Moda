@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "totvs-moda-mcp"
-version = "2.1.4"
+version = "2.1.5"
 description = "MCP Server para API V2 do TOTVS Moda — integre Claude e outros clientes MCP ao seu ERP de moda brasileiro"
 readme = "README.md"
 license = { text = "MIT" }

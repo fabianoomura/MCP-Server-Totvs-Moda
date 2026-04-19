@@ -170,7 +170,16 @@ TOOLS: list[types.Tool] = [
     types.Tool(name="totvs_get_product", description="Dados completos de um produto/pack pelo código.",
         inputSchema={"type":"object","properties":{"code":{"type":"integer"},"branchCode":{"type":"integer","description":"Código da filial"}},"required":["code"]}),
     types.Tool(name="totvs_search_product_balances", description="Saldos de estoque por produto. Retorna disponível, reservado, total por filial/depósito.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"productCodeList":{"type":"array","items":{"type":"integer"}},"referenceCodeList":{"type":"array","items":{"type":"string"}},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer","description":"Código da filial (padrão 1)"},
+            "stockCodeList":{"type":"array","items":{"type":"integer"},"description":"Tipos de saldo (padrão [1])"},
+            "isSalesOrder":{"type":"boolean","description":"Incluir saldo reservado em pedidos de venda"},
+            "productCodeList":{"type":"array","items":{"type":"integer"}},
+            "referenceCodeList":{"type":"array","items":{"type":"string"}},
+            "expand":{"type":"string","description":"locations"},
+            "page":{"type":"integer","default":1},
+            "pageSize":{"type":"integer","default":1000}
+        }}),
     types.Tool(name="totvs_search_product_prices", description="Preços de produtos por filtro, opcionalmente por tabela de preço.",
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"productCodeList":{"type":"array","items":{"type":"integer"}},"referenceCodeList":{"type":"array","items":{"type":"string"}},"priceTableCodeList":{"type":"array","items":{"type":"integer"}},"priceCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos numéricos de tipo de preço (ex: [1])"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
     types.Tool(name="totvs_search_price_tables", description="Preços de produtos baseados em tabela de preço. branchCode e priceTableCode são obrigatórios.",
@@ -654,7 +663,7 @@ TOOLS: list[types.Tool] = [
 
     # ── PURCHASE ORDER ────────────────────────────────────────────────────────
     types.Tool(name="totvs_search_purchase_orders", description="Pedidos de compra por filtro.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"statusList":{"type":"array","items":{"type":"string"}},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"orderCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos dos pedidos de compra"},"supplierCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos dos fornecedores"},"operationCodeList":{"type":"array","items":{"type":"integer"}},"startDate":{"type":"string"},"endDate":{"type":"string"},"statusList":{"type":"array","items":{"type":"string"}},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}}}),
     types.Tool(name="totvs_create_purchase_order", description="⚠️ Inclui pedido de compra.",
         inputSchema={"type":"object","properties":{
             "branchCode":{"type":"integer"},"supplierCode":{"type":"integer"},
