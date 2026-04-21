@@ -3,15 +3,16 @@
 [![PyPI](https://img.shields.io/pypi/v/totvs-moda-mcp)](https://pypi.org/project/totvs-moda-mcp/)
 [![Python](https://img.shields.io/pypi/pyversions/totvs-moda-mcp)](https://pypi.org/project/totvs-moda-mcp/)
 
-> MCP (Model Context Protocol) server para integração com a **API V2 do TOTVS Moda**.  
+> **Criação de um servidor MCP para TOTVS Moda usando as APIs V2 fornecidas.**
 > Permite que Claude e outros clientes MCP consultem e operem pedidos, produtos, clientes, fiscal e financeiro do TOTVS Moda por linguagem natural.
 
 ---
 
-## Por que isso existe?
+## Sobre este projeto
 
-O TOTVS Moda é amplamente usado no varejo de moda brasileiro, mas não possui um MCP server oficial.  
-Este projeto preenche essa lacuna, permitindo que times usem IA diretamente sobre os dados operacionais do TOTVS — consultas, alertas, automações — sem precisar acessar o sistema manualmente.
+Este é um projeto **não oficial** de criação de um servidor MCP (Model Context Protocol) para integração com o ERP TOTVS Moda através de suas APIs V2.
+
+O TOTVS Moda é amplamente usado no varejo de moda brasileiro, mas não possui um MCP server oficial. Este projeto preenche essa lacuna, permitindo que times usem IA diretamente sobre os dados operacionais do TOTVS — consultas, alertas, automações — sem precisar acessar o sistema manualmente.
 
 ---
 
