@@ -128,20 +128,115 @@ TOOLS: list[types.Tool] = [
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"orderCode":{"type":"integer"}},"required":["branchCode","orderCode"]}),
     types.Tool(name="totvs_get_billing_suggestions", description="Sugestões de faturamento do TOTVS.",
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"orderCode":{"type":"integer"}},"required":["branchCode"]}),
-    types.Tool(name="totvs_cancel_order", description="⚠️ ESCRITA — Cancela pedido de venda (irreversível).",
+    types.Tool(name="totvs_cancel_order", description="⚠️ ESCRITA — Cancela pedido de venda (irreversível). Somente pedidos não aceitos na retaguarda podem ser cancelados.",
         inputSchema={"type":"object","properties":{
             "branchCode":{"type":"integer","description":"Código da filial"},
             "orderCode":{"type":"integer"},
-            "reasonCancellationCode":{"type":"integer","description":"Código do motivo de cancelamento (obrigatório)"}
+            "reasonCancellationCode":{"type":"integer","description":"Código do motivo de cancelamento (obrigatório)"},
+            "ReasonCancellationDescription":{"type":"string","description":"Descrição do cancelamento (max 80 chars)"}
         },"required":["branchCode","orderCode","reasonCancellationCode"]}),
-    types.Tool(name="totvs_change_order_status", description="⚠️ ESCRITA — Altera situação do pedido.",
+    types.Tool(name="totvs_change_order_status", description="⚠️ ESCRITA — Altera situação do pedido. Aceita apenas valores do enum: InProgress (Em andamento), BillingReleased (Liberado p/ faturamento), Blocked (Bloqueado), InComposition (Em composição), InAnalysis (Em análise).",
         inputSchema={"type":"object","properties":{
             "branchCode":{"type":"integer","description":"Código da filial"},
             "orderCode":{"type":"integer"},
-            "newStatus":{"type":"string","description":"Nova situação do pedido (obrigatório)"}
-        },"required":["branchCode","orderCode","newStatus"]}),
+            "statusOrder":{"type":"string","enum":["InProgress","BillingReleased","Blocked","InComposition","InAnalysis"],"description":"Nova situação do pedido"},
+            "reasonBlockingCode":{"type":"integer","description":"Código do motivo de bloqueio (apenas para statusOrder=Blocked)"},
+            "reasonBlockingDescription":{"type":"string","description":"Descrição do motivo de bloqueio"}
+        },"required":["branchCode","orderCode","statusOrder"]}),
     types.Tool(name="totvs_update_order_items_price", description="⚠️ ESCRITA — Altera preço de itens do pedido.",
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"orderCode":{"type":"integer"},"items":{"type":"array","items":{"type":"object","properties":{"itemSequential":{"type":"integer"},"price":{"type":"number"}},"required":["itemSequential","price"]}}},"required":["branchCode","orderCode","items"]}),
+
+    # ── SALES ORDER v2.3 (item management) ────────────────────────────────────
+    types.Tool(name="totvs_add_order_items", description="⚠️ ESCRITA — Adiciona itens a pedido existente. Informe branchCode+orderCode OU orderId + lista 'items'.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},
+            "orderCode":{"type":"integer"},
+            "orderId":{"type":"string"},
+            "items":{"type":"array","description":"Lista de itens. Cada item exige: productCode, productSku, quantity, price. Opcionais: originalPrice, discountPercentage, discountValue, billingForecastDate, billingStartDate, customerOrderCode, customerProductCode, rollMeasureCode, sequentials, sequentialsValues, groupObservations, commissioneds.","items":{"type":"object"}}
+        },"required":["items"]}),
+    types.Tool(name="totvs_remove_order_item", description="⚠️ ESCRITA — Remove item de pedido (DELETE). Identifica item por productCode ou productSku.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},
+            "orderCode":{"type":"integer"},
+            "orderId":{"type":"string"},
+            "productCode":{"type":"integer"},
+            "productSku":{"type":"string"}
+        }}),
+    types.Tool(name="totvs_cancel_order_items", description="⚠️ ESCRITA — Cancela quantidades de itens do pedido.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},
+            "orderCode":{"type":"integer"},
+            "orderId":{"type":"string"},
+            "items":{"type":"array","description":"Lista CancelOrderItemModel (productCode, productSku, quantityToCancel, reasonCancellationCode)","items":{"type":"object"}}
+        },"required":["items"]}),
+    types.Tool(name="totvs_change_order_item_quantity", description="⚠️ ESCRITA — Altera quantidade de itens do pedido.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},
+            "orderCode":{"type":"integer"},
+            "orderId":{"type":"string"},
+            "items":{"type":"array","description":"Lista UpdateOrderItemQuantityModel (productCode, productSku, newQuantity)","items":{"type":"object"}}
+        },"required":["items"]}),
+    types.Tool(name="totvs_update_order_items_additional", description="⚠️ ESCRITA — Altera dados adicionais de itens (customerOrderCode, customerProductCode, billingForecastDate etc).",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},
+            "orderCode":{"type":"integer"},
+            "orderId":{"type":"string"},
+            "items":{"type":"array","items":{"type":"object"}}
+        },"required":["items"]}),
+    types.Tool(name="totvs_add_order_observation", description="⚠️ ESCRITA — Adiciona observação ao pedido.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},
+            "orderCode":{"type":"integer"},
+            "orderId":{"type":"string"},
+            "observation":{"type":"string"},
+            "visualizationType":{"type":"string","description":"Enum VisualizationObservationType"}
+        },"required":["observation"]}),
+    types.Tool(name="totvs_update_order_shipping", description="⚠️ ESCRITA — Altera dados de transporte do pedido (transportadora, frete, endereço).",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},
+            "orderCode":{"type":"integer"},
+            "orderId":{"type":"string"},
+            "shippingCompanyCode":{"type":"integer"},
+            "shippingCompanyCpfCnpj":{"type":"string"},
+            "redispatchingShippingCompanyCode":{"type":"integer"},
+            "redispatchingShippingCompanyCpfCnpj":{"type":"string"},
+            "redispatchingFreightType":{"type":"integer"},
+            "freightType":{"type":"string","description":"Enum FreitghtType"},
+            "freightPercentage":{"type":"number"},
+            "freightValue":{"type":"number"},
+            "shippingAddress":{"type":"object"}
+        }}),
+    types.Tool(name="totvs_update_order_additional", description="⚠️ ESCRITA — Altera dados adicionais do pedido (tracking, ecommerce, omni, etc).",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},
+            "orderCode":{"type":"integer"},
+            "orderId":{"type":"string"},
+            "shippingService":{"type":"string"},
+            "trackingId":{"type":"string"},
+            "ecommerceStage":{"type":"string"},
+            "omniSiteId":{"type":"integer"},
+            "compensationDays":{"type":"integer"},
+            "anticipationDay":{"type":"integer"},
+            "entryType":{"type":"string"},
+            "experienceType":{"type":"string"}
+        }}),
+    types.Tool(name="totvs_search_batch_items", description="Consulta lote de pedidos por status e período de alteração.",
+        inputSchema={"type":"object","properties":{
+            "status":{"type":"string"},
+            "startChangeDate":{"type":"string","description":"ISO 8601"},
+            "endChangeDate":{"type":"string"},
+            "page":{"type":"integer","default":1},
+            "pageSize":{"type":"integer","default":100},
+            "order":{"type":"string"}
+        }}),
+    types.Tool(name="totvs_create_order_relationship_counts", description="⚠️ ESCRITA — Vincula contagens ao pedido.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},
+            "orderCode":{"type":"integer"},
+            "orderId":{"type":"string"},
+            "counts":{"type":"array","description":"Lista de contagens (countCode, etc)","items":{"type":"object"}}
+        },"required":["counts"]}),
+
     types.Tool(name="totvs_create_order", description="⚠️ Cria um pedido de venda B2C.",
         inputSchema={"type":"object","properties":{
             "branchCode":{"type":"integer"},"customerCode":{"type":"integer"},
@@ -259,6 +354,28 @@ TOOLS: list[types.Tool] = [
         inputSchema={"type":"object","properties":{
             "productCode":{"type":"integer"},"barcode":{"type":"string"},"barcodeType":{"type":"string"}
         },"required":["productCode","barcode"]}),
+
+    # ── PRODUCT v2.3 (new write endpoints) ────────────────────────────────────
+    types.Tool(name="totvs_update_barcode", description="⚠️ ESCRITA — Altera código de barras existente.",
+        inputSchema={"type":"object","properties":{
+            "productCode":{"type":"integer"},
+            "oldBarcode":{"type":"string"},
+            "newBarcode":{"type":"string"}
+        }}),
+    types.Tool(name="totvs_create_reference", description="⚠️ ESCRITA — Cria nova referência de produto.",
+        inputSchema={"type":"object","properties":{
+            "referenceCode":{"type":"string"},
+            "description":{"type":"string"},
+            "categoryCode":{"type":"integer"},
+            "colorCode":{"type":"integer"},
+            "grid":{"type":"object"}
+        }}),
+    types.Tool(name="totvs_create_classification_type", description="⚠️ ESCRITA — Cria um novo tipo de classificação (agrupador). Diferente de GET /classifications (consulta).",
+        inputSchema={"type":"object","properties":{
+            "typeCode":{"type":"integer"},
+            "description":{"type":"string"},
+            "isInactive":{"type":"boolean"}
+        }}),
     types.Tool(name="totvs_create_product_batch", description="⚠️ Inclui lote e item de lote de produto.",
         inputSchema={"type":"object","properties":{
             "branchCode":{"type":"integer"},"productCode":{"type":"integer"},
@@ -386,6 +503,25 @@ TOOLS: list[types.Tool] = [
             "chargeType":{"type":"integer","description":"Tipo de cobrança"},
             "observation":{"type":"string","description":"Observação a ser gravada no log"},
         },"required":["branchCode","customerCode","receivableCode","installmentCode","chargeType"]}),
+
+    # ── ACCOUNTS RECEIVABLE v2.3 (completes module) ───────────────────────────
+    types.Tool(name="totvs_move_gift_check", description="⚠️ ESCRITA — Movimenta cheque presente.",
+        inputSchema={"type":"object","properties":{
+            "value":{"type":"number","description":"Valor da movimentação"},
+            "branchCode":{"type":"integer"},
+            "customerCode":{"type":"integer"},
+            "sequence":{"type":"integer"},
+            "barCode":{"type":"string"}
+        },"required":["value"]}),
+    types.Tool(name="totvs_upsert_invoice_commission", description="⚠️ ESCRITA — Inclui ou altera comissão de fatura.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},
+            "customerCode":{"type":"integer"},
+            "customerCpfCnpj":{"type":"string"},
+            "receivableCode":{"type":"integer"},
+            "installments":{"type":"array","description":"Lista UpsertCommissionInstallmentRequestModel (installmentCode, commissionedCode, commissionedPercentage)","items":{"type":"object"}}
+        },"required":["receivableCode","installments"]}),
+
     types.Tool(name="totvs_create_gift_check", description="⚠️ ESCRITA — Inclui cheque presente para cliente.",
         inputSchema={"type":"object","properties":{
             "branchCode":{"type":"integer","description":"Código da filial"},
@@ -569,6 +705,8 @@ TOOLS: list[types.Tool] = [
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"sellerCode":{"type":"integer"}}}),
     types.Tool(name="totvs_search_customer_purchased_products", description="Produtos comprados por um cliente (painel de vendedor).",
         inputSchema={"type":"object","properties":{"customerCode":{"type":"integer"},"customerCpfCnpj":{"type":"string"},"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"}}}),
+    types.Tool(name="totvs_search_seller_pending_conditionals", description="Condicionais pendentes do vendedor.",
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer"},"sellerCode":{"type":"integer"}}}),
     ]),  # end analytics block
 
     # ── GENERAL ──────────────────────────────────────────────────────────────
@@ -743,25 +881,44 @@ TOOLS: list[types.Tool] = [
         },"required":["branchCode","orderCode","movementDate","items"]}),
 
     # ── IMAGE ─────────────────────────────────────────────────────────────────
-    types.Tool(name="totvs_get_product_images", description="Imagens de um produto por código de referência.",
+    types.Tool(name="totvs_search_product_images", description="Consulta imagens de produto por filtro.",
         inputSchema={"type":"object","properties":{
-            "referenceCode":{"type":"string","description":"Código de referência do produto (obrigatório)"},
-            "branchCode":{"type":"integer"}
-        },"required":["referenceCode"]}),
-    types.Tool(name="totvs_upload_product_image", description="⚠️ Upload de imagem de produto em base64.",
+            "referenceCode":{"type":"string"},
+            "productCodeList":{"type":"array","items":{"type":"integer"}},
+            "page":{"type":"integer","default":1},
+            "pageSize":{"type":"integer","default":100},
+        }}),
+    types.Tool(name="totvs_upload_product_image", description="⚠️ Importa imagem de produto (com vínculo). Imagem deve estar em base64.",
         inputSchema={"type":"object","properties":{
-            "referenceCode":{"type":"string","description":"Código de referência (obrigatório)"},
-            "imageBase64":{"type":"string","description":"Imagem em base64 (obrigatório)"},
+            "productCode":{"type":"integer"},
+            "referenceCode":{"type":"string"},
+            "imageBase64":{"type":"string","description":"Imagem em base64"},
             "branchCode":{"type":"integer"},
-            "imageType":{"type":"string","description":"Tipo da imagem"},
-            "order":{"type":"integer","description":"Ordem de exibição"},
-            "colorCode":{"type":"string","description":"Código da cor"}
-        },"required":["referenceCode","imageBase64"]}),
-    types.Tool(name="totvs_delete_product_image", description="⚠️ Remove imagem de produto.",
+            "imageType":{"type":"string"},
+            "order":{"type":"integer"},
+            "colorCode":{"type":"string"},
+        },"required":["imageBase64"]}),
+    types.Tool(name="totvs_import_image_no_link", description="⚠️ Importa imagem sem realizar vínculo com produto (vínculo posterior).",
         inputSchema={"type":"object","properties":{
-            "referenceCode":{"type":"string","description":"Código de referência (obrigatório)"},
-            "imageType":{"type":"string"},"order":{"type":"integer"}
-        },"required":["referenceCode"]}),
+            "imageBase64":{"type":"string","description":"Imagem em base64"},
+            "fileName":{"type":"string"},
+        },"required":["imageBase64"]}),
+    types.Tool(name="totvs_upload_person_image", description="⚠️ Insere imagem de uma pessoa.",
+        inputSchema={"type":"object","properties":{
+            "personCode":{"type":"integer"},
+            "personCpfCnpj":{"type":"string"},
+            "imageBase64":{"type":"string"},
+        },"required":["imageBase64"]}),
+    types.Tool(name="totvs_list_person_images", description="Lista imagens de uma pessoa.",
+        inputSchema={"type":"object","properties":{
+            "personCode":{"type":"integer"},
+            "personCpfCnpj":{"type":"string"},
+        }}),
+    types.Tool(name="totvs_get_person_image_base64", description="Retorna imagem de pessoa em base64.",
+        inputSchema={"type":"object","properties":{
+            "personCode":{"type":"integer"},
+            "imageId":{"type":"string"},
+        }}),
 
     # ── VOUCHER (extras) ──────────────────────────────────────────────────────
     types.Tool(name="totvs_update_voucher", description="⚠️ Altera dados de um voucher existente.",
@@ -851,7 +1008,6 @@ ROUTING: dict[str, tuple[str, str]] = {
     "totvs_search_product_balances":             ("product", "search_balances"),
     "totvs_search_product_prices":               ("product", "search_prices"),
     "totvs_search_price_tables":                 ("product", "search_price_tables"),
-    "totvs_get_price_tables_headers":            ("product", "get_price_tables_headers"),
     "totvs_search_product_references":           ("product", "search_references"),
     "totvs_get_product_grid":                    ("product", "get_grid"),
     "totvs_search_product_colors":               ("product", "search_colors"),
@@ -925,6 +1081,7 @@ ROUTING: dict[str, tuple[str, str]] = {
     "totvs_search_seller_period_birthday":           ("analytics", "search_seller_period_birthday"),
     "totvs_search_seller_sales_target":              ("analytics", "search_seller_sales_target"),
     "totvs_search_customer_purchased_products":      ("analytics", "search_customer_purchased_products"),
+    "totvs_search_seller_pending_conditionals":      ("analytics", "search_seller_pending_conditionals"),
     } if ANALYTICS_ENABLED else {}),
     "totvs_get_payment_conditions":              ("general", "get_payment_conditions"),
     "totvs_get_operations":                      ("general", "get_operations"),
@@ -959,9 +1116,12 @@ ROUTING: dict[str, tuple[str, str]] = {
     "totvs_search_production_orders":            ("production_order", "search_production_orders"),
     "totvs_get_pending_material_consumption":    ("production_order", "get_pending_material_consumption"),
     "totvs_create_material_movement":            ("production_order", "create_material_movement"),
-    "totvs_get_product_images":                  ("image", "get_product_images"),
+    "totvs_search_product_images":               ("image", "search_product_images"),
     "totvs_upload_product_image":                ("image", "upload_product_image"),
-    "totvs_delete_product_image":                ("image", "delete_product_image"),
+    "totvs_import_image_no_link":                ("image", "import_image_no_link"),
+    "totvs_upload_person_image":                 ("image", "upload_person_image"),
+    "totvs_list_person_images":                  ("image", "list_person_images"),
+    "totvs_get_person_image_base64":             ("image", "get_person_image_base64"),
     "totvs_update_voucher":                      ("voucher", "update_voucher"),
     "totvs_create_customer_vouchers":            ("voucher", "create_customer_vouchers"),
     "totvs_list_input_packages":                 ("data_package", "list_input_packages"),
@@ -971,7 +1131,27 @@ ROUTING: dict[str, tuple[str, str]] = {
     "totvs_create_input_package":                ("data_package", "create_input_package"),
     "totvs_receive_output_package":              ("data_package", "receive_output_package"),
     "totvs_reactivate_package":                  ("data_package", "reactivate_package"),
-    "totvs_get_context":                         None,  # handled inline
+
+    # Sales Order v2.3
+    "totvs_add_order_items":                    ("sales_order", "add_order_items"),
+    "totvs_remove_order_item":                  ("sales_order", "remove_order_item"),
+    "totvs_cancel_order_items":                 ("sales_order", "cancel_order_items"),
+    "totvs_change_order_item_quantity":         ("sales_order", "change_order_item_quantity"),
+    "totvs_update_order_items_additional":      ("sales_order", "update_order_items_additional"),
+    "totvs_add_order_observation":              ("sales_order", "add_order_observation"),
+    "totvs_update_order_shipping":              ("sales_order", "update_order_shipping"),
+    "totvs_update_order_additional":            ("sales_order", "update_order_additional"),
+    "totvs_search_batch_items":                 ("sales_order", "search_batch_items"),
+    "totvs_create_order_relationship_counts":   ("sales_order", "create_order_relationship_counts"),
+
+    # Product v2.3
+    "totvs_update_barcode":                     ("product", "update_barcode"),
+    "totvs_create_reference":                   ("product", "create_reference"),
+    "totvs_create_classification_type":         ("product", "create_classification_type"),
+
+    # Accounts Receivable v2.3
+    "totvs_move_gift_check":                    ("accounts_receivable", "move_gift_check"),
+    "totvs_upsert_invoice_commission":          ("accounts_receivable", "upsert_invoice_commission"),
 }
 
 
@@ -1006,7 +1186,7 @@ async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[types.T
 
 
 async def main() -> None:
-    logger.info(f"TOTVS Moda MCP Server v2.0 — {len(TOOLS)} tools | {len(get_modules())} módulos")
+    logger.info(f"TOTVS Moda MCP Server v2.3 — {len(TOOLS)} tools | {len(get_modules())} módulos")
     try:
         await context_cache.load(get_client())
     except Exception as e:
@@ -1016,7 +1196,7 @@ async def main() -> None:
             read_stream, write_stream,
             InitializationOptions(
                 server_name="totvs-moda-mcp",
-                server_version="2.0.0",
+                server_version="2.1.6",
                 capabilities=server.get_capabilities(
                     notification_options=NotificationOptions(),
                     experimental_capabilities={},

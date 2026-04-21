@@ -8,3 +8,17 @@ __pycache__/
 dist/
 build/
 PUBLISHING.md
+
+# Arquivos temporários e pacotes de desenvolvimento
+*.zip
+fixes/
+v2.2.0_package/
+v2.3.0_delivery/
+totvs-moda-mcp/
+
+# Arquivos de teste e exemplos (não oficiais)
+test_manual.py
+test_phase2.py
+TEST_RESULTS.md
+TESTING_ROADMAP.md
+scripts_analysis.md
