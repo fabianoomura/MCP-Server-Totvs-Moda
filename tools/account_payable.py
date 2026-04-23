@@ -6,6 +6,7 @@ API Accounts Payable v2 — /api/totvsmoda/accounts-payable/v2/
 import logging
 from typing import Any
 from totvs_client import TotvsClient
+from tools._fields import apply_fields
 
 logger = logging.getLogger("totvs-moda-mcp.account-payable")
 BASE = "/api/totvsmoda/accounts-payable/v2"
@@ -45,7 +46,8 @@ class AccountPayableTools:
         if args.get("order"):
             body["order"] = args["order"]
 
-        return await self.client.post(f"{BASE}/duplicates/search", body)
+        result = await self.client.post(f"{BASE}/duplicates/search", body)
+        return apply_fields(result, args)
 
     async def search_commissions_paid(self, args: dict[str, Any]) -> Any:
         """POST /comissions-paid/search — Fechamento de comissão por representante."""
@@ -69,7 +71,8 @@ class AccountPayableTools:
         if args.get("expand"):
             body["expand"] = args["expand"]
 
-        return await self.client.post(f"{BASE}/comissions-paid/search", body)
+        result = await self.client.post(f"{BASE}/comissions-paid/search", body)
+        return apply_fields(result, args)
 
     async def create_duplicate(self, args: dict[str, Any]) -> Any:
         """POST /duplicates — ⚠️ Inclusão de duplicata a pagar."""

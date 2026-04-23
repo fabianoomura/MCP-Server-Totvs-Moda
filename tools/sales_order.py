@@ -9,6 +9,7 @@ import logging
 from typing import Any
 
 from totvs_client import TotvsClient
+from tools._fields import apply_fields
 
 logger = logging.getLogger("totvs-moda-mcp.sales-order")
 
@@ -69,7 +70,8 @@ class SalesOrderTools:
         body["page"] = args.get("page", 1)
         body["pageSize"] = args.get("pageSize", 100)
 
-        return await self.client.post(f"{BASE}/orders/search", body)
+        result = await self.client.post(f"{BASE}/orders/search", body)
+        return apply_fields(result, args)
 
     async def get_order_invoices(self, args: dict[str, Any]) -> Any:
         """

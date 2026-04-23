@@ -2,6 +2,7 @@
 import logging
 from typing import Any
 from totvs_client import TotvsClient
+from tools._fields import apply_fields
 
 logger = logging.getLogger("totvs-moda-mcp.purchase-order")
 BASE = "/api/totvsmoda/purchase-order/v2"
@@ -23,7 +24,8 @@ class PurchaseOrderTools:
             "page": args.get("page", 1),
             "pageSize": args.get("pageSize", 100),
         }
-        return await self.client.post(f"{BASE}/search", body)
+        result = await self.client.post(f"{BASE}/search", body)
+        return apply_fields(result, args)
 
     async def create_purchase_order(self, args: dict[str, Any]) -> Any:
         """POST /orders — ⚠️ Inclui pedido de compra."""

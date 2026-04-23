@@ -6,6 +6,7 @@ API Voucher v2 — /api/totvsmoda/voucher/v2/
 import logging
 from typing import Any
 from totvs_client import TotvsClient
+from tools._fields import apply_fields
 
 logger = logging.getLogger("totvs-moda-mcp.voucher")
 BASE = "/api/totvsmoda/voucher/v2"
@@ -17,11 +18,12 @@ class VoucherTools:
 
     async def search_voucher(self, args: dict[str, Any]) -> Any:
         """POST /search — Lista vouchers por filtro."""
-        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order", "fields") and v is not None}
         body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
         if args.get("order"):
             body["order"] = args["order"]
-        return await self.client.post(f"{BASE}/search", body)
+        result = await self.client.post(f"{BASE}/search", body)
+        return apply_fields(result, args)
 
     async def get_voucher(self, args: dict[str, Any]) -> Any:
         """GET /{id} — Retorna voucher por ID."""

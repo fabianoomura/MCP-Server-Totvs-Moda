@@ -6,6 +6,7 @@ API Accounts Receivable v2 — /api/totvsmoda/accounts-receivable/v2/
 import logging
 from typing import Any
 from totvs_client import TotvsClient
+from tools._fields import apply_fields
 
 logger = logging.getLogger("totvs-moda-mcp.accounts-receivable")
 BASE = "/api/totvsmoda/accounts-receivable/v2"
@@ -50,7 +51,8 @@ class AccountsReceivableTools:
             "page": args.get("page", 1),
             "pageSize": args.get("pageSize", 500),
         }
-        return await self.client.post(f"{BASE}/customer-financial-balance/search", body)
+        result = await self.client.post(f"{BASE}/customer-financial-balance/search", body)
+        return apply_fields(result, args)
 
     async def search_documents(self, args: dict[str, Any]) -> Any:
         """POST /documents/search — Documentos de contas a receber."""
@@ -87,12 +89,14 @@ class AccountsReceivableTools:
         if args.get("order"):
             body["order"] = args["order"]
 
-        return await self.client.post(f"{BASE}/documents/search", body)
+        result = await self.client.post(f"{BASE}/documents/search", body)
+        return apply_fields(result, args)
 
     async def search_printed_invoices(self, args: dict[str, Any]) -> Any:
         """POST /invoices-print/search — Boletos já impressos."""
-        body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/invoices-print/search", body)
+        body = {k: v for k, v in args.items() if k != "fields" and v is not None}
+        result = await self.client.post(f"{BASE}/invoices-print/search", body)
+        return apply_fields(result, args)
 
     async def get_gift_check_balances(self, args: dict[str, Any]) -> Any:
         """GET /gift-check-balances — Saldo de cheque presente."""

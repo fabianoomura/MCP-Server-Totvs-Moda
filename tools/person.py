@@ -7,13 +7,14 @@ Clientes PF/PJ, representantes, filiais, bônus, mensagens.
 import logging
 from typing import Any
 from totvs_client import TotvsClient
+from tools._fields import apply_fields
 
 logger = logging.getLogger("totvs-moda-mcp.person")
 BASE = "/api/totvsmoda/person/v2"
 
 
 def _search_body(args: dict[str, Any]) -> dict[str, Any]:
-    flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+    flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order", "fields") and v is not None}
     body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
     if args.get("order"):
         body["order"] = args["order"]
@@ -26,11 +27,13 @@ class PersonTools:
 
     async def search_individuals(self, args: dict[str, Any]) -> Any:
         """POST /individuals/search — Dados de pessoa física."""
-        return await self.client.post(f"{BASE}/individuals/search", _search_body(args))
+        result = await self.client.post(f"{BASE}/individuals/search", _search_body(args))
+        return apply_fields(result, args)
 
     async def search_legal_entities(self, args: dict[str, Any]) -> Any:
         """POST /legal-entities/search — Dados de pessoa jurídica."""
-        return await self.client.post(f"{BASE}/legal-entities/search", _search_body(args))
+        result = await self.client.post(f"{BASE}/legal-entities/search", _search_body(args))
+        return apply_fields(result, args)
 
     async def get_branch(self, args: dict[str, Any]) -> Any:
         """GET /branches/{branchId} — Dados de empresa por código ou CNPJ."""
@@ -43,7 +46,8 @@ class PersonTools:
 
     async def search_representatives(self, args: dict[str, Any]) -> Any:
         """POST /representatives/search — Dados de representante."""
-        return await self.client.post(f"{BASE}/representatives/search", _search_body(args))
+        result = await self.client.post(f"{BASE}/representatives/search", _search_body(args))
+        return apply_fields(result, args)
 
     async def list_bonus_balance(self, args: dict[str, Any]) -> Any:
         """POST /list-balance-bonus — Saldo de bônus de cliente."""

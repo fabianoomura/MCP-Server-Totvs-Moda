@@ -7,6 +7,7 @@ Notas fiscais, XML NF-e, DANFE, certificado digital, centro de custo.
 import logging
 from typing import Any
 from totvs_client import TotvsClient
+from tools._fields import apply_fields
 
 logger = logging.getLogger("totvs-moda-mcp.fiscal")
 BASE = "/api/totvsmoda/fiscal/v2"
@@ -51,7 +52,8 @@ class FiscalTools:
         if args.get("order"):
             body["order"] = args["order"]
 
-        return await self.client.post(f"{BASE}/invoices/search", body)
+        result = await self.client.post(f"{BASE}/invoices/search", body)
+        return apply_fields(result, args)
 
     async def get_xml_content(self, args: dict[str, Any]) -> Any:
         """GET /xml-contents/{accessKey} — XML da NF-e pela chave de acesso (44 dígitos)."""
@@ -92,7 +94,8 @@ class FiscalTools:
         if args.get("order"):
             body["order"] = args["order"]
 
-        return await self.client.post(f"{BASE}/invoice-products/search", body)
+        result = await self.client.post(f"{BASE}/invoice-products/search", body)
+        return apply_fields(result, args)
 
     async def get_digital_certificates(self, args: dict[str, Any]) -> Any:
         """GET /digital-certificates — Dados de certificados digitais."""

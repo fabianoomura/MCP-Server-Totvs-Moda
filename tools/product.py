@@ -11,6 +11,7 @@ v2.3.0 additions (3 new endpoints):
 import logging
 from typing import Any
 from totvs_client import TotvsClient
+from tools._fields import apply_fields
 
 logger = logging.getLogger("totvs-moda-mcp.product")
 BASE = "/api/totvsmoda/product/v2"
@@ -61,7 +62,8 @@ class ProductTools:
         if args.get("order"):
             body["order"] = args["order"]
 
-        return await self.client.post(f"{BASE}/products/search", body)
+        result = await self.client.post(f"{BASE}/products/search", body)
+        return apply_fields(result, args)
 
     async def get_product(self, args: dict[str, Any]) -> Any:
         """GET /products/{code}/{branchCode}."""
@@ -71,11 +73,12 @@ class ProductTools:
 
     async def search_product_codes(self, args: dict[str, Any]) -> Any:
         """POST /product-codes/search."""
-        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order", "fields") and v is not None}
         body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
         if args.get("order"):
             body["order"] = args["order"]
-        return await self.client.post(f"{BASE}/product-codes/search", body)
+        result = await self.client.post(f"{BASE}/product-codes/search", body)
+        return apply_fields(result, args)
 
     async def search_balances(self, args: dict[str, Any]) -> Any:
         """POST /balances/search — Saldos de estoque por filtro geral.
@@ -100,7 +103,8 @@ class ProductTools:
             body["order"] = args["order"]
         if args.get("expand"):
             body["expand"] = args["expand"]
-        return await self.client.post(f"{BASE}/balances/search", body)
+        result = await self.client.post(f"{BASE}/balances/search", body)
+        return apply_fields(result, args)
 
     async def search_prices(self, args: dict[str, Any]) -> Any:
         """POST /prices/search."""
@@ -119,7 +123,8 @@ class ProductTools:
             "filter": {k: v for k, v in args.items() if k in filter_fields and v is not None},
             "option": {"prices": [prices_option]},
         }
-        return await self.client.post(f"{BASE}/prices/search", body)
+        result = await self.client.post(f"{BASE}/prices/search", body)
+        return apply_fields(result, args)
 
     async def search_price_tables(self, args: dict[str, Any]) -> Any:
         """POST /price-tables/search."""
@@ -143,7 +148,8 @@ class ProductTools:
             body["pageSize"] = args["pageSize"]
         if args.get("order"):
             body["order"] = args["order"]
-        return await self.client.post(f"{BASE}/price-tables/search", body)
+        result = await self.client.post(f"{BASE}/price-tables/search", body)
+        return apply_fields(result, args)
 
     async def get_price_tables_headers(self, args: dict[str, Any]) -> Any:
         """GET /price-tables-headers."""
@@ -152,19 +158,21 @@ class ProductTools:
 
     async def search_costs(self, args: dict[str, Any]) -> Any:
         """POST /costs/search."""
-        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order", "fields") and v is not None}
         body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
         if args.get("order"):
             body["order"] = args["order"]
-        return await self.client.post(f"{BASE}/costs/search", body)
+        result = await self.client.post(f"{BASE}/costs/search", body)
+        return apply_fields(result, args)
 
     async def search_references(self, args: dict[str, Any]) -> Any:
         """POST /references/search — Consulta referências."""
-        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order", "fields") and v is not None}
         body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
         if args.get("order"):
             body["order"] = args["order"]
-        return await self.client.post(f"{BASE}/references/search", body)
+        result = await self.client.post(f"{BASE}/references/search", body)
+        return apply_fields(result, args)
 
     async def get_grid(self, args: dict[str, Any]) -> Any:
         """GET /grid."""
@@ -178,11 +186,12 @@ class ProductTools:
 
     async def search_colors(self, args: dict[str, Any]) -> Any:
         """POST /colors/search."""
-        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order", "fields") and v is not None}
         body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
         if args.get("order"):
             body["order"] = args["order"]
-        return await self.client.post(f"{BASE}/colors/search", body)
+        result = await self.client.post(f"{BASE}/colors/search", body)
+        return apply_fields(result, args)
 
     async def get_classifications(self, args: dict[str, Any]) -> Any:
         """GET /classifications — Consulta classificações (método GET)."""
@@ -191,11 +200,12 @@ class ProductTools:
 
     async def search_batch(self, args: dict[str, Any]) -> Any:
         """POST /batch/search."""
-        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order", "fields") and v is not None}
         body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
         if args.get("order"):
             body["order"] = args["order"]
-        return await self.client.post(f"{BASE}/batch/search", body)
+        result = await self.client.post(f"{BASE}/batch/search", body)
+        return apply_fields(result, args)
 
     async def get_measurement_units(self, args: dict[str, Any]) -> Any:
         """GET /measurement-unit."""
@@ -208,11 +218,12 @@ class ProductTools:
 
     async def search_compositions(self, args: dict[str, Any]) -> Any:
         """POST /compositions."""
-        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order", "fields") and v is not None}
         body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
         if args.get("order"):
             body["order"] = args["order"]
-        return await self.client.post(f"{BASE}/compositions", body)
+        result = await self.client.post(f"{BASE}/compositions", body)
+        return apply_fields(result, args)
 
     async def search_omni_changed_balances(self, args: dict[str, Any]) -> Any:
         """POST /omni-changed-balances."""
