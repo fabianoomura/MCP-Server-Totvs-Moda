@@ -18,12 +18,9 @@ class VoucherTools:
         self.client = client
 
     async def search_voucher(self, args: dict[str, Any]) -> Any:
-        """POST /search — Lista vouchers por filtro."""
-        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order", "fields") and v is not None}
-        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
-        if args.get("order"):
-            body["order"] = args["order"]
-        result = await self.client.post(f"{BASE}/search", body)
+        """GET /search — Lista vouchers por filtro (query params)."""
+        params = {k: v for k, v in args.items() if k not in ("fields",) and v is not None}
+        result = await self.client.get(f"{BASE}/search", params=params or None)
         return apply_fields(result, args)
 
     async def get_voucher(self, args: dict[str, Any]) -> Any:

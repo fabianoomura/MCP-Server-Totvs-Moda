@@ -23,16 +23,15 @@ class ImageTools:
             params["BranchCode"] = args["branchCode"]
         return await self.client.get(f"{BASE}/product-images", params=params)
 
+    async def search_product_images(self, args: dict[str, Any]) -> Any:
+        """POST /product/search — Lista imagens de produto por filtro."""
+        body = {k: v for k, v in args.items() if v is not None}
+        return await self.client.post(f"{BASE}/product/search", body)
+
     async def upload_product_image(self, args: dict[str, Any]) -> Any:
-        """POST /product-images — ⚠️ Upload de imagem de produto (base64)."""
-        body: dict[str, Any] = {
-            "referenceCode": args["referenceCode"],
-            "imageBase64": args["imageBase64"],
-        }
-        for field in ("branchCode", "imageType", "order", "colorCode"):
-            if args.get(field) is not None:
-                body[field] = args[field]
-        return await self.client.post(f"{BASE}/product-images", body)
+        """POST /product — ⚠️ Upload de imagem de produto (base64)."""
+        body = {k: v for k, v in args.items() if v is not None}
+        return await self.client.post(f"{BASE}/product", body)
 
     async def delete_product_image(self, args: dict[str, Any]) -> Any:
         """DELETE /product-images — ⚠️ Remove imagem de produto."""

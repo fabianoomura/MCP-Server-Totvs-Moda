@@ -162,15 +162,27 @@ class AccountsReceivableTools:
     async def change_charge_type(self, args: dict[str, Any]) -> Any:
         """POST /documents/change-charge-type — ⚠️ Altera tipo de cobrança de fatura."""
         args = inject_branch_defaults(args)
-        body: dict[str, Any] = {
-            "branchCode": args["branchCode"],
-            "customerCode": args["customerCode"],
-            "receivableCode": args["receivableCode"],
-            "installmentCode": args["installmentCode"],
-            "chargeType": args["chargeType"],
-        }
-        if args.get("customerCpfCnpj"):
-            body["customerCpfCnpj"] = args["customerCpfCnpj"]
-        if args.get("observation"):
-            body["observation"] = args["observation"]
+        if not args.get("customerCode") and not args.get("customerCpfCnpj"):
+            raise ValueError("customerCode OU customerCpfCnpj é obrigatório")
+        body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/documents/change-charge-type", body)
+
+    async def move_gift_check(self, args: dict[str, Any]) -> Any:
+        """POST /gift-check-movements — ⚠️ Movimenta cheque presente."""
+        args = inject_branch_defaults(args)
+        if args.get("value") is None:
+            raise ValueError("'value' é obrigatório")
+        body = {k: v for k, v in args.items() if v is not None}
+        return await self.client.post(f"{BASE}/gift-check-movements", body)
+
+    async def upsert_invoice_commission(self, args: dict[str, Any]) -> Any:
+        """POST /comission — ⚠️ Cria ou atualiza comissão de fatura."""
+        args = inject_branch_defaults(args)
+        if not args.get("receivableCode"):
+            raise ValueError("'receivableCode' é obrigatório")
+        if not args.get("installments"):
+            raise ValueError("'installments' é obrigatório")
+        if not args.get("customerCode") and not args.get("customerCpfCnpj"):
+            raise ValueError("customerCode OU customerCpfCnpj é obrigatório")
+        body = {k: v for k, v in args.items() if v is not None}
+        return await self.client.post(f"{BASE}/comission", body)
