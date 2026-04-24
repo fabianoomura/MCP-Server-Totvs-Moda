@@ -8,6 +8,7 @@ import logging
 from typing import Any
 from totvs_client import TotvsClient
 from tools._fields import apply_fields
+from tools._defaults import inject_branch_defaults
 
 logger = logging.getLogger("totvs-moda-mcp.fiscal")
 BASE = "/api/totvsmoda/fiscal/v2"
@@ -19,6 +20,7 @@ class FiscalTools:
 
     async def search_invoices(self, args: dict[str, Any]) -> Any:
         """POST /invoices/search — Lista NF-e por filtro geral."""
+        args = inject_branch_defaults(args)
         flt: dict[str, Any] = {
             "branchCodeList": args["branchCodeList"],
         }
@@ -73,6 +75,7 @@ class FiscalTools:
 
     async def search_invoice_products(self, args: dict[str, Any]) -> Any:
         """POST /invoice-products/search — Produtos de NF-e por filtro geral."""
+        args = inject_branch_defaults(args)
         flt: dict[str, Any] = {
             "branchCodeList": args["branchCodeList"],
         }
@@ -99,6 +102,7 @@ class FiscalTools:
 
     async def get_digital_certificates(self, args: dict[str, Any]) -> Any:
         """GET /digital-certificates — Dados de certificados digitais."""
+        args = inject_branch_defaults(args)
         params: dict[str, Any] = {
             "BranchCode": args["branchCode"],
             "EnviromentType": args["environmentType"],
@@ -107,6 +111,7 @@ class FiscalTools:
 
     async def get_cost_center(self, args: dict[str, Any]) -> Any:
         """GET /cost-center — Centros de custo (datas obrigatórias)."""
+        args = inject_branch_defaults(args)
         params: dict[str, Any] = {
             "StartChangeDate": args["startChangeDate"],
             "EndChangeDate": args["endChangeDate"],
@@ -121,6 +126,7 @@ class FiscalTools:
 
     async def get_pending_conditional_products(self, args: dict[str, Any]) -> Any:
         """GET /invoices/pending-conditional-products — Saldo de produto em condicional por pessoa."""
+        args = inject_branch_defaults(args)
         params: dict[str, Any] = {
             "BranchCode": args["branchCode"],
             "OnlyPendingItem": args.get("onlyPendingItem", True),
@@ -133,6 +139,7 @@ class FiscalTools:
 
     async def get_disabled_invoices(self, args: dict[str, Any]) -> Any:
         """GET /invoices/disable — NF-e inutilizadas por período e filial."""
+        args = inject_branch_defaults(args)
         params: dict[str, Any] = {
             "StartDate": args["startDate"],
             "EndDate": args["endDate"],
@@ -148,10 +155,12 @@ class FiscalTools:
 
     async def print_transaction(self, args: dict[str, Any]) -> Any:
         """POST /transaction/print — Base64 da impressão da transação em PDF."""
+        args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/transaction/print", body)
 
     async def create_manifestation(self, args: dict[str, Any]) -> Any:
         """POST /invoices/manifestations — ⚠️ Manifestação do destinatário NF-e."""
+        args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/invoices/manifestations", body)

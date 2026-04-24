@@ -20,6 +20,7 @@ from datetime import datetime
 from typing import Any
 
 from totvs_client import TotvsClient
+from tools._defaults import inject_branch_defaults
 
 logger = logging.getLogger("totvs-moda-mcp.aggregators")
 
@@ -61,6 +62,7 @@ class AggregatorTools:
               ]
             }
         """
+        args = inject_branch_defaults(args)
         start = args["startDate"]
         end = args["endDate"]
         top_n = args.get("topN", 10)
@@ -133,6 +135,7 @@ class AggregatorTools:
               ]
             }
         """
+        args = inject_branch_defaults(args)
         start = args["startDate"]
         end = args["endDate"]
         group_by = args.get("groupBy", "branch")
@@ -155,7 +158,7 @@ class AggregatorTools:
                 key = str(order.get("branchCode", ""))
                 label = f"Filial {key}"
             elif group_by == "status":
-                key = str(order.get("orderStatus", "unknown"))
+                key = str(order.get("statusOrder", "unknown"))
                 label = key
             elif group_by == "day":
                 date = order.get("orderDate", "")[:10]
@@ -165,7 +168,7 @@ class AggregatorTools:
                 key = "all"
                 label = "All"
 
-            value = float(order.get("totalValue", 0) or 0)
+            value = float(order.get("totalAmountOrder", 0) or 0)
             g = groups[key]
             g["key"] = key
             g["label"] = label
@@ -198,6 +201,7 @@ class AggregatorTools:
               ]
             }
         """
+        args = inject_branch_defaults(args)
         start = args["startDate"]
         end = args["endDate"]
         top_n = args.get("topN", 10)
@@ -224,7 +228,7 @@ class AggregatorTools:
             c["customerName"] = order.get("customerName", c["customerName"])
             c["customerCpfCnpj"] = order.get("customerCpfCnpj", c["customerCpfCnpj"])
             c["orderCount"] += 1
-            c["totalValue"] += float(order.get("totalValue", 0) or 0)
+            c["totalValue"] += float(order.get("totalAmountOrder", 0) or 0)
 
         for c in by_customer.values():
             c["averageOrderValue"] = c["totalValue"] / c["orderCount"] if c["orderCount"] else 0
@@ -252,15 +256,21 @@ class AggregatorTools:
               ]
             }
         """
+        args = inject_branch_defaults(args)
         threshold = args["threshold"]
         branch = args["branchCode"]
         top_n = args.get("topN", 50)
 
-        flt: dict[str, Any] = {"branchCodeList": [branch]}
+        flt: dict[str, Any] = {}
         if args.get("productCodeList"):
             flt["productCodeList"] = args["productCodeList"]
 
-        body = {"filter": flt, "page": 1, "pageSize": 500}
+        body = {
+            "filter": flt,
+            "option": {"balances": [{"branchCode": branch, "stockCodeList": [1]}]},
+            "page": 1,
+            "pageSize": 500,
+        }
         response = await self.client.post(f"{BASE_PRODUCT}/balances/search", body)
         items = response.get("items", []) if isinstance(response, dict) else []
 
@@ -300,6 +310,7 @@ class AggregatorTools:
               ]
             }
         """
+        args = inject_branch_defaults(args)
         start = args["startDate"]
         end = args["endDate"]
 
@@ -317,8 +328,8 @@ class AggregatorTools:
         total_value = 0.0
 
         for order in orders:
-            status = str(order.get("orderStatus", "unknown"))
-            value = float(order.get("totalValue", 0) or 0)
+            status = str(order.get("statusOrder", "unknown"))
+            value = float(order.get("totalAmountOrder", 0) or 0)
             s = by_status[status]
             s["status"] = status
             s["orderCount"] += 1

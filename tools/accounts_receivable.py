@@ -7,6 +7,7 @@ import logging
 from typing import Any
 from totvs_client import TotvsClient
 from tools._fields import apply_fields
+from tools._defaults import inject_branch_defaults
 
 logger = logging.getLogger("totvs-moda-mcp.accounts-receivable")
 BASE = "/api/totvsmoda/accounts-receivable/v2"
@@ -18,6 +19,7 @@ class AccountsReceivableTools:
 
     async def search_customer_financial_balance(self, args: dict[str, Any]) -> Any:
         """POST /customer-financial-balance/search — Limite financeiro e saldo do cliente."""
+        args = inject_branch_defaults(args)
         # filter: quem buscar
         flt: dict[str, Any] = {}
         if args.get("customerCodeList"):
@@ -56,6 +58,7 @@ class AccountsReceivableTools:
 
     async def search_documents(self, args: dict[str, Any]) -> Any:
         """POST /documents/search — Documentos de contas a receber."""
+        args = inject_branch_defaults(args)
         flt: dict[str, Any] = {}
         for field in (
             "branchCodeList", "customerCodeList", "customerCpfCnpjList",
@@ -94,17 +97,20 @@ class AccountsReceivableTools:
 
     async def search_printed_invoices(self, args: dict[str, Any]) -> Any:
         """POST /invoices-print/search — Boletos já impressos."""
+        args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if k != "fields" and v is not None}
         result = await self.client.post(f"{BASE}/invoices-print/search", body)
         return apply_fields(result, args)
 
     async def get_gift_check_balances(self, args: dict[str, Any]) -> Any:
         """GET /gift-check-balances — Saldo de cheque presente."""
+        args = inject_branch_defaults(args)
         params = {k: v for k, v in args.items() if v is not None}
         return await self.client.get(f"{BASE}/gift-check-balances", params=params or None)
 
     async def get_bank_slip(self, args: dict[str, Any]) -> Any:
         """POST /bank-slip — Retorna base64 do boleto bancário."""
+        args = inject_branch_defaults(args)
         body: dict[str, Any] = {
             "branchCode": args["branchCode"],
             "customerCode": args["customerCode"],
@@ -117,6 +123,7 @@ class AccountsReceivableTools:
 
     async def get_payment_link(self, args: dict[str, Any]) -> Any:
         """POST /payment-link — Retorna link de pagamento PIX da fatura."""
+        args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/payment-link", body)
 
@@ -124,31 +131,37 @@ class AccountsReceivableTools:
 
     async def settle_invoices(self, args: dict[str, Any]) -> Any:
         """POST /invoices-settle/create — ⚠️ Liquidar faturas."""
+        args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/invoices-settle/create", body)
 
     async def create_invoice(self, args: dict[str, Any]) -> Any:
         """POST /invoices — ⚠️ Incluir fatura em aberto."""
+        args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/invoices", body)
 
     async def renegotiate_invoices(self, args: dict[str, Any]) -> Any:
         """POST /invoices-renegotiate — ⚠️ Renegociar faturas."""
+        args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/invoices-renegotiate", body)
 
     async def pay_invoices(self, args: dict[str, Any]) -> Any:
         """POST /invoices-payment — ⚠️ Baixa de faturas."""
+        args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/invoices-payment", body)
 
     async def create_gift_check(self, args: dict[str, Any]) -> Any:
         """POST /gift-checks — ⚠️ Incluir cheque presente."""
+        args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/gift-checks", body)
 
     async def change_charge_type(self, args: dict[str, Any]) -> Any:
         """POST /documents/change-charge-type — ⚠️ Altera tipo de cobrança de fatura."""
+        args = inject_branch_defaults(args)
         body: dict[str, Any] = {
             "branchCode": args["branchCode"],
             "customerCode": args["customerCode"],

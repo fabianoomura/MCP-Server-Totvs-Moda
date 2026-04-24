@@ -12,6 +12,7 @@ import logging
 from typing import Any
 from totvs_client import TotvsClient
 from tools._fields import apply_fields
+from tools._defaults import inject_branch_defaults
 
 logger = logging.getLogger("totvs-moda-mcp.product")
 BASE = "/api/totvsmoda/product/v2"
@@ -25,6 +26,7 @@ class ProductTools:
 
     async def search_products(self, args: dict[str, Any]) -> Any:
         """POST /products/search."""
+        args = inject_branch_defaults(args)
         # Business filter fields per CLAUDE.md ProductFilterModel
         filter_fields = {
             "productCodeList", "referenceCodeList", "productName", "groupCodeList",
@@ -67,6 +69,7 @@ class ProductTools:
 
     async def get_product(self, args: dict[str, Any]) -> Any:
         """GET /products/{code}/{branchCode}."""
+        args = inject_branch_defaults(args)
         code = args["code"]
         branch = args.get("branchCode", 1)
         return await self.client.get(f"{BASE}/products/{code}/{branch}")
@@ -83,6 +86,7 @@ class ProductTools:
     async def search_balances(self, args: dict[str, Any]) -> Any:
         """POST /balances/search — Saldos de estoque por filtro geral.
         option.balances[{branchCode, stockCodeList}] é obrigatório."""
+        args = inject_branch_defaults(args)
         filter_keys = {"productCodeList", "referenceCodeList", "productName", "groupCodeList",
                        "startProductCode", "endProductCode", "classifications", "branchInfo",
                        "hasStock", "change"}
@@ -108,6 +112,7 @@ class ProductTools:
 
     async def search_prices(self, args: dict[str, Any]) -> Any:
         """POST /prices/search."""
+        args = inject_branch_defaults(args)
         filter_fields = {"productCodeList", "referenceCodeList", "priceTableCodeList"}
         price_codes = args.get("priceCodeList")
         if not price_codes:
@@ -128,6 +133,7 @@ class ProductTools:
 
     async def search_price_tables(self, args: dict[str, Any]) -> Any:
         """POST /price-tables/search."""
+        args = inject_branch_defaults(args)
         filter_fields = {
             "productCodeList", "referenceCodeList", "productName", "groupCodeList",
             "startProductCode", "endProductCode", "classifications",
@@ -153,11 +159,13 @@ class ProductTools:
 
     async def get_price_tables_headers(self, args: dict[str, Any]) -> Any:
         """GET /price-tables-headers."""
+        args = inject_branch_defaults(args)
         params = {k: v for k, v in args.items() if v is not None}
         return await self.client.get(f"{BASE}/price-tables-headers", params=params or None)
 
     async def search_costs(self, args: dict[str, Any]) -> Any:
         """POST /costs/search."""
+        args = inject_branch_defaults(args)
         flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order", "fields") and v is not None}
         body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
         if args.get("order"):
@@ -167,6 +175,7 @@ class ProductTools:
 
     async def search_references(self, args: dict[str, Any]) -> Any:
         """POST /references/search — Consulta referências."""
+        args = inject_branch_defaults(args)
         flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order", "fields") and v is not None}
         body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
         if args.get("order"):
@@ -176,16 +185,19 @@ class ProductTools:
 
     async def get_grid(self, args: dict[str, Any]) -> Any:
         """GET /grid."""
+        args = inject_branch_defaults(args)
         params = {k: v for k, v in args.items() if v is not None}
         return await self.client.get(f"{BASE}/grid", params=params or None)
 
     async def get_category(self, args: dict[str, Any]) -> Any:
         """GET /category."""
+        args = inject_branch_defaults(args)
         params = {k: v for k, v in args.items() if v is not None}
         return await self.client.get(f"{BASE}/category", params=params or None)
 
     async def search_colors(self, args: dict[str, Any]) -> Any:
         """POST /colors/search."""
+        args = inject_branch_defaults(args)
         flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order", "fields") and v is not None}
         body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
         if args.get("order"):
@@ -200,6 +212,7 @@ class ProductTools:
 
     async def search_batch(self, args: dict[str, Any]) -> Any:
         """POST /batch/search."""
+        args = inject_branch_defaults(args)
         flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order", "fields") and v is not None}
         body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
         if args.get("order"):
@@ -213,11 +226,13 @@ class ProductTools:
 
     async def get_kardex_movement(self, args: dict[str, Any]) -> Any:
         """GET /kardex-movement."""
+        args = inject_branch_defaults(args)
         params = {k: v for k, v in args.items() if v is not None}
         return await self.client.get(f"{BASE}/kardex-movement", params=params or None)
 
     async def search_compositions(self, args: dict[str, Any]) -> Any:
         """POST /compositions."""
+        args = inject_branch_defaults(args)
         flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order", "fields") and v is not None}
         body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
         if args.get("order"):
@@ -227,6 +242,7 @@ class ProductTools:
 
     async def search_omni_changed_balances(self, args: dict[str, Any]) -> Any:
         """POST /omni-changed-balances."""
+        args = inject_branch_defaults(args)
         flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
         body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
         if args.get("order"):
@@ -237,6 +253,7 @@ class ProductTools:
 
     async def update_product_price(self, args: dict[str, Any]) -> Any:
         """POST /values/update — ⚠️ Altera preço/custo."""
+        args = inject_branch_defaults(args)
         value_item: dict[str, Any] = {
             "branchCode": args["branchCode"],
             "valueCode": args["valueCode"],
@@ -347,6 +364,7 @@ class ProductTools:
 
     async def create_product_value(self, args: dict[str, Any]) -> Any:
         """POST /values/create — ⚠️ Inclui preço/custo novo."""
+        args = inject_branch_defaults(args)
         value_item: dict[str, Any] = {
             "branchCode": args["branchCode"],
             "valueCode": args["valueCode"],

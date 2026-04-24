@@ -1,188 +1,76 @@
 # TOTVS Moda MCP Server
 
-[![PyPI](https://img.shields.io/pypi/v/totvs-moda-mcp)](https://pypi.org/project/totvs-moda-mcp/)
-[![Python](https://img.shields.io/pypi/pyversions/totvs-moda-mcp)](https://pypi.org/project/totvs-moda-mcp/)
+MCP Server para a API V2 do TOTVS Moda. Projeto pessoal, não oficial, feito por um usuário do sistema que resolveu aprender a programar pra facilitar a própria vida.
 
-> **Criação de um servidor MCP para TOTVS Moda usando as APIs V2 fornecidas.**
-> Permite que Claude e outros clientes MCP consultem e operem pedidos, produtos, clientes, fiscal e financeiro do TOTVS Moda por linguagem natural.
+Se te servir, ótimo. Se achou bug, abre issue. Se quer contribuir, PR é bem-vindo.
 
----
-
-## Sobre este projeto
-
-Este é um projeto **não oficial** de criação de um servidor MCP (Model Context Protocol) para integração com o ERP TOTVS Moda através de suas APIs V2.
-
-O TOTVS Moda é amplamente usado no varejo de moda brasileiro, mas não possui um MCP server oficial. Este projeto preenche essa lacuna, permitindo que times usem IA diretamente sobre os dados operacionais do TOTVS — consultas, alertas, automações — sem precisar acessar o sistema manualmente.
+[![PyPI](https://img.shields.io/pypi/v/totvs-moda-mcp.svg)](https://pypi.org/project/totvs-moda-mcp/)
+[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ---
 
-## Tools disponíveis
+## Por que existe
 
-### Pedidos de Venda
-| Tool | Método | Endpoint | Descrição |
-|------|--------|----------|-----------|
-| `totvs_search_orders` | POST | `/sales-order/v2/orders/search` | Busca pedidos com filtros flexíveis (data, status, cliente, integração Shopify...) |
-| `totvs_get_order_invoices` | GET | `/sales-order/v2/invoices` | Notas fiscais vinculadas a um pedido |
-| `totvs_get_pending_items` | GET | `/sales-order/v2/pending-items` | Itens pendentes de faturamento |
-| `totvs_get_billing_suggestions` | GET | `/sales-order/v2/billing-suggestions` | Sugestões de faturamento |
-| `totvs_cancel_order` | POST | `/sales-order/v2/orders/cancel` | ⚠️ Cancela um pedido |
-| `totvs_change_order_status` | POST | `/sales-order/v2/orders/change-status` | ⚠️ Altera situação do pedido |
-| `totvs_update_order_items_price` | POST | `/sales-order/v2/price-items` | ⚠️ Atualiza preços de itens do pedido |
+Sou usuário do TOTVS Moda desde o final de 2021. Tive dificuldade pra entender o sistema no começo, depois descobri as APIs, estudei por conta, e comecei a escrever scripts Python pra acelerar tarefas repetitivas no trabalho — consultas, exportações, atualizações em lote. Economizou muito tempo.
 
-### Produtos
-| Tool | Método | Endpoint | Descrição |
-|------|--------|----------|-----------|
-| `totvs_search_products` | POST | `/product/v2/products/search` | Busca produtos por filtro (referência, categoria, código) |
-| `totvs_get_product` | GET | `/product/v2/products/{code}/{branch}` | Dados completos de um produto pelo código |
-| `totvs_get_product_grid` | GET | `/product/v2/grid` | Grade completa (cores e tamanhos) |
-| `totvs_search_product_references` | POST | `/product/v2/references/search` | Referências de produtos |
-| `totvs_search_product_colors` | POST | `/product/v2/colors/search` | Cores disponíveis |
-| `totvs_search_product_balances` | POST | `/product/v2/balances/search` | Saldo em estoque por filial |
-| `totvs_search_product_prices` | POST | `/product/v2/prices/search` | Preços nas tabelas |
-| `totvs_search_product_compositions` | POST | `/product/v2/compositions` | Composição dos produtos |
-| `totvs_search_product_batch` | POST | `/product/v2/batch/search` | Lotes de produtos |
-| `totvs_search_product_fiscal_movement` | POST | `/analytics/v2/product-fiscal-movement/search` | Movimentação fiscal de produtos |
-| `totvs_search_price_tables` | POST | `/product/v2/price-tables/search` | Tabelas de preço disponíveis |
-| `totvs_get_kardex_movement` | GET | `/product/v2/kardex-movement` | Movimentação kardex |
-| `totvs_update_product_price` | POST | `/product/v2/values/update` | ⚠️ Atualiza preço de produto |
-| `totvs_update_promotion_price` | POST | `/product/v2/promotion-values/update` | ⚠️ Atualiza preço de promoção |
+Quando os LLMs avançaram e a Anthropic lançou o MCP (Model Context Protocol — padrão pra conectar IA a sistemas externos), pensei: dava pra conectar com TOTVS Moda.
 
-### Clientes
-| Tool | Método | Endpoint | Descrição |
-|------|--------|----------|-----------|
-| `totvs_search_individual_customers` | POST | `/person/v2/individuals/search` | Busca clientes pessoa física |
-| `totvs_search_legal_customers` | POST | `/person/v2/legal-entities/search` | Busca clientes pessoa jurídica |
-| `totvs_get_person_statistics` | GET | `/person/v2/person-statistics` | Estatísticas de um cliente |
-| `totvs_search_top_customers` | POST | `/financial/v2/ranking-customer-biggers/search` | Melhores clientes por período |
-| `totvs_search_top_debtors` | POST | `/financial/v2/ranking-customer-debtors/search` | Maiores devedores |
-| `totvs_get_customer_bonus_balance` | POST | `/person/v2/list-balance-bonus` | Saldo de bônus do cliente |
-| `totvs_create_or_update_individual_customer` | POST | `/person/v2/individual-customers` | ⚠️ Cria ou atualiza cliente PF |
+Fui procurar se já existia. Não existia — nem oficial, nem de parceiros, nem da comunidade. Então fiz.
 
-### Fiscal
-| Tool | Método | Endpoint | Descrição |
-|------|--------|----------|-----------|
-| `totvs_search_fiscal_invoices` | POST | `/fiscal/v2/invoices/search` | Notas fiscais emitidas |
-| `totvs_search_fiscal_movement` | POST | `/analytics/v2/fiscal-movement/search` | Movimentação fiscal |
-| `totvs_search_invoice_products` | POST | `/fiscal/v2/invoice-products/search` | Produtos de uma nota fiscal |
-| `totvs_get_danfe` | POST | `/fiscal/v2/danfe-search` | DANFE em PDF |
-| `totvs_get_nfe_xml` | GET | `/fiscal/v2/xml-contents/{access_key}` | XML da NF-e |
-| `totvs_get_cost_center` | GET | `/fiscal/v2/cost-center` | Centros de custo |
+O projeto não é oficial da TOTVS. Não tem time por trás. Sou só eu, trabalhando na hora que dá. Uso em produção no meu próprio trabalho, e vou corrigindo o que quebra. Compartilho porque outras empresas que usam TOTVS Moda provavelmente têm a mesma dor.
 
-### Financeiro
-| Tool | Método | Endpoint | Descrição |
-|------|--------|----------|-----------|
-| `totvs_search_receivable_documents` | POST | `/accounts-receivable/v2/documents/search` | Títulos a receber |
-| `totvs_search_payable_duplicates` | POST | `/accounts-payable/v2/duplicates/search` | Duplicatas a pagar |
-| `totvs_search_total_receivable` | POST | `/financial/v2/total-receivable/search` | Total a receber |
-| `totvs_search_total_payable` | POST | `/financial/v2/total-payable/search` | Total a pagar |
-| `totvs_search_customer_financial_balance` | POST | `/accounts-receivable/v2/customer-financial-balance/search` | Posição financeira do cliente |
-| `totvs_search_financial_income_statement` | POST | `/financial/v2/financial-income-statement/search` | DRE financeiro |
-| `totvs_get_bank_slip` | POST | `/accounts-receivable/v2/bank-slip` | Boleto bancário |
-| `totvs_get_payment_link` | POST | `/accounts-receivable/v2/payment-link` | Link de pagamento |
-| `totvs_simulate_payment_plan` | POST | `/general/v2/payment-plan-simulate` | Simula plano de pagamento |
-| `totvs_get_payment_conditions` | GET | `/general/v2/payment-conditions` | Condições de pagamento disponíveis |
-| `totvs_create_voucher` | POST | `/voucher/v2/create` | ⚠️ Cria voucher |
-| `totvs_search_voucher` | GET | `/voucher/v2/search` | Busca vouchers |
+## O que dá pra fazer
 
-### Analytics
-| Tool | Método | Endpoint | Descrição |
-|------|--------|----------|-----------|
-| `totvs_search_best_selling_products` | POST | `/ecommerce/v2/best-selling-products/search` | Produtos mais vendidos |
-| `totvs_search_sales_by_hour` | POST | `/ecommerce/v2/sales-quantity-hour/search` | Vendas por hora |
-| `totvs_search_sales_by_weekday` | POST | `/ecommerce/v2/sales-quantity-weekday/search` | Vendas por dia da semana |
-| `totvs_search_commissions_paid` | POST | `/accounts-payable/v2/comissions-paid/search` | Comissões pagas |
-| `totvs_search_devolutions` | GET | `/general/v2/devolutions/search` | Devoluções |
+Com o MCP conectado ao Claude (ou qualquer cliente MCP — Claude Desktop, Claude Code, VS Code Copilot, Cursor), você pergunta em linguagem natural e ele consulta ou age no TOTVS.
 
-### Compras & Produção
-| Tool | Método | Endpoint | Descrição |
-|------|--------|----------|-----------|
-| `totvs_search_purchase_orders` | POST | `/purchase-order/v2/search` | Pedidos de compra |
-| `totvs_search_production_orders` | POST | `/production-order/v2/orders/search` | Ordens de produção |
+Exemplos de perguntas que funcionam hoje:
 
-### Geral
-| Tool | Método | Endpoint | Descrição |
-|------|--------|----------|-----------|
-| `totvs_get_operations` | GET | `/general/v2/operations` | Operações disponíveis |
-| `totvs_get_branch_parameters` | GET | `/general/v2/branch-parameter` | Parâmetros da filial |
-| `totvs_get_global_parameters` | GET | `/general/v2/global-parameter` | Parâmetros globais |
-| `totvs_get_users` | GET | `/general/v2/users` | Usuários do sistema |
-| `totvs_get_cep` | GET | `/general/v2/ceps/{cep}` | Consulta endereço por CEP |
-| `totvs_search_sellers` | POST | `/seller/v2/search` | Vendedores |
+- "Quais pedidos de venda foram criados hoje?"
+- "Qual o faturamento da semana passada por filial?"
+- "Me mostra as estatísticas de compra do cliente 38181"
+- "Quais produtos estão com saldo abaixo de 10?"
+- "Quais os 10 clientes que mais compraram este mês?"
+- "Atualiza o preço do produto X para R$ 89,90 na tabela de preço 2"
+- "Me dá os documentos em aberto no contas a receber com vencimento até sexta"
 
-### Contexto
-| Tool | Descrição |
-|------|-----------|
-| `totvs_get_context` | Retorna todos os dados de referência carregados na inicialização (ver seção abaixo) |
+Cobertura atual: 18 módulos da API V2, mais de 75 tools.
 
----
+- **Pedidos de venda**: consulta, criação B2C, cancelamento, alteração de itens, transporte, observações
+- **Produtos**: busca, preços, custos, saldos, referências, cores, grades, lotes
+- **Clientes**: PF/PJ, representantes, bônus, estatísticas, mensagens
+- **Financeiro**: contas a receber e a pagar com cobertura 100% do swagger
+- **Fiscal**: NF-e, XML, DANFE, centros de custo
+- **Logística, vouchers, imagens, pacotes de dados, ordens de produção, ordens de compra**
+- **Analytics** (se sua empresa tem o módulo contratado): movimentação fiscal, painel financeiro, painel de vendedor
 
-## Pré-requisitos
+## Requisitos
 
-- Python 3.11+
-- Acesso à API V2 do TOTVS Moda (client_id, client_secret, usuário e senha)
-- Claude Desktop, Claude Code ou qualquer cliente MCP compatível
-
----
+- Python 3.11 ou superior
+- Uma instância do TOTVS Moda V2 com API ativada
+- Credenciais de integração (client_id, client_secret, usuário, senha)
+- Um cliente MCP (Claude Desktop, Claude Code, VS Code Copilot Chat em modo Agent, Cursor, etc.)
 
 ## Instalação
-
-### Via PyPI (recomendado)
 
 ```bash
 pip install totvs-moda-mcp
 ```
 
-### Via repositório
-
-```bash
-git clone https://github.com/fabianoomura/MCP-Server-Totvs-Moda.git
-cd MCP-Server-Totvs-Moda
-
-pip install -r requirements.txt
-```
-
----
-
 ## Configuração
 
-```bash
-cp .env.example .env
-```
-
-Edite o `.env` com as credenciais do seu ambiente TOTVS:
-
-```env
-TOTVS_BASE_URL=https://seu-servidor-totvs:9443
-TOTVS_CLIENT_ID=seu_client_id
-TOTVS_CLIENT_SECRET=sua_client_secret
-TOTVS_USERNAME=seu_usuario
-TOTVS_PASSWORD=sua_senha
-
-# Filiais gerenciadas (separadas por vírgula)
-TOTVS_BRANCH_CODES=1
-
-# Analytics (painel de vendas, ranking e-commerce). Desabilite se não usar.
-TOTVS_ENABLE_ANALYTICS=true
-
-# TLS: defina "false" APENAS se o servidor usar certificado autoassinado
-TOTVS_TLS_VERIFY=true
-```
-
----
-
-## Uso com Claude Code (VS Code Extension)
-
-Abra a paleta de comandos (`Ctrl+Shift+P`), busque **"MCP: Open User Configuration"** e adicione:
+Exemplo de configuração para VS Code Copilot Chat (`mcp.json`):
 
 ```json
 {
   "servers": {
     "totvs-moda": {
-      "command": "totvs-moda-mcp",
+      "command": "python",
+      "args": ["-m", "totvs_moda_mcp"],
       "env": {
         "TOTVS_BASE_URL": "https://seu-servidor-totvs:9443",
         "TOTVS_CLIENT_ID": "seu_client_id",
-        "TOTVS_CLIENT_SECRET": "sua_client_secret",
+        "TOTVS_CLIENT_SECRET": "seu_secret",
         "TOTVS_USERNAME": "seu_usuario",
         "TOTVS_PASSWORD": "sua_senha",
         "TOTVS_BRANCH_CODES": "1"
@@ -192,180 +80,83 @@ Abra a paleta de comandos (`Ctrl+Shift+P`), busque **"MCP: Open User Configurati
 }
 ```
 
-> Se instalar via repositório, use `"command": "python"` com `"args": ["/caminho/para/server.py"]`.
+Para Claude Desktop, a estrutura é igual, só muda a chave raiz para `mcpServers` em vez de `servers`.
 
-## Uso com Claude Desktop
+### Variáveis de ambiente
 
-Adicione ao seu `claude_desktop_config.json`:
+**Obrigatórias:**
 
-- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+| Variável              | Descrição                                                              |
+| --------------------- | ---------------------------------------------------------------------- |
+| `TOTVS_BASE_URL`      | URL base da sua API TOTVS (ex: `https://www30.suaempresa.com.br:9443`) |
+| `TOTVS_CLIENT_ID`     | Client ID da integração                                                |
+| `TOTVS_CLIENT_SECRET` | Client secret                                                          |
+| `TOTVS_USERNAME`      | Usuário de integração no TOTVS                                         |
+| `TOTVS_PASSWORD`      | Senha do usuário                                                       |
+
+**Recomendadas:**
+
+| Variável             | Padrão | Descrição                                                                                               |
+| -------------------- | ------ | ------------------------------------------------------------------------------------------------------- |
+| `TOTVS_BRANCH_CODES` | —      | Filial padrão (ex: `1` ou `1,2,5`). Se não setar, toda chamada com filial vai exigir o código explícito |
+
+**Opcionais:**
+
+| Variável                 | Padrão | Descrição                                                               |
+| ------------------------ | ------ | ----------------------------------------------------------------------- |
+| `TOTVS_TIMEOUT`          | `30`   | Timeout em segundos por chamada                                         |
+| `TOTVS_MAX_RETRIES`      | `3`    | Tentativas em erros 5xx e rede                                          |
+| `TOTVS_TLS_VERIFY`       | `true` | Verificação TLS (só mude se seu servidor usa certificado auto-assinado) |
+| `TOTVS_ENABLE_ANALYTICS` | `true` | Desabilita o módulo Analytics se sua empresa não contrata               |
+
+### Segurança das credenciais
+
+**Não comite o `mcp.json` com credenciais reais.** Uma opção segura é referenciar variáveis de ambiente do sistema operacional:
 
 ```json
-{
-  "mcpServers": {
-    "totvs-moda": {
-      "command": "totvs-moda-mcp",
-      "env": {
-        "TOTVS_BASE_URL": "https://seu-servidor-totvs:9443",
-        "TOTVS_CLIENT_ID": "seu_client_id",
-        "TOTVS_CLIENT_SECRET": "sua_client_secret",
-        "TOTVS_USERNAME": "seu_usuario",
-        "TOTVS_PASSWORD": "sua_senha",
-        "TOTVS_BRANCH_CODES": "1"
-      }
-    }
-  }
+"env": {
+  "TOTVS_PASSWORD": "${env:TOTVS_PASSWORD}"
 }
 ```
 
-> Se instalar via repositório, use `"command": "python"` com `"args": ["/caminho/para/server.py"]`.
+## Limitações conhecidas
 
----
+Esse projeto é limitado pelo que a API V2 do TOTVS Moda expõe.
 
-## Exemplos de uso no Claude
+## Como funciona por dentro
 
-```
-"Quais pedidos foram criados hoje?"
+Em linhas gerais:
 
-"Mostre as notas fiscais do pedido 12345."
+1. Autenticação OAuth2 ROPC contra `/api/totvsmoda/authorization/v2/token`, com refresh automático quando o token expira
+2. Retry automático em 401 reativo (token invalidado antes da hora pelo servidor) e em 5xx com backoff exponencial
+3. Cada módulo da API tem um arquivo em `tools/` que expõe os endpoints como métodos async
+4. `server.py` registra as tools MCP, mapeia argumentos pros métodos, e retorna JSON pro cliente
+5. `context_cache.py` carrega dados de referência no startup (filiais, operações, tabelas de preço) pra evitar chamadas repetidas
+6. `tools/_defaults.py` preenche automaticamente `branchCode` da variável de ambiente quando o LLM esquece de passar — reduz drasticamente os erros 400 em loop
 
-"Qual o estoque do produto 10000?"
+Se você quiser entender a arquitetura em mais detalhe, dê uma olhada no `server.py` e no `totvs_client.py`. O código é comentado em português.
 
-"Liste os 10 produtos mais vendidos este mês."
+## Testes
 
-"Qual a posição financeira do cliente CPF 123.456.789-00?"
+O projeto tem testes automatizados cobrindo as tools, o client HTTP, e os utilitários de injeção de default e filtragem de campos.
 
-"Qual o status do pedido SHP-13518?"
-```
-
----
-
-## Cache de contexto
-
-Ao iniciar, o servidor executa automaticamente uma carga de dados de referência do TOTVS e os mantém em memória. Isso evita chamadas repetitivas de lookup durante consultas, criações e alterações.
-
-### O que é carregado
-
-| Chave | Origem | Conteúdo |
-|-------|--------|----------|
-| `branches` | variável de ambiente `TOTVS_BRANCH_CODES` | Lista de códigos de filial configurados pelo usuário |
-| `operations` | `general/v2/operations` | Todas as operações (entrada/saída) ativas e inativas |
-| `paymentConditions` | `general/v2/payment-conditions` | Condições de pagamento disponíveis |
-| `paymentPlans` | `general/v2/payment-plans` | Planos de pagamento |
-| `priceTables` | `product/v2/price-tables-headers` | Cabeçalhos das tabelas de preço |
-| `classifications` | `product/v2/classifications` | Classificações de produto |
-| `categories` | `product/v2/category` | Categorias de produto |
-| `grids` | `product/v2/grid` | Grades disponíveis (tamanhos) |
-| `measurementUnits` | `product/v2/measurement-unit` | Unidades de medida |
-| `users` | `management/v2/users` | Usuários cadastrados (e seus `branchCode`) |
-| `priceTypes` | `product/v2/prices/search` | Tipos de preço ativos (código + nome) |
-| `costTypes` | `product/v2/costs/search` | Tipos de custo ativos (código + nome) |
-
-### Como `branches` é configurado
-
-O TOTVS Moda não possui um endpoint de listagem de filiais sem parâmetros. Por isso, as filiais são informadas diretamente no arquivo `.env` via `TOTVS_BRANCH_CODES`:
-
-```env
-# Uma filial
-TOTVS_BRANCH_CODES=1
-
-# Múltiplas filiais
-TOTVS_BRANCH_CODES=1,2,5
+```bash
+pip install -r tests/requirements-test.txt
+PYTHONPATH=. pytest tests/ -v
 ```
 
-O valor é lido na inicialização e exposto como lista de inteiros em `branches`. O primeiro código da lista é usado como filial padrão nas consultas de descoberta de tipos de preço/custo.
+## Contribuindo
 
-### Como `priceTypes` e `costTypes` são descobertos
+Se você usa TOTVS Moda e quer ajudar:
 
-O TOTVS Moda não expõe um endpoint dedicado para listar tipos de preço e custo. Na inicialização, o servidor adota a seguinte estratégia:
+- **Bug ou endpoint que não funciona?** Me envie mensagem descrevendo o que você tentou e o que aconteceu.
 
-1. Busca os **20 produtos mais vendidos nos últimos 30 dias** via `ecommerce-sales-order/v2/best-selling-products/search`.
-2. Se não houver vendas no período, faz um fallback para **20 produtos quaisquer** via `product/v2/products/search`.
-3. Com a lista de `productCode` obtida, consulta preços passando `priceCodeList: [1..20]` — o TOTVS retorna apenas os tipos que existem, ignorando os inválidos.
-4. Os pares `{priceCode, priceName}` e `{costCode, costName}` extraídos (deduplicados) são armazenados em `priceTypes` e `costTypes`.
-
-### Como usar o contexto
-
-Chame `totvs_get_context` antes de qualquer operação de escrita para obter os códigos corretos:
-
-```
-"Quais tipos de preço estão disponíveis?"
-→ totvs_get_context  →  priceTypes: [{priceCode: 1, priceName: "Preço de Venda"}, ...]
-```
-
-O resultado de `totvs_get_context` é o mesmo objeto em memória — não gera chamadas adicionais ao TOTVS enquanto o servidor estiver rodando.
-
-### Atualização do cache
-
-O cache é carregado uma vez na inicialização. Para recarregar sem reiniciar o servidor, basta chamar `totvs_get_context` — se ainda não estiver carregado, ele dispara o `load()` automaticamente.
-
----
-
-## Autenticação TOTVS
-
-O servidor usa o fluxo **OAuth2 Resource Owner Password Credentials (ROPC)**, padrão do TOTVS Moda API V2. O token é obtido automaticamente e renovado antes de expirar — nenhuma ação manual é necessária.
-
----
-
-## Operações de escrita
-
-Tools marcadas com ⚠️ **modificam dados no TOTVS**. Use com atenção.
-
----
-
-## Estrutura do projeto
-
-```
-MCP-Server-Totvs-Moda/
-├── server.py                        # Entry point MCP (stdio)
-├── totvs_client.py                  # HTTP client com OAuth2 auto-refresh
-├── context_cache.py                 # Cache de dados de referência (carregado na inicialização)
-├── tools/
-│   ├── __init__.py
-│   ├── sales_order.py               # Pedidos de venda
-│   ├── product.py                   # Produtos
-│   ├── person.py                    # Clientes
-│   ├── fiscal.py                    # Fiscal / NF-e
-│   ├── accounts_receivable.py       # Contas a receber
-│   ├── account_payable.py           # Contas a pagar
-│   ├── analytics.py                 # Analytics e relatórios
-│   ├── purchase_order.py            # Pedidos de compra
-│   ├── seller.py                    # Vendedores
-│   ├── voucher.py                   # Vouchers
-│   ├── general.py                   # Parâmetros e utilitários
-│   └── other_modules.py             # Módulos adicionais
-├── requirements.txt
-├── .env.example
-└── README.md
-```
-
----
-
-## Segurança
-
-### TLS / Verificação de Certificado
-
-Por padrão, o cliente valida o certificado TLS do servidor TOTVS (`TOTVS_TLS_VERIFY=true`).  
-Se o seu servidor usa um **certificado autoassinado** (comum em ambientes on-premise), defina:
-
-```env
-TOTVS_TLS_VERIFY=false
-```
-
-> Use `false` apenas em redes internas confiáveis. Com `true`, um atacante na mesma rede não consegue interceptar as credenciais OAuth2 em trânsito.
-
-### Logs de Debug
-
-O servidor nunca registra o corpo das requisições POST nos logs, evitando exposição de dados pessoais (CPF, CNPJ, senhas) mesmo quando o nível de log está em `DEBUG`.
-
-### Credenciais
-
-- Nunca commite o arquivo `.env` — ele está no `.gitignore` por padrão.
-- Use um usuário TOTVS dedicado para integração com permissões mínimas necessárias.
-
----
+- **Quer mandar código?** PRs são bem-vindos. O projeto tem teste automatizado — se você adicionar um endpoint novo, adicione um teste junto (tem exemplos em `tests/`).
 
 ## Licença
 
-MIT — use livremente, inclusive em projetos comerciais.
+MIT. Usa à vontade. Se quiser dar crédito, ótimo, mas não é obrigatório.
+
+## Contato
+
+[LinkedIn](https://www.linkedin.com/in/fabiano-o-50619734/) — se quiser conversar sobre TOTVS, integração com IA, ou só falar que o projeto te ajudou.

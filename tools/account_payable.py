@@ -7,6 +7,7 @@ import logging
 from typing import Any
 from totvs_client import TotvsClient
 from tools._fields import apply_fields
+from tools._defaults import inject_branch_defaults
 
 logger = logging.getLogger("totvs-moda-mcp.account-payable")
 BASE = "/api/totvsmoda/accounts-payable/v2"
@@ -18,6 +19,7 @@ class AccountPayableTools:
 
     async def search_duplicates(self, args: dict[str, Any]) -> Any:
         """POST /duplicates/search — Consulta de duplicatas a pagar."""
+        args = inject_branch_defaults(args)
         flt: dict[str, Any] = {
             "branchCodeList": args["branchCodeList"],
         }
@@ -51,6 +53,7 @@ class AccountPayableTools:
 
     async def search_commissions_paid(self, args: dict[str, Any]) -> Any:
         """POST /comissions-paid/search — Fechamento de comissão por representante."""
+        args = inject_branch_defaults(args)
         flt: dict[str, Any] = {
             "closingCompanyCode": args["closingCompanyCode"],
         }
@@ -76,5 +79,6 @@ class AccountPayableTools:
 
     async def create_duplicate(self, args: dict[str, Any]) -> Any:
         """POST /duplicates — ⚠️ Inclusão de duplicata a pagar."""
+        args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/duplicates", body)

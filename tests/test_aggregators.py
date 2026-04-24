@@ -1,4 +1,6 @@
 """Tests for the aggregator tools — high-level composition."""
+import sys
+import types
 import pytest
 import respx
 from httpx import Response
@@ -6,6 +8,15 @@ from httpx import Response
 from tools.aggregators import AggregatorTools
 
 from conftest import TOTVS_BASE, TOKEN_URL
+
+
+@pytest.fixture(autouse=True)
+def fake_context_cache(monkeypatch):
+    """Fornece context_cache com filial padrão para os testes desse arquivo."""
+    fake = types.ModuleType("context_cache")
+    fake.CACHE = {"branches": [1]}
+    monkeypatch.setitem(sys.modules, "context_cache", fake)
+    yield fake
 
 
 def _mock_token():
@@ -119,9 +130,9 @@ async def test_sales_summary_groups_by_branch(client):
     respx.post(f"{TOTVS_BASE}/api/totvsmoda/sales-order/v2/orders/search").mock(
         return_value=Response(200, json={
             "items": [
-                {"branchCode": 1, "totalValue": 100.0, "orderStatus": "BillingReleased"},
-                {"branchCode": 1, "totalValue": 200.0, "orderStatus": "InProgress"},
-                {"branchCode": 2, "totalValue": 50.0,  "orderStatus": "BillingReleased"},
+                {"branchCode": 1, "totalAmountOrder": 100.0, "statusOrder": "BillingReleased"},
+                {"branchCode": 1, "totalAmountOrder": 200.0, "statusOrder": "InProgress"},
+                {"branchCode": 2, "totalAmountOrder": 50.0,  "statusOrder": "BillingReleased"},
             ],
         })
     )
@@ -146,9 +157,9 @@ async def test_sales_summary_groups_by_status(client):
     respx.post(f"{TOTVS_BASE}/api/totvsmoda/sales-order/v2/orders/search").mock(
         return_value=Response(200, json={
             "items": [
-                {"branchCode": 1, "totalValue": 100.0, "orderStatus": "BillingReleased"},
-                {"branchCode": 1, "totalValue": 200.0, "orderStatus": "InProgress"},
-                {"branchCode": 1, "totalValue": 50.0,  "orderStatus": "BillingReleased"},
+                {"branchCode": 1, "totalAmountOrder": 100.0, "statusOrder": "BillingReleased"},
+                {"branchCode": 1, "totalAmountOrder": 200.0, "statusOrder": "InProgress"},
+                {"branchCode": 1, "totalAmountOrder": 50.0,  "statusOrder": "BillingReleased"},
             ],
         })
     )
@@ -172,9 +183,9 @@ async def test_top_customers_ranks_by_value(client):
     respx.post(f"{TOTVS_BASE}/api/totvsmoda/sales-order/v2/orders/search").mock(
         return_value=Response(200, json={
             "items": [
-                {"customerCode": 100, "customerName": "Alice", "totalValue": 500.0},
-                {"customerCode": 200, "customerName": "Bob",   "totalValue": 200.0},
-                {"customerCode": 100, "customerName": "Alice", "totalValue": 300.0},
+                {"customerCode": 100, "customerName": "Alice", "totalAmountOrder": 500.0},
+                {"customerCode": 200, "customerName": "Bob",   "totalAmountOrder": 200.0},
+                {"customerCode": 100, "customerName": "Alice", "totalAmountOrder": 300.0},
             ],
         })
     )
@@ -225,10 +236,10 @@ async def test_orders_by_status_percentages_sum_100(client):
     respx.post(f"{TOTVS_BASE}/api/totvsmoda/sales-order/v2/orders/search").mock(
         return_value=Response(200, json={
             "items": [
-                {"orderStatus": "BillingReleased", "totalValue": 300.0},
-                {"orderStatus": "BillingReleased", "totalValue": 300.0},
-                {"orderStatus": "InProgress",      "totalValue": 200.0},
-                {"orderStatus": "Blocked",         "totalValue": 200.0},
+                {"statusOrder": "BillingReleased", "totalAmountOrder": 300.0},
+                {"statusOrder": "BillingReleased", "totalAmountOrder": 300.0},
+                {"statusOrder": "InProgress",      "totalAmountOrder": 200.0},
+                {"statusOrder": "Blocked",         "totalAmountOrder": 200.0},
             ],
         })
     )

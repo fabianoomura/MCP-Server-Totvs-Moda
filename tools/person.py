@@ -8,6 +8,7 @@ import logging
 from typing import Any
 from totvs_client import TotvsClient
 from tools._fields import apply_fields
+from tools._defaults import inject_branch_defaults
 
 logger = logging.getLogger("totvs-moda-mcp.person")
 BASE = "/api/totvsmoda/person/v2"
@@ -46,6 +47,7 @@ class PersonTools:
 
     async def search_representatives(self, args: dict[str, Any]) -> Any:
         """POST /representatives/search — Dados de representante."""
+        args = inject_branch_defaults(args)
         result = await self.client.post(f"{BASE}/representatives/search", _search_body(args))
         return apply_fields(result, args)
 
@@ -55,6 +57,7 @@ class PersonTools:
 
     async def get_person_statistics(self, args: dict[str, Any]) -> Any:
         """GET /person-statistics — Estatísticas do cliente."""
+        args = inject_branch_defaults(args)
         params = {k: v for k, v in args.items() if v is not None}
         return await self.client.get(f"{BASE}/person-statistics", params=params or None)
 

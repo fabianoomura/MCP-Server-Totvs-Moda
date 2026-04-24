@@ -10,6 +10,7 @@ from typing import Any
 
 from totvs_client import TotvsClient
 from tools._fields import apply_fields
+from tools._defaults import inject_branch_defaults
 
 logger = logging.getLogger("totvs-moda-mcp.sales-order")
 
@@ -29,6 +30,7 @@ class SalesOrderTools:
         POST /orders/search
         Busca pedidos de venda com filtros flexíveis.
         """
+        args = inject_branch_defaults(args)
         # Build filter object from flat args
         filter_fields = [
             "startOrderDate",
@@ -78,6 +80,7 @@ class SalesOrderTools:
         GET /invoices?branchCode=X&orderCode=Y
         Retorna notas fiscais vinculadas ao pedido.
         """
+        args = inject_branch_defaults(args)
         params = {
             "branchCode": args["branchCode"],
             "orderCode": args["orderCode"],
@@ -89,6 +92,7 @@ class SalesOrderTools:
         GET /pending-items?branchCode=X&orderCode=Y
         Retorna itens pendentes (não faturados) do pedido.
         """
+        args = inject_branch_defaults(args)
         params = {
             "branchCode": args["branchCode"],
             "orderCode": args["orderCode"],
@@ -100,6 +104,7 @@ class SalesOrderTools:
         GET /discount-type?branchCode=X
         Consulta tipos de desconto disponíveis.
         """
+        args = inject_branch_defaults(args)
         params = {"branchCode": args["branchCode"]}
         return await self.client.get(f"{BASE}/discount-type", params=params)
 
@@ -108,6 +113,7 @@ class SalesOrderTools:
         GET /billing-suggestions?branchCode=X&orderCode=Y
         Consulta sugestões de faturamento.
         """
+        args = inject_branch_defaults(args)
         params: dict[str, Any] = {"branchCode": args["branchCode"]}
         if "orderCode" in args:
             params["orderCode"] = args["orderCode"]
@@ -118,6 +124,7 @@ class SalesOrderTools:
         GET /classifications?branchCode=X
         Consulta classificações disponíveis.
         """
+        args = inject_branch_defaults(args)
         params = {"branchCode": args["branchCode"]}
         return await self.client.get(f"{BASE}/classifications", params=params)
 
@@ -138,6 +145,7 @@ class SalesOrderTools:
         POST /orders/cancel
         Cancela um pedido de venda. reasonCancellationCode é obrigatório (integer).
         """
+        args = inject_branch_defaults(args)
         body: dict[str, Any] = {
             "branchCode": args["branchCode"],
             "orderCode": args["orderCode"],
@@ -150,6 +158,7 @@ class SalesOrderTools:
         POST /orders/change-status
         Altera a situação de um pedido de venda. newStatus é obrigatório.
         """
+        args = inject_branch_defaults(args)
         body = {
             "branchCode": args["branchCode"],
             "orderCode": args["orderCode"],
@@ -162,6 +171,7 @@ class SalesOrderTools:
         POST /header
         Altera dados de capa do pedido.
         """
+        args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/header", body)
 
@@ -170,6 +180,7 @@ class SalesOrderTools:
         POST /price-items
         Altera preço de itens do pedido.
         """
+        args = inject_branch_defaults(args)
         body = {
             "branchCode": args["branchCode"],
             "orderCode": args["orderCode"],

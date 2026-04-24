@@ -7,6 +7,7 @@ Condições de pagamento, operações, devoluções, transações, contagens.
 import logging
 from typing import Any
 from totvs_client import TotvsClient
+from tools._defaults import inject_branch_defaults
 
 logger = logging.getLogger("totvs-moda-mcp.general")
 BASE = "/api/totvsmoda/general/v2"
@@ -32,11 +33,13 @@ class GeneralTools:
 
     async def simulate_payment_plan(self, args: dict[str, Any]) -> Any:
         """POST /payment-plan-simulate — Simula cálculo de plano de pagamento."""
+        args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/payment-plan-simulate", body)
 
     async def search_devolutions(self, args: dict[str, Any]) -> Any:
         """GET /devolutions/search — Dados de devolução por estágio."""
+        args = inject_branch_defaults(args)
         params = {k: v for k, v in args.items() if v is not None}
         return await self.client.get(f"{BASE}/devolutions/search", params=params or None)
 
@@ -51,15 +54,18 @@ class GeneralTools:
 
     async def create_devolution(self, args: dict[str, Any]) -> Any:
         """POST /devolutions/create — ⚠️ Grava dados de devolução."""
+        args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/devolutions/create", body)
 
     async def create_transaction(self, args: dict[str, Any]) -> Any:
         """POST /transactions — ⚠️ Inclui transação."""
+        args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/transactions", body)
 
     async def create_product_count(self, args: dict[str, Any]) -> Any:
         """POST /product-counts — ⚠️ Criação de contagem com produtos."""
+        args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/product-counts", body)

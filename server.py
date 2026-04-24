@@ -1256,7 +1256,7 @@ async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[types.T
 
 
 async def main() -> None:
-    logger.info(f"TOTVS Moda MCP Server v2.5 — {len(TOOLS)} tools | {len(get_modules())} módulos")
+    logger.info(f"TOTVS Moda MCP Server v2.6 — {len(TOOLS)} tools | {len(get_modules())} módulos")
     try:
         await context_cache.load(get_client())
     except Exception as e:
@@ -1266,7 +1266,7 @@ async def main() -> None:
             read_stream, write_stream,
             InitializationOptions(
                 server_name="totvs-moda-mcp",
-                server_version="2.5.0",
+                server_version="2.6.0",
                 capabilities=server.get_capabilities(
                     notification_options=NotificationOptions(),
                     experimental_capabilities={},

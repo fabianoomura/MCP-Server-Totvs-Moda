@@ -6,6 +6,7 @@ import logging
 from typing import Any
 from totvs_client import TotvsClient
 from tools._fields import apply_fields
+from tools._defaults import inject_branch_defaults
 
 logger = logging.getLogger("totvs-moda-mcp.other")
 
@@ -75,6 +76,7 @@ class ProductionOrderTools:
 
     async def search_production_orders(self, args: dict[str, Any]) -> Any:
         """POST /orders/search — Consulta ordens de produção."""
+        args = inject_branch_defaults(args)
         flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order", "fields") and v is not None}
         body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
         if args.get("order"):

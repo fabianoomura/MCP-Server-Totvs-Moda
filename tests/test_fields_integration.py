@@ -4,6 +4,8 @@ Integration test: fields parameter on a real tool.
 Demonstrates the pattern that all search tools should adopt in v2.5.
 """
 import json
+import sys
+import types
 import pytest
 import respx
 from httpx import Response
@@ -11,6 +13,15 @@ from httpx import Response
 from tools._fields import apply_fields
 
 from conftest import TOTVS_BASE, TOKEN_URL
+
+
+@pytest.fixture(autouse=True)
+def fake_context_cache(monkeypatch):
+    """Fornece context_cache com filial padrão para os testes desse arquivo."""
+    fake = types.ModuleType("context_cache")
+    fake.CACHE = {"branches": [1]}
+    monkeypatch.setitem(sys.modules, "context_cache", fake)
+    yield fake
 
 
 def _mock_token():

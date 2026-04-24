@@ -7,6 +7,7 @@ import logging
 from typing import Any
 from totvs_client import TotvsClient
 from tools._fields import apply_fields
+from tools._defaults import inject_branch_defaults
 
 logger = logging.getLogger("totvs-moda-mcp.voucher")
 BASE = "/api/totvsmoda/voucher/v2"
@@ -31,15 +32,18 @@ class VoucherTools:
 
     async def create_voucher(self, args: dict[str, Any]) -> Any:
         """POST /create — ⚠️ Inclui voucher."""
+        args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/create", body)
 
     async def update_voucher(self, args: dict[str, Any]) -> Any:
         """POST /update — ⚠️ Altera voucher."""
+        args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/update", body)
 
     async def create_customer_vouchers(self, args: dict[str, Any]) -> Any:
         """POST /customer/create — ⚠️ Cria vouchers para lista de clientes."""
+        args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/customer/create", body)
