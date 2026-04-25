@@ -265,8 +265,71 @@ TOOLS: list[types.Tool] = [
             "pageSize":{"type":"integer","default":1000},
             "fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."},
         }}),
-    types.Tool(name="totvs_search_product_prices", description="Consulta preços de produtos. priceCodeList é OBRIGATÓRIO (lista de códigos numéricos de tipo de preço, ex: [1] para preço de venda). Retorna items[] com: productCode, branchCode, priceCode, value (preço atual). Para alterar preço use totvs_update_product_price. Para consultar custos use totvs_search_product_costs. Use fields=['productCode','value'] para respostas enxutas.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"productCodeList":{"type":"array","items":{"type":"integer"}},"referenceCodeList":{"type":"array","items":{"type":"string"}},"priceTableCodeList":{"type":"array","items":{"type":"integer"}},"priceCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos numéricos de tipo de preço (ex: [1])"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100},"fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."}}}),
+    types.Tool(
+        name="totvs_search_product_prices",
+        description=(
+            "Consulta preços de produtos. priceCodeList é OBRIGATÓRIO. "
+            "Retorna items[] com prices[]={branchCode, priceCode, priceName, price, "
+            "promotionalPrice, promotionalInformation, informationOtherPromotions}. "
+            "Para alterar use totvs_update_product_price_only ou totvs_update_product_cost. "
+            "Use option.prices=[{branchCode, priceCodeList, isPromotionalPrice, isScheduledPrice}] "
+            "pra incluir blocos de promoção/agenda. "
+            "Use fields=['productCode','prices.price'] para reduzir tokens."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "productCodeList": {"type": "array", "items": {"type": "integer"}},
+                "referenceCodeList": {"type": "array", "items": {"type": "string"}},
+                "priceCodeList": {"type": "array", "items": {"type": "integer"},
+                    "description": "Códigos de tabela (consulte priceTypes em totvs_get_context)"},
+                "branchCodeList": {"type": "array", "items": {"type": "integer"}},
+                "change": {
+                    "type": "object",
+                    "description": "Filtro de alterações no período",
+                    "properties": {
+                        "startDate": {"type": "string"},
+                        "endDate": {"type": "string"},
+                        "inProduct": {"type": "boolean"},
+                        "inPrice": {"type": "boolean"},
+                        "inPromotionalPrice": {"type": "boolean"},
+                        "inScheduledPrice": {"type": "boolean"},
+                        "inDigitalPromotionPrice": {"type": "boolean"},
+                        "branchPriceCodeList": {"type": "array", "items": {"type": "integer"}},
+                        "priceCodeList": {"type": "array", "items": {"type": "integer"}}
+                    }
+                },
+                "option": {
+                    "type": "object",
+                    "description": "Opções de retorno",
+                    "properties": {
+                        "prices": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "branchCode": {"type": "integer"},
+                                    "priceCodeList": {"type": "array", "items": {"type": "integer"}},
+                                    "isPromotionalPrice": {"type": "boolean"},
+                                    "isScheduledPrice": {"type": "boolean"}
+                                }
+                            }
+                        },
+                        "digitalPromotionPrices": {
+                            "type": "object",
+                            "properties": {
+                                "branchCodeList": {"type": "array", "items": {"type": "integer"}},
+                                "isInformationOtherDigitalPromotions": {"type": "boolean"}
+                            }
+                        }
+                    }
+                },
+                "page": {"type": "integer", "default": 1},
+                "pageSize": {"type": "integer", "default": 100},
+                "fields": {"type": "array", "items": {"type": "string"}}
+            }
+        }
+    ),
     types.Tool(name="totvs_search_price_tables", description="Preços de produtos baseados em tabela de preço. branchCode e priceTableCode são obrigatórios.",
         inputSchema={"type":"object","properties":{
             "branchCode":{"type":"integer","description":"Código da filial (usado como branchCodeList)"},
@@ -308,8 +371,74 @@ TOOLS: list[types.Tool] = [
             "valueType":{"type":"integer","description":"Tipo do valor conforme enum da API"},
             "value":{"type":"number","description":"Valor"},
         },"required":["branchCode","productCode","valueCode","value"]}),
-    types.Tool(name="totvs_update_product_price", description="⚠️ ESCRITA — Altera preço ou custo de produto. Use totvs_get_context para obter priceTypes/costTypes com os códigos válidos. valueCode = priceCode; valueType = tipo numérico do preço/custo.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"productCode":{"type":"integer","description":"Código do produto"},"valueCode":{"type":"integer","description":"Código do tipo de preço ou custo (priceCode/costCode do contexto)"},"valueType":{"type":"integer","description":"Tipo do valor conforme enum da API (obtido via priceTypes/costTypes no contexto)"},"value":{"type":"number","description":"Novo valor"}},"required":["branchCode","productCode","valueCode","value"]}),
+    types.Tool(
+        name="totvs_update_product_price",
+        description=(
+            "⚠️ ESCRITA — Altera preço OU custo de produto. "
+            "DEPRECATED em v3.1: prefira totvs_update_product_price_only ou "
+            "totvs_update_product_cost. Esta tool ainda funciona — sem valueType "
+            "assume Price; passe valueType='Cost' (ou 'C') pra custo."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "productCode": {"type": "integer"},
+                "branchCode": {"type": "integer", "description": "Padrão do .env se omitido"},
+                "valueType": {
+                    "type": "string",
+                    "enum": ["Price", "Cost", "P", "C"],
+                    "description": "Price/P = preço de venda; Cost/C = custo. Default: Price."
+                },
+                "valueCode": {"type": "integer", "description": "Código da tabela (1, 2, 3...)"},
+                "value": {"type": "number"}
+            },
+            "required": ["productCode", "valueCode", "value"]
+        }
+    ),
+    types.Tool(
+        name="totvs_update_product_price_only",
+        description=(
+            "⚠️ ESCRITA — Atualiza PREÇO DE VENDA do produto. "
+            "valueType='Price' é injetado automaticamente. "
+            "Faz upsert: tenta UPDATE; se não existe, faz CREATE. "
+            "Modo simples: passe productCode + valueCode + value. "
+            "Modo lote: products[]={productCode, values:[{branchCode, valueCode, value}]}. "
+            "Para custo use totvs_update_product_cost."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "productCode": {"type": "integer"},
+                "branchCode": {"type": "integer", "description": "Padrão do .env se omitido"},
+                "valueCode": {"type": "integer", "description": "Tabela de preço (consulte priceTypes em totvs_get_context)"},
+                "value": {"type": "number"},
+                "products": {
+                    "type": "array",
+                    "description": "Modo lote (alternativo)",
+                    "items": {"type": "object"}
+                }
+            }
+        }
+    ),
+    types.Tool(
+        name="totvs_update_product_cost",
+        description=(
+            "⚠️ ESCRITA — Atualiza CUSTO do produto. "
+            "valueType='Cost' é injetado automaticamente. "
+            "Faz upsert: tenta UPDATE; se não existe, faz CREATE. "
+            "Para preço use totvs_update_product_price_only."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "productCode": {"type": "integer"},
+                "branchCode": {"type": "integer", "description": "Padrão do .env se omitido"},
+                "valueCode": {"type": "integer"},
+                "value": {"type": "number"},
+                "products": {"type": "array", "items": {"type": "object"}}
+            }
+        }
+    ),
     types.Tool(name="totvs_update_promotion_price", description="⚠️ ESCRITA — Altera preço de promoção de produto.",
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"productCode":{"type":"integer"},"promotionPrice":{"type":"number"},"startDate":{"type":"string"},"endDate":{"type":"string"}},"required":["branchCode","productCode","promotionPrice"]}),
     types.Tool(name="totvs_search_product_codes", description="Lista de produtos com filtro — retorna apenas código e dados básicos. Use fields para reduzir tokens.",
@@ -338,11 +467,88 @@ TOOLS: list[types.Tool] = [
             "branchCode":{"type":"integer"},"startChangeDate":{"type":"string"},"endChangeDate":{"type":"string"},
             "page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100}
         }}),
-    types.Tool(name="totvs_update_product_data", description="⚠️ Altera dados gerais de um produto.",
-        inputSchema={"type":"object","properties":{
-            "productCode":{"type":"integer"},"branchCode":{"type":"integer"},
-            "description":{"type":"string"},"isActive":{"type":"boolean"}
-        },"required":["productCode","branchCode"]}),
+    types.Tool(
+        name="totvs_update_product_data",
+        description=(
+            "⚠️ ESCRITA — Atualiza dados gerais de produto (peso, NCM, CST, etc). "
+            "Auto-roteamento: "
+            "se passar productCode (1 produto) → PUT /products/{code}/{branchCode} (simples); "
+            "se passar productCodeList ou groupCode → PUT /data (batch com filtros). "
+            "Campos: weight, ncmCode, cstCode, cestCode, prefixEanGtin, measuredUnit, "
+            "isInactive, isFinishedProduct, isRawMaterial, isBulkMaterial, isOwnProduction."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "productCode": {"type": "integer", "description": "Modo simples (1 produto)"},
+                "productCodeList": {"type": "array", "items": {"type": "integer"}, "description": "Modo batch"},
+                "branchCode": {"type": "integer"},
+                "barCodeList": {"type": "array", "items": {"type": "string"}},
+                "groupCode": {"type": "string"},
+                "referenceCode": {"type": "string"},
+                "weight": {"type": "number", "description": "Peso em kg"},
+                "ncmCode": {"type": "string"},
+                "measuredUnit": {"type": "string"},
+                "cstCode": {"type": "string"},
+                "cestCode": {"type": "string"},
+                "prefixEanGtin": {"type": "string"},
+                "isInactive": {"type": "boolean"},
+                "isFinishedProduct": {"type": "boolean"},
+                "isRawMaterial": {"type": "boolean"},
+                "isBulkMaterial": {"type": "boolean"},
+                "isOwnProduction": {"type": "boolean"}
+            }
+        }
+    ),
+    types.Tool(
+        name="totvs_update_product_simple",
+        description=(
+            "⚠️ ESCRITA — Atualiza dados de UM produto específico. "
+            "Endpoint validado em produção (MOOUI alterar_peso.py). "
+            "Use pra: peso, NCM, CST, flags. Para múltiplos produtos use totvs_update_product_data."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "productCode": {"type": "integer"},
+                "branchCode": {"type": "integer"},
+                "weight": {"type": "number"},
+                "ncmCode": {"type": "string"},
+                "cstCode": {"type": "string"},
+                "cestCode": {"type": "string"},
+                "prefixEanGtin": {"type": "string"},
+                "isInactive": {"type": "boolean"},
+                "isFinishedProduct": {"type": "boolean"},
+                "isRawMaterial": {"type": "boolean"},
+                "isBulkMaterial": {"type": "boolean"},
+                "isOwnProduction": {"type": "boolean"}
+            },
+            "required": ["productCode"]
+        }
+    ),
+    types.Tool(
+        name="totvs_update_product_branch_info_batch",
+        description=(
+            "⚠️ ESCRITA — Atualiza dados em LOTE de produtos numa filial. "
+            "Endpoint PUT /branch-info/{branchCode}. "
+            "Útil pra ativar/desativar muitos produtos."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {"type": "integer"},
+                "productCodeList": {"type": "array", "items": {"type": "integer"}},
+                "barCodeList": {"type": "array", "items": {"type": "string"}},
+                "groupCode": {"type": "string"},
+                "referenceCode": {"type": "string"},
+                "isInactive": {"type": "boolean"},
+                "isFinishedProduct": {"type": "boolean"},
+                "isRawMaterial": {"type": "boolean"},
+                "isBulkMaterial": {"type": "boolean"},
+                "isOwnProduction": {"type": "boolean"}
+            }
+        }
+    ),
     types.Tool(name="totvs_create_product_barcode", description="⚠️ Inclui código de barras para produto.",
         inputSchema={"type":"object","properties":{
             "productCode":{"type":"integer"},"barcode":{"type":"string"},"barcodeType":{"type":"string"}
@@ -899,8 +1105,27 @@ TOOLS: list[types.Tool] = [
         inputSchema={"type":"object","properties":{"packageId":{"type":"string","description":"ID do pacote rejeitado"}},"required":["packageId"]}),
 
     # ── CONTEXT ───────────────────────────────────────────────────────────────
-    types.Tool(name="totvs_get_context", description="Retorna dados de referência carregados na inicialização: filiais, operações, condições de pagamento, tabelas de preço, classificações, categorias, grades e unidades de medida. Use antes de criar/alterar registros para obter os códigos corretos.",
-        inputSchema={"type":"object","properties":{}}),
+    types.Tool(
+        name="totvs_get_context",
+        description=(
+            "Retorna dados de referência da empresa: filiais, tabelas de preço/custo "
+            "EXISTENTES, operações, condições de pagamento. "
+            "Por padrão retorna SLIM (~5KB com top 5 de cada lista). "
+            "Use verbose=true pra retornar tudo (pode ser grande, ~50-300KB). "
+            "Use isto pra descobrir priceCode/costCode válidos antes de chamar "
+            "totvs_search_prices ou totvs_update_product_price_only."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "verbose": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": "Se true, retorna cache completo. Default: slim."
+                }
+            }
+        }
+    ),
 
     # ── AGGREGATORS v2.4 ──────────────────────────────────────────────────────
     types.Tool(name="totvs_get_products_sold", description="Agrega vendas de produtos em um período. Retorna os TOP N produtos mais vendidos já agregados por quantidade ou valor — elimina a necessidade de buscar pedidos, expandir items, e agregar manualmente. Retorna: {period, totalOrders, topProducts: [{productCode, name, totalQuantity, totalValue, orderCount}]}.",
@@ -976,6 +1201,8 @@ ROUTING: dict[str, tuple[str, str]] = {
     "totvs_create_product_classification":        ("product", "create_classification_relationship"),
     "totvs_create_product_value":                 ("product", "create_product_value"),
     "totvs_update_product_price":                ("product", "update_product_price"),
+    "totvs_update_product_price_only":           ("product", "update_product_price_only"),
+    "totvs_update_product_cost":                 ("product", "update_product_cost"),
     "totvs_update_promotion_price":              ("product", "update_promotion_price"),
     "totvs_search_product_codes":                ("product", "search_product_codes"),
     "totvs_search_product_costs":                ("product", "search_costs"),
@@ -984,6 +1211,8 @@ ROUTING: dict[str, tuple[str, str]] = {
     "totvs_get_measurement_units":               ("product", "get_measurement_units"),
     "totvs_search_omni_changed_balances":        ("product", "search_omni_changed_balances"),
     "totvs_update_product_data":                 ("product", "update_product_data"),
+    "totvs_update_product_simple":               ("product", "update_product_simple"),
+    "totvs_update_product_branch_info_batch":    ("product", "update_product_branch_info_batch"),
     "totvs_create_product_barcode":              ("product", "create_barcode"),
     "totvs_create_product_batch":                ("product", "create_batch"),
     "totvs_search_individual_customers":         ("person", "search_individuals"),
@@ -1107,9 +1336,11 @@ async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[types.T
 
     # ── context tool ──────────────────────────────────────────────────────────
     if name == "totvs_get_context":
-        if not context_cache.is_loaded():
-            await context_cache.load(get_client())
-        return [types.TextContent(type="text", text=json.dumps(context_cache.get(), ensure_ascii=False, indent=2))]
+        if arguments.get("verbose"):
+            result = context_cache.get_full_context()
+        else:
+            result = context_cache.get_slim_context()
+        return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False, default=str))]
 
     route = ROUTING.get(name)
     if not route:
@@ -1127,9 +1358,9 @@ async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[types.T
 
 
 async def main() -> None:
-    logger.info(f"TOTVS Moda MCP Server v3.0 — {len(TOOLS)} tools | {len(get_modules())} módulos")
+    logger.info(f"TOTVS Moda MCP Server v3.1 — {len(TOOLS)} tools | {len(get_modules())} módulos")
     try:
-        await context_cache.load(get_client())
+        await context_cache.load_context(get_client())
     except Exception as e:
         logger.warning(f"Falha ao carregar contexto na inicialização: {e}")
     async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
@@ -1137,7 +1368,7 @@ async def main() -> None:
             read_stream, write_stream,
             InitializationOptions(
                 server_name="totvs-moda-mcp",
-                server_version="3.0.0",
+                server_version="3.1.0",
                 capabilities=server.get_capabilities(
                     notification_options=NotificationOptions(),
                     experimental_capabilities={},

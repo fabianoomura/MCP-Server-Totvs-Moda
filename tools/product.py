@@ -13,6 +13,7 @@ from typing import Any
 from totvs_client import TotvsClient
 from tools._fields import apply_fields
 from tools._defaults import inject_branch_defaults
+from tools._value_types import normalize_value_type
 
 logger = logging.getLogger("totvs-moda-mcp.product")
 BASE = "/api/totvsmoda/product/v2"
@@ -252,17 +253,69 @@ class ProductTools:
     # ── WRITE ─────────────────────────────────────────────────────────────
 
     async def update_product_price(self, args: dict[str, Any]) -> Any:
-        """POST /values/update — ⚠️ Altera preço/custo."""
+        """⚠️ DEPRECATED em v3.1 — use update_product_price_only ou update_product_cost.
+
+        Mantida por retrocompatibilidade. Detecta valueType e delega.
+        Aceita aliases 'P'/'C' como atalhos de 'Price'/'Cost'.
+        Sem valueType, assume 'Price' (default histórico).
+        """
+        args = dict(args)
+        vt = normalize_value_type(args.get("valueType"))
+        if vt == "Cost":
+            return await self.update_product_cost(args)
+        return await self.update_product_price_only(args)
+
+    async def update_product_price_only(self, args: dict[str, Any]) -> Any:
+        """POST /values/update — ⚠️ Atualiza PREÇO DE VENDA. valueType='Price' injetado.
+
+        Faz upsert: tenta UPDATE; se NotFound, faz CREATE.
+        """
+        return await self._upsert_product_value(args, value_type="Price")
+
+    async def update_product_cost(self, args: dict[str, Any]) -> Any:
+        """POST /values/update — ⚠️ Atualiza CUSTO. valueType='Cost' injetado.
+
+        Faz upsert: tenta UPDATE; se NotFound, faz CREATE.
+        """
+        return await self._upsert_product_value(args, value_type="Cost")
+
+    async def _upsert_product_value(self, args: dict[str, Any], value_type: str) -> Any:
+        """Helper interno para upsert de Price ou Cost.
+
+        Força valueType ao tipo passado (sobrescreve qualquer coisa que vier).
+        """
         args = inject_branch_defaults(args)
-        value_item: dict[str, Any] = {
-            "branchCode": args["branchCode"],
-            "valueCode": args["valueCode"],
-            "value": args["value"],
-        }
-        if args.get("valueType") is not None:
-            value_item["valueType"] = args["valueType"]
-        body = {"products": [{"productCode": args["productCode"], "values": [value_item]}]}
-        return await self.client.post(f"{BASE}/values/update", body)
+        branch = args.get("branchCode")
+
+        if args.get("products"):
+            products = args["products"]
+            for p in products:
+                for v in p.get("values", []):
+                    v["valueType"] = value_type
+                    if "branchCode" not in v and branch is not None:
+                        v["branchCode"] = branch
+        else:
+            if not all(k in args for k in ("productCode", "valueCode", "value")):
+                raise ValueError(
+                    "Modo simples requer productCode, valueCode e value. "
+                    "Para lote use products=[{productCode, values:[...]}]"
+                )
+            products = [{
+                "productCode": args["productCode"],
+                "values": [{
+                    "branchCode": branch,
+                    "valueType": value_type,
+                    "valueCode": args["valueCode"],
+                    "value": args["value"],
+                }]
+            }]
+
+        body = {"products": products}
+        return await self.client.upsert(
+            update_path=f"{BASE}/values/update",
+            create_path=f"{BASE}/values/create",
+            body=body,
+        )
 
     async def update_promotion_price(self, args: dict[str, Any]) -> Any:
         """POST /promotion-values/update — ⚠️ Altera preço de promoção."""
@@ -270,9 +323,96 @@ class ProductTools:
         return await self.client.post(f"{BASE}/promotion-values/update", body)
 
     async def update_product_data(self, args: dict[str, Any]) -> Any:
-        """PUT /data — ⚠️ Altera dados gerais de produto."""
-        body = {k: v for k, v in args.items() if v is not None}
+        """⚠️ Atualiza dados de produto (peso, NCM, CST, etc).
+
+        Auto-roteamento:
+        - Se passar productCode (singular) → PUT /products/{code}/{branchCode} (simples)
+        - Se passar productCodeList ou outros filtros → PUT /data (lote)
+
+        Endpoint simples valida em produção pela MOOUI (alterar_peso.py).
+        """
+        args = inject_branch_defaults(args)
+
+        # Modo simples
+        if args.get("productCode") and not args.get("productCodeList"):
+            code = args["productCode"]
+            branch = args["branchCode"]
+            excluded = {"productCode", "branchCode", "productCodeList",
+                       "barCodeList", "groupCode", "referenceCode"}
+            body = {k: v for k, v in args.items()
+                    if k not in excluded and v is not None}
+            return await self.client.put(
+                f"{BASE}/products/{code}/{branch}", body
+            )
+
+        # Modo batch
+        filter_keys = {"productCodeList", "barCodeList",
+                       "groupCode", "referenceCode"}
+        flt = {}
+        payload = {}
+        for k, v in args.items():
+            if v is None:
+                continue
+            if k == "branchCode":
+                continue
+            if k in filter_keys:
+                flt[k] = v
+            else:
+                payload[k] = v
+
+        if not flt:
+            raise ValueError(
+                "Modo batch requer pelo menos um filtro: "
+                "productCodeList, barCodeList, groupCode ou referenceCode."
+            )
+
+        body = {"filter": flt, **payload}
         return await self.client.put(f"{BASE}/data", body)
+
+    async def update_product_simple(self, args: dict[str, Any]) -> Any:
+        """PUT /products/{code}/{branchCode} — ⚠️ Update unitário simples.
+
+        Endpoint validado pela MOOUI em produção.
+        """
+        args = inject_branch_defaults(args)
+        if not args.get("productCode"):
+            raise ValueError("update_product_simple requer productCode.")
+
+        code = args["productCode"]
+        branch = args["branchCode"]
+        excluded = {"productCode", "branchCode", "productCodeList"}
+        body = {k: v for k, v in args.items()
+                if k not in excluded and v is not None}
+
+        return await self.client.put(f"{BASE}/products/{code}/{branch}", body)
+
+    async def update_product_branch_info_batch(self, args: dict[str, Any]) -> Any:
+        """PUT /branch-info/{branchCode} — ⚠️ Atualização em lote por filial."""
+        args = inject_branch_defaults(args)
+        branch = args["branchCode"]
+
+        filter_keys = {"productCodeList", "barCodeList",
+                       "groupCode", "referenceCode"}
+        flt = {}
+        payload = {}
+        for k, v in args.items():
+            if v is None:
+                continue
+            if k in ("branchCode",):
+                continue
+            if k in filter_keys:
+                flt[k] = v
+            else:
+                payload[k] = v
+
+        if not flt:
+            raise ValueError(
+                "update_product_branch_info_batch requer pelo menos um "
+                "filtro: productCodeList, barCodeList, groupCode ou referenceCode."
+            )
+
+        body = {"filter": flt, **payload}
+        return await self.client.put(f"{BASE}/branch-info/{branch}", body)
 
     async def create_barcode(self, args: dict[str, Any]) -> Any:
         """POST /barcodes — ⚠️ Inclui código de barras."""

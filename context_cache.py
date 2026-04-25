@@ -1,162 +1,263 @@
 """
-Context Cache
-=============
-Carregado na inicialização do servidor. Busca dados de referência do TOTVS
-e armazena em memória para uso em consultas, criações e alterações.
+Context Cache v3.1
+==================
+Carrega dados de referência do TOTVS no startup pra evitar chamadas repetidas.
+
+Mudanças v3.1:
+1. NOVO: descoberta de priceTypes e costTypes via top 20 produtos vendidos.
+   Antes vinha vazio. Agora consulta /prices/search e /costs/search SEM filtro
+   de priceCode/costCode pra descobrir quais tabelas existem na empresa.
+
+2. NOVO: slim mode no get_context() — retorno em ~5KB (era 313KB).
+   verbose=True traz o cache completo pra debug.
+
+3. Fix: estrutura de cache padronizada com keys consistentes.
 """
+from __future__ import annotations
+
+import asyncio
 import logging
 import os
 from datetime import datetime, timedelta
 from typing import Any
 
-logger = logging.getLogger("totvs-moda-mcp.context")
+from totvs_client import TotvsClient
 
-_cache: dict[str, Any] = {}
-_loaded: bool = False
+logger = logging.getLogger("totvs-moda-mcp.context_cache")
+
+# Cache global do módulo
+CACHE: dict[str, Any] = {}
 
 
-async def load(client: Any) -> None:
-    """Busca todos os dados de referência do TOTVS e armazena no cache."""
-    global _cache, _loaded
+async def load_context(client: TotvsClient) -> dict[str, Any]:
+    """Carrega dados de referência do TOTVS na inicialização.
 
-    BASE_PRODUCT    = "/api/totvsmoda/product/v2"
-    BASE_GENERAL    = "/api/totvsmoda/general/v2"
-    BASE_MANAGEMENT = "/api/totvsmoda/management/v2"
-    BASE_ECOMMERCE  = "/api/totvsmoda/ecommerce-sales-order/v2"
+    Popula CACHE com:
+    - branches: lista de filiais
+    - operations: lista de operações ativas
+    - priceTypes: códigos de tabela de preço EXISTENTES (descobertos via produtos vendidos)
+    - costTypes: códigos de tipo de custo EXISTENTES (mesma lógica)
+    - paymentConditions: lista de condições de pagamento
 
-    async def safe_get(path: str, params: dict | None = None) -> Any:
-        try:
-            return await client.get(path, params=params)
-        except Exception as e:
-            logger.warning(f"Context load failed for {path}: {e}")
-            return None
-
-    async def safe_post(path: str, body: dict) -> Any:
-        try:
-            return await client.post(path, body)
-        except Exception as e:
-            logger.warning(f"Context load failed for {path}: {e}")
-            return None
-
-    logger.info("Carregando contexto do TOTVS...")
-
-    # general/v2
-    operations     = await safe_get(f"{BASE_GENERAL}/operations", params={"StartChangeDate": "2000-01-01T00:00:00", "EndChangeDate": "2099-12-31T23:59:59", "PageSize": 1000})
-    pay_conditions = await safe_get(f"{BASE_GENERAL}/payment-conditions")
-    pay_plans      = await safe_get(f"{BASE_GENERAL}/payment-plans")
-
-    # product/v2
-    price_headers   = await safe_get(f"{BASE_PRODUCT}/price-tables-headers")
-    classifications = await safe_get(f"{BASE_PRODUCT}/classifications")
-    categories      = await safe_get(f"{BASE_PRODUCT}/category")
-    grids           = await safe_get(f"{BASE_PRODUCT}/grid")
-    measure_units   = await safe_get(f"{BASE_PRODUCT}/measurement-unit")
-
-    # management/v2/users
-    users = await safe_get(f"{BASE_MANAGEMENT}/users", params={"PageSize": 1000})
-
-    # ── Filiais via variável de ambiente TOTVS_BRANCH_CODES ───────────────────
-    _raw = os.environ.get("TOTVS_BRANCH_CODES", "1")
-    branches: list[int] = [int(x.strip()) for x in _raw.split(",") if x.strip().isdigit()]
-    if not branches:
-        branches = [1]
-    logger.info(f"Filiais configuradas: {branches}")
-
-    # ── Descoberta de tipos de preço e custo ──────────────────────────────────
-    # Estratégia: pegar produto mais vendido nos últimos 30 dias (ou qualquer produto)
-    # e consultar preços/custos com range amplo de códigos para extrair os tipos disponíveis.
-
-    price_types: list[dict] = []
-    cost_types: list[dict]  = []
-
-    branch_code: int = branches[0]
-
-    # Tentar pegar produto mais vendido nos últimos 30 dias
-    today = datetime.now()
-    start_date = (today - timedelta(days=30)).strftime("%Y-%m-%dT00:00:00")
-    end_date   = today.strftime("%Y-%m-%dT23:59:59")
-
-    sample_product_code: int | None = None
-
-    best_selling = await safe_post(
-        f"{BASE_ECOMMERCE}/best-selling-products/search",
-        {"startDate": start_date, "endDate": end_date, "pageSize": 20},
-    )
-    sample_product_codes: list[int] = []
-    if best_selling and isinstance(best_selling, dict):
-        for item in (best_selling.get("items") or best_selling.get("Items") or []):
-            pc = item.get("productCode") or item.get("ProductCode")
-            if pc:
-                sample_product_codes.append(int(pc))
-
-    # Fallback: qualquer produto do catálogo
-    if not sample_product_codes:
-        any_product = await safe_post(f"{BASE_PRODUCT}/products/search", {"pageSize": 20})
-        if any_product and isinstance(any_product, dict):
-            for item in (any_product.get("items") or any_product.get("Items") or []):
-                pc = item.get("productCode") or item.get("ProductCode")
-                if pc:
-                    sample_product_codes.append(int(pc))
-
-    if sample_product_codes:
-        logger.info(f"Descobrindo tipos de preço/custo via {len(sample_product_codes)} produtos (filial {branch_code})...")
-
-        # Consultar preços com range 1..20 para capturar todos os tipos cadastrados
-        prices_data = await safe_post(f"{BASE_PRODUCT}/prices/search", {
-            "filter": {"productCodeList": sample_product_codes},
-            "option": {"prices": [{"branchCode": branch_code, "priceCodeList": list(range(1, 21))}]},
-        })
-        if prices_data and isinstance(prices_data, dict):
-            seen: set = set()
-            for item in (prices_data.get("items") or prices_data.get("Items") or []):
-                for p in (item.get("prices") or item.get("Prices") or []):
-                    code = p.get("priceCode") or p.get("PriceCode")
-                    name = p.get("priceName") or p.get("PriceName") or ""
-                    if code is not None and code not in seen:
-                        seen.add(code)
-                        price_types.append({"priceCode": code, "priceName": name})
-
-        # Consultar custos
-        costs_data = await safe_post(f"{BASE_PRODUCT}/costs/search", {
-            "filter": {"productCodeList": sample_product_codes},
-            "option": {"branchCode": branch_code},
-        })
-        if costs_data and isinstance(costs_data, dict):
-            seen = set()
-            for item in (costs_data.get("items") or costs_data.get("Items") or []):
-                for c in (item.get("costs") or item.get("Costs") or []):
-                    code = c.get("costCode") or c.get("CostCode")
-                    name = c.get("costName") or c.get("CostName") or ""
-                    if code is not None and code not in seen:
-                        seen.add(code)
-                        cost_types.append({"costCode": code, "costName": name})
-
-        logger.info(f"Tipos de preço descobertos: {price_types}")
-        logger.info(f"Tipos de custo descobertos: {cost_types}")
-    else:
-        logger.warning("Nenhum produto encontrado para descoberta de tipos de preço/custo.")
-
-    _cache = {
-        "branches":          branches,
-        "operations":        operations,
-        "paymentConditions": pay_conditions,
-        "paymentPlans":      pay_plans,
-        "priceTables":       price_headers,
-        "classifications":   classifications,
-        "categories":        categories,
-        "grids":             grids,
-        "measurementUnits":  measure_units,
-        "users":             users,
-        "priceTypes":        price_types,
-        "costTypes":         cost_types,
+    Cada erro é logado mas não impede o startup. Cache parcial > cache vazio.
+    """
+    global CACHE
+    CACHE = {
+        "loadedAt": datetime.utcnow().isoformat() + "Z",
+        "branches": [],
+        "operations": [],
+        "priceTypes": [],
+        "costTypes": [],
+        "paymentConditions": [],
     }
-    _loaded = True
-    logger.info(f"Contexto carregado: {list(_cache.keys())}")
+
+    # 1. Branches (filiais) — fundamental, vem do env
+    branches_raw = os.environ.get("TOTVS_BRANCH_CODES", "").strip()
+    if branches_raw:
+        try:
+            CACHE["branches"] = [int(x.strip()) for x in branches_raw.split(",") if x.strip()]
+        except ValueError:
+            logger.warning(f"TOTVS_BRANCH_CODES inválido: {branches_raw!r}")
+
+    # Tarefas paralelas pra ganhar tempo no startup
+    tasks = [
+        _load_operations(client),
+        _load_payment_conditions(client),
+        _load_price_and_cost_types(client),
+    ]
+
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    for result in results:
+        if isinstance(result, Exception):
+            logger.warning(f"Falha parcial no context_cache: {type(result).__name__}: {result}")
+
+    logger.info(
+        f"Context cache loaded: "
+        f"{len(CACHE['branches'])} branches, "
+        f"{len(CACHE['operations'])} operations, "
+        f"{len(CACHE['priceTypes'])} priceTypes, "
+        f"{len(CACHE['costTypes'])} costTypes, "
+        f"{len(CACHE['paymentConditions'])} paymentConditions"
+    )
+
+    return CACHE
 
 
-def get() -> dict[str, Any]:
-    return _cache
+async def _load_operations(client: TotvsClient) -> None:
+    """Carrega operações ativas de venda/compra."""
+    try:
+        response = await client.get(
+            "/api/totvsmoda/general/v2/operations",
+            params={"page": 1, "pageSize": 200}
+        )
+        items = response.get("items", []) if isinstance(response, dict) else []
+        CACHE["operations"] = [
+            {"code": o.get("code"), "name": o.get("name"), "type": o.get("type")}
+            for o in items
+        ]
+    except Exception as e:
+        logger.debug(f"operations load failed: {e}")
 
 
-def is_loaded() -> bool:
-    return _loaded
+async def _load_payment_conditions(client: TotvsClient) -> None:
+    """Carrega condições de pagamento ativas."""
+    try:
+        response = await client.get(
+            "/api/totvsmoda/general/v2/payment-conditions",
+            params={"page": 1, "pageSize": 100}
+        )
+        items = response.get("items", []) if isinstance(response, dict) else []
+        CACHE["paymentConditions"] = [
+            {"code": p.get("code"), "name": p.get("name")}
+            for p in items
+        ]
+    except Exception as e:
+        logger.debug(f"payment_conditions load failed: {e}")
+
+
+async def _load_price_and_cost_types(client: TotvsClient) -> None:
+    """Descobre priceTypes e costTypes existentes consultando produtos top vendidos.
+
+    Estratégia:
+    1. Pega 20 produtos vendidos no último mês (via search_orders + items)
+    2. Pra cada produto, consulta /prices/search e /costs/search SEM filtro de tabela
+    3. Agrega priceCode e costCode únicos que aparecerem
+    4. Resultado: lista de tabelas EXISTENTES na empresa, não chutadas
+
+    Esta abordagem funciona porque a API TOTVS retorna em items[].prices[]
+    todas as tabelas que aquele produto tem cadastro, sem precisar de filtro.
+    """
+    try:
+        # Etapa 1: pegar produtos com vendas recentes
+        end_date = datetime.utcnow().date()
+        start_date = end_date - timedelta(days=30)
+
+        branches = CACHE.get("branches") or [1]
+
+        orders_response = await client.post(
+            "/api/totvsmoda/sales-order/v2/orders/search",
+            {
+                "filter": {
+                    "branchCodeList": branches,
+                    "startOrderDate": start_date.isoformat(),
+                    "endOrderDate": end_date.isoformat(),
+                },
+                "expand": "items",
+                "page": 1,
+                "pageSize": 50,  # 50 pedidos costuma trazer 100+ produtos únicos
+            }
+        )
+
+        orders = orders_response.get("items", []) if isinstance(orders_response, dict) else []
+        product_codes: set[int] = set()
+        for order in orders:
+            for item in order.get("items") or []:
+                pc = item.get("productCode")
+                if pc is not None:
+                    product_codes.add(pc)
+            if len(product_codes) >= 20:
+                break
+
+        if not product_codes:
+            logger.info("Nenhum produto vendido no período recente. priceTypes/costTypes ficam vazios.")
+            return
+
+        product_list = list(product_codes)[:20]
+        logger.debug(f"Sondando priceTypes/costTypes via {len(product_list)} produtos: {product_list[:5]}...")
+
+        # Etapa 2: descobrir priceTypes
+        await _discover_price_types(client, product_list, branches)
+
+        # Etapa 3: descobrir costTypes
+        await _discover_cost_types(client, product_list, branches)
+
+    except Exception as e:
+        logger.debug(f"price/cost types discovery failed: {e}")
+
+
+async def _discover_price_types(client: TotvsClient, product_codes: list[int], branches: list[int]) -> None:
+    """Descobre priceTypes ativos consultando produtos sem filtro de priceCode."""
+    try:
+        response = await client.post(
+            "/api/totvsmoda/product/v2/prices/search",
+            {
+                "filter": {
+                    "productCodeList": product_codes,
+                    "branchCodeList": branches,
+                },
+                "page": 1,
+                "pageSize": 100,
+            }
+        )
+        items = response.get("items", []) if isinstance(response, dict) else []
+
+        seen: dict[int, dict[str, Any]] = {}
+        for item in items:
+            for price in item.get("prices") or []:
+                code = price.get("priceCode")
+                name = price.get("priceName")
+                if code is not None and code not in seen:
+                    seen[code] = {"priceCode": code, "priceName": name}
+
+        CACHE["priceTypes"] = sorted(seen.values(), key=lambda x: x["priceCode"])
+
+    except Exception as e:
+        logger.debug(f"price types discovery failed: {e}")
+
+
+async def _discover_cost_types(client: TotvsClient, product_codes: list[int], branches: list[int]) -> None:
+    """Descobre costTypes ativos consultando produtos sem filtro de costCode."""
+    try:
+        response = await client.post(
+            "/api/totvsmoda/product/v2/costs/search",
+            {
+                "filter": {
+                    "productCodeList": product_codes,
+                    "branchCodeList": branches,
+                },
+                "page": 1,
+                "pageSize": 100,
+            }
+        )
+        items = response.get("items", []) if isinstance(response, dict) else []
+
+        seen: dict[int, dict[str, Any]] = {}
+        for item in items:
+            for cost in item.get("costs") or []:
+                code = cost.get("costCode")
+                name = cost.get("costName")
+                if code is not None and code not in seen:
+                    seen[code] = {"costCode": code, "costName": name}
+
+        CACHE["costTypes"] = sorted(seen.values(), key=lambda x: x["costCode"])
+
+    except Exception as e:
+        logger.debug(f"cost types discovery failed: {e}")
+
+
+def get_slim_context() -> dict[str, Any]:
+    """Retorna apenas os dados essenciais do cache (~5KB).
+
+    Inclui:
+    - branches (filiais)
+    - priceTypes (tabelas de preço existentes)
+    - costTypes (tipos de custo existentes)
+    - top 5 operações mais comuns
+    - timestamp do load
+
+    Para cache completo use get_full_context().
+    """
+    return {
+        "loadedAt": CACHE.get("loadedAt"),
+        "branches": CACHE.get("branches", []),
+        "priceTypes": CACHE.get("priceTypes", []),
+        "costTypes": CACHE.get("costTypes", []),
+        "operations": (CACHE.get("operations") or [])[:5],
+        "paymentConditions": (CACHE.get("paymentConditions") or [])[:5],
+    }
+
+
+def get_full_context() -> dict[str, Any]:
+    """Retorna o cache inteiro. Use só pra debug — pode ser grande."""
+    return dict(CACHE)

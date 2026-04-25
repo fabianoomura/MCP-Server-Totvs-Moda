@@ -35,15 +35,17 @@ def _mock_token():
 @pytest.mark.asyncio
 @respx.mock
 async def test_update_product_data_uses_PUT_not_POST(client):
-    """Regression: swagger specifies PUT /product/v2/data — POST returns 405."""
+    """Regression: swagger specifies PUT — POST returns 405.
+    v3.1: productCode simples roteia para PUT /products/{code}/{branchCode}."""
     _mock_token()
-    put_route = respx.put(f"{TOTVS_BASE}/api/totvsmoda/product/v2/data").mock(
+    # v3.1: modo simples (productCode sem productCodeList) usa endpoint unitário
+    put_route = respx.put(f"{TOTVS_BASE}/api/totvsmoda/product/v2/products/123/1").mock(
         return_value=Response(200, json={"updated": True})
     )
     post_route = respx.post(f"{TOTVS_BASE}/api/totvsmoda/product/v2/data")
 
     tools = ProductTools(client)
-    await tools.update_product_data({"productCode": 123, "description": "x"})
+    await tools.update_product_data({"productCode": 123, "branchCode": 1, "description": "x"})
 
     assert put_route.called, "Must use PUT"
     assert not post_route.called, "Must NOT use POST"

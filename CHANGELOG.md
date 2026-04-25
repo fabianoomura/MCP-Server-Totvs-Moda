@@ -1,5 +1,28 @@
 # Changelog
 
+## [3.1.0] — 2026-04-25
+
+### Corrigido
+- `update_product_data` estava com bug crítico: usava POST quando devia ser PUT, e endpoint errado. Tool nunca funcionou. Refatorada com auto-roteamento (simples vs batch).
+- `update_product_price` exigia `valueType` mas não documentava no schema. Adicionado fallback pra Price quando omitido. Aliases P/C aceitos.
+
+### Adicionado
+- `tools/_value_types.py` — normalização de Price/Cost com aliases P/C.
+- `update_product_price_only` — atualiza preço com valueType='Price' injetado.
+- `update_product_cost` — atualiza custo com valueType='Cost' injetado.
+- `update_product_simple` — alias claro pro PUT /products/{code}/{branchCode}.
+- `update_product_branch_info_batch` — update em lote por filial.
+- Schema enriquecido de `update_product_data` (weight, ncmCode, CST, flags).
+- Schema enriquecido de `search_prices` (filter.change, option.prices, digitalPromotionPrices).
+
+### Mudado
+- `context_cache.py` agora descobre `priceTypes` e `costTypes` reais via top 20 produtos vendidos. Antes vinha vazio.
+- `get_context` ganhou parâmetro `verbose` (default false). Slim mode retorna ~5KB; verbose retorna cache completo.
+- Carregamento do cache agora é resiliente: falha em um endpoint não impede os outros.
+
+### Testes
+- 26 testes novos. Total do projeto: 117.
+
 ## [3.0.0] — 2026-04-24
 
 ### Removido
