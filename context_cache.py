@@ -98,7 +98,11 @@ async def _load_operations(client: TotvsClient) -> None:
         )
         items = response.get("items", []) if isinstance(response, dict) else []
         CACHE["operations"] = [
-            {"code": o.get("code"), "name": o.get("name"), "type": o.get("type")}
+            {
+                "code": o.get("operationCode"),
+                "name": o.get("description"),
+                "type": o.get("invoiceData", {}).get("operationsType") if isinstance(o.get("invoiceData"), dict) else None,
+            }
             for o in items
         ]
     except Exception as e:
@@ -182,63 +186,79 @@ async def _load_price_and_cost_types(client: TotvsClient) -> None:
 
 
 async def _discover_price_types(client: TotvsClient, product_codes: list[int], branches: list[int]) -> None:
-    """Descobre priceTypes ativos consultando produtos sem filtro de priceCode."""
-    try:
-        response = await client.post(
-            "/api/totvsmoda/product/v2/prices/search",
-            {
-                "filter": {
-                    "productCodeList": product_codes,
-                    "branchCodeList": branches,
-                },
-                "page": 1,
-                "pageSize": 100,
-            }
-        )
-        items = response.get("items", []) if isinstance(response, dict) else []
+    """Descobre priceTypes ativos sondando priceCode 1..N com os produtos top vendidos.
 
-        seen: dict[int, dict[str, Any]] = {}
-        for item in items:
-            for price in item.get("prices") or []:
-                code = price.get("priceCode")
-                name = price.get("priceName")
-                if code is not None and code not in seen:
-                    seen[code] = {"priceCode": code, "priceName": name}
+    O endpoint /prices/search exige option.prices[{branchCode, priceCodeList}] e rejeita
+    a requisição inteira se algum código for inválido (NotFound). Por isso sondamos
+    um código de cada vez, parando em 10 consecutivos não encontrados.
+    """
+    branch = branches[0] if branches else 1
+    seen: dict[int, dict[str, Any]] = {}
+    consecutive_not_found = 0
 
-        CACHE["priceTypes"] = sorted(seen.values(), key=lambda x: x["priceCode"])
+    for price_code in range(1, 30):
+        try:
+            response = await client.post(
+                "/api/totvsmoda/product/v2/prices/search",
+                {
+                    "filter": {"productCodeList": product_codes[:5]},
+                    "option": {"prices": [{"branchCode": branch, "priceCodeList": [price_code]}]},
+                    "page": 1,
+                    "pageSize": 5,
+                }
+            )
+            items = response.get("items", []) if isinstance(response, dict) else []
+            for item in items:
+                for price in item.get("prices") or []:
+                    code = price.get("priceCode")
+                    name = price.get("priceName")
+                    if code is not None and code not in seen and price.get("price", 0) > 0:
+                        seen[code] = {"priceCode": code, "priceName": name}
+            consecutive_not_found = 0
+        except Exception:
+            consecutive_not_found += 1
+            if consecutive_not_found >= 3:
+                break
 
-    except Exception as e:
-        logger.debug(f"price types discovery failed: {e}")
+    CACHE["priceTypes"] = sorted(seen.values(), key=lambda x: x["priceCode"])
+    logger.debug(f"priceTypes descobertos: {CACHE['priceTypes']}")
 
 
 async def _discover_cost_types(client: TotvsClient, product_codes: list[int], branches: list[int]) -> None:
-    """Descobre costTypes ativos consultando produtos sem filtro de costCode."""
-    try:
-        response = await client.post(
-            "/api/totvsmoda/product/v2/costs/search",
-            {
-                "filter": {
-                    "productCodeList": product_codes,
-                    "branchCodeList": branches,
-                },
-                "page": 1,
-                "pageSize": 100,
-            }
-        )
-        items = response.get("items", []) if isinstance(response, dict) else []
+    """Descobre costTypes ativos sondando costCode 1..N com os produtos top vendidos."""
+    branch = branches[0] if branches else 1
+    seen: dict[int, dict[str, Any]] = {}
+    consecutive_not_found = 0
 
-        seen: dict[int, dict[str, Any]] = {}
-        for item in items:
-            for cost in item.get("costs") or []:
-                code = cost.get("costCode")
-                name = cost.get("costName")
-                if code is not None and code not in seen:
-                    seen[code] = {"costCode": code, "costName": name}
+    for cost_code in range(1, 30):
+        try:
+            response = await client.post(
+                "/api/totvsmoda/product/v2/costs/search",
+                {
+                    "filter": {
+                        "productCodeList": product_codes[:5],
+                        "branchCode": branch,
+                        "costCodeList": [cost_code],
+                    },
+                    "page": 1,
+                    "pageSize": 5,
+                }
+            )
+            items = response.get("items", []) if isinstance(response, dict) else []
+            for item in items:
+                for cost in item.get("costs") or []:
+                    code = cost.get("costCode")
+                    name = cost.get("costName")
+                    if code is not None and code not in seen:
+                        seen[code] = {"costCode": code, "costName": name}
+            consecutive_not_found = 0
+        except Exception:
+            consecutive_not_found += 1
+            if consecutive_not_found >= 3:
+                break
 
-        CACHE["costTypes"] = sorted(seen.values(), key=lambda x: x["costCode"])
-
-    except Exception as e:
-        logger.debug(f"cost types discovery failed: {e}")
+    CACHE["costTypes"] = sorted(seen.values(), key=lambda x: x["costCode"])
+    logger.debug(f"costTypes descobertos: {CACHE['costTypes']}")
 
 
 def get_slim_context() -> dict[str, Any]:
