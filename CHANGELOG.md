@@ -1,5 +1,28 @@
 # Changelog
 
+## [3.0.0] — 2026-04-24
+
+### Removido
+- Módulo Analytics completo (24 tools)
+- Variável de ambiente `TOTVS_ENABLE_ANALYTICS` (não tem mais função)
+
+### Razão da remoção
+Analytics é módulo opcional do TOTVS Moda — a maioria dos usuários não contrata. Manter no projeto adicionava 24 tools que aparecem no LLM mas retornam 401/403, polui a interface, e gera consumo desnecessário de tokens no system prompt.
+
+Quem precisar de analytics pode contribuir via PR ou manter um fork.
+
+### Migração
+Se você tem `TOTVS_ENABLE_ANALYTICS` no seu `.env` ou `mcp.json`, pode remover. Não tem mais efeito.
+
+Nenhuma outra mudança. Tools dos demais 15 módulos continuam idênticas.
+
+### Documentação adicionada
+- `docs/PROJECT_STATE.md` — estado consolidado do projeto
+- `docs/ROADMAP.md` — plano de evolução
+- `docs/PATTERNS.md` — padrões obrigatórios
+
+---
+
 ## [2.1.6] - 2026-04-20
 
 ### Fixed

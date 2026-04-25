@@ -1,8 +1,8 @@
 """
-TOTVS Moda MCP Server v2.0
-===========================
-MCP server completo para API V2 do TOTVS Moda.
-16 módulos | 135 tools | OAuth2 ROPC
+TOTVS Moda MCP Server v3.0.0
+=============================
+MCP server para API V2 do TOTVS Moda.
+15 módulos | ~111 tools | OAuth2 ROPC
 
 Author: ATL4S
 """
@@ -26,7 +26,6 @@ from tools.product import ProductTools
 from tools.person import PersonTools
 from tools.accounts_receivable import AccountsReceivableTools
 from tools.fiscal import FiscalTools
-from tools.analytics import AnalyticsTools
 from tools.general import GeneralTools
 from tools.account_payable import AccountPayableTools
 from tools.purchase_order import PurchaseOrderTools
@@ -73,7 +72,6 @@ def get_modules() -> dict[str, Any]:
             "person":              PersonTools(c),
             "accounts_receivable": AccountsReceivableTools(c),
             "fiscal":              FiscalTools(c),
-            "analytics":           AnalyticsTools(c),
             "general":             GeneralTools(c),
             "account_payable":     AccountPayableTools(c),
             "purchase_order":      PurchaseOrderTools(c),
@@ -88,18 +86,6 @@ def get_modules() -> dict[str, Any]:
         }
     return _modules
 
-
-# ---------------------------------------------------------------------------
-# Feature flags (env vars)
-# ---------------------------------------------------------------------------
-
-# Set TOTVS_ENABLE_ANALYTICS=false para desabilitar todos os tools do módulo
-# analytics (movimentação fiscal, painel financeiro, painel de vendedor, e-commerce).
-# Útil quando a empresa não contrata/utiliza esse módulo.
-ANALYTICS_ENABLED: bool = os.getenv("TOTVS_ENABLE_ANALYTICS", "true").lower() not in ("false", "0", "no")
-
-if not ANALYTICS_ENABLED:
-    logger.info("Analytics module DISABLED (TOTVS_ENABLE_ANALYTICS=false)")
 
 # ---------------------------------------------------------------------------
 # Tools
@@ -638,96 +624,6 @@ TOOLS: list[types.Tool] = [
             "manifestationType":{"type":"string","description":"Tipo de manifestação"}
         },"required":["branchCode","accessKey","manifestationType"]}),
 
-    # ── ANALYTICS (condicional — TOTVS_ENABLE_ANALYTICS) ─────────────────────
-    *([] if not ANALYTICS_ENABLED else [
-    types.Tool(name="totvs_search_fiscal_movement", description="Movimentação fiscal geral (vendas, devoluções, NF-e) por período. Use fields para reduzir tokens.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string","description":"Data inicial ISO 8601"},"endDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100},"fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."}}}),
-    types.Tool(name="totvs_search_product_fiscal_movement", description="Produtos na movimentação fiscal. Análise de vendas por produto/período. Use fields para reduzir tokens.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string","description":"Data inicial ISO 8601"},"endDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100},"fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."}}}),
-    types.Tool(name="totvs_search_person_fiscal_movement", description="Pessoa (cliente/fornecedor) na movimentação fiscal por período. Use fields para reduzir tokens.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string","description":"Data inicial ISO 8601"},"endDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100},"fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."}}}),
-    types.Tool(name="totvs_search_seller_fiscal_movement", description="Vendedor na movimentação fiscal por período. Use fields para reduzir tokens.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100},"fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."}}}),
-    types.Tool(name="totvs_search_payment_fiscal_movement", description="Condição de pagamento na movimentação fiscal por período. Use fields para reduzir tokens.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100},"fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."}}}),
-    types.Tool(name="totvs_search_representative_fiscal_movement", description="Representante na movimentação fiscal por período. Use fields para reduzir tokens.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100},"fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."}}}),
-    types.Tool(name="totvs_search_buyer_fiscal_movement", description="Comprador na movimentação fiscal por período. Use fields para reduzir tokens.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100},"fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."}}}),
-    types.Tool(name="totvs_search_operation_fiscal_movement", description="Operação na movimentação fiscal por período. Use fields para reduzir tokens.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100},"fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."}}}),
-    types.Tool(name="totvs_search_best_selling_products", description="Ranking dos produtos mais vendidos no e-commerce. Use fields para reduzir tokens.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"limit":{"type":"integer"},"fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."}}}),
-    types.Tool(name="totvs_search_sales_by_hour", description="Vendas por hora do dia. Identifica pico de vendas. Use fields para reduzir tokens.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."}}}),
-    types.Tool(name="totvs_search_sales_by_weekday", description="Vendas por dia da semana no período. Use fields para reduzir tokens.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."}}}),
-    types.Tool(name="totvs_search_total_receivable", description="Totais de contas a receber do painel financeiro. Usa branchCodeList (array) e startDate/endDate. Use fields para reduzir tokens.",
-        inputSchema={"type":"object","properties":{
-            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos das filiais (preferencial)"},
-            "branchCode":{"type":"integer","description":"Código da filial (alternativa a branchCodeList)"},
-            "startDate":{"type":"string","description":"Data inicial ISO 8601 (datemin)"},
-            "endDate":{"type":"string","description":"Data final ISO 8601 (datemax)"},
-            "fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."},
-        }}),
-    types.Tool(name="totvs_search_total_payable", description="Totais de contas a pagar do painel financeiro. Use fields para reduzir tokens.",
-        inputSchema={"type":"object","properties":{
-            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos das filiais"},
-            "branchCode":{"type":"integer","description":"Código da filial (alternativa)"},
-            "startDate":{"type":"string","description":"Data inicial ISO 8601"},
-            "endDate":{"type":"string","description":"Data final ISO 8601"},
-            "fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."},
-        }}),
-    types.Tool(name="totvs_search_top_customers", description="Top 5 clientes que mais compraram no período. Use fields para reduzir tokens.",
-        inputSchema={"type":"object","properties":{
-            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos das filiais"},
-            "branchCode":{"type":"integer","description":"Código da filial (alternativa)"},
-            "startDate":{"type":"string","description":"Data inicial ISO 8601"},
-            "endDate":{"type":"string","description":"Data final ISO 8601"},
-            "fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."},
-        }}),
-    types.Tool(name="totvs_search_top_debtors", description="Top 5 clientes com maior atraso. Use fields para reduzir tokens.",
-        inputSchema={"type":"object","properties":{
-            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos das filiais"},
-            "branchCode":{"type":"integer","description":"Código da filial (alternativa)"},
-            "fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."},
-        }}),
-    types.Tool(name="totvs_search_financial_income_statement", description="DRF — Demonstrativo de Resultado Financeiro. Use fields para reduzir tokens.",
-        inputSchema={"type":"object","properties":{
-            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos das filiais"},
-            "branchCode":{"type":"integer","description":"Código da filial (alternativa)"},
-            "startDate":{"type":"string","description":"Data inicial ISO 8601"},
-            "endDate":{"type":"string","description":"Data final ISO 8601"},
-            "fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."},
-        }}),
-    types.Tool(name="totvs_search_biweekly", description="Total a pagar e receber quinzenal do painel financeiro. Use fields para reduzir tokens.",
-        inputSchema={"type":"object","properties":{
-            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos das filiais"},
-            "branchCode":{"type":"integer","description":"Código da filial (alternativa)"},
-            "fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."},
-        }}),
-    types.Tool(name="totvs_search_top_suppliers", description="Maiores fornecedores por valor pago no período. Use fields para reduzir tokens.",
-        inputSchema={"type":"object","properties":{
-            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos das filiais"},
-            "branchCode":{"type":"integer","description":"Código da filial (alternativa)"},
-            "startDate":{"type":"string","description":"Data inicial ISO 8601"},
-            "endDate":{"type":"string","description":"Data final ISO 8601"},
-            "fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."},
-        }}),
-    types.Tool(name="totvs_search_seller_panel_totals", description="Totais do painel de vendedor: vendas, devoluções, ticket médio. Use fields para reduzir tokens.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."}}}),
-    types.Tool(name="totvs_search_seller_top_customers", description="Melhores clientes do vendedor no período. Use fields para reduzir tokens.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"sellerCode":{"type":"integer"},"fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."}}}),
-    types.Tool(name="totvs_search_seller_period_birthday", description="Aniversariantes do período vinculados ao vendedor. Use fields para reduzir tokens.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"sellerCode":{"type":"integer"},"fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."}}}),
-    types.Tool(name="totvs_search_seller_sales_target", description="Meta de vendas do vendedor no período. Use fields para reduzir tokens.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"sellerCode":{"type":"integer"},"fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."}}}),
-    types.Tool(name="totvs_search_customer_purchased_products", description="Produtos comprados por um cliente (painel de vendedor). Use fields para reduzir tokens.",
-        inputSchema={"type":"object","properties":{"customerCode":{"type":"integer"},"customerCpfCnpj":{"type":"string"},"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."}}}),
-    types.Tool(name="totvs_search_seller_pending_conditionals", description="Condicionais pendentes do vendedor. Use fields para reduzir tokens.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer"},"sellerCode":{"type":"integer"},"fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."}}}),
-    ]),  # end analytics block
-
     # ── GENERAL ──────────────────────────────────────────────────────────────
     types.Tool(name="totvs_get_payment_conditions", description="Condições de pagamento disponíveis.",
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"}}}),
@@ -1121,31 +1017,6 @@ ROUTING: dict[str, tuple[str, str]] = {
     "totvs_get_disabled_invoices":               ("fiscal", "get_disabled_invoices"),
     "totvs_print_transaction":                   ("fiscal", "print_transaction"),
     "totvs_create_nfe_manifestation":            ("fiscal", "create_manifestation"),
-    **({"totvs_search_fiscal_movement":                  ("analytics", "search_fiscal_movement"),
-    "totvs_search_product_fiscal_movement":          ("analytics", "search_product_fiscal_movement"),
-    "totvs_search_person_fiscal_movement":           ("analytics", "search_person_fiscal_movement"),
-    "totvs_search_seller_fiscal_movement":           ("analytics", "search_seller_fiscal_movement"),
-    "totvs_search_payment_fiscal_movement":          ("analytics", "search_payment_fiscal_movement"),
-    "totvs_search_representative_fiscal_movement":   ("analytics", "search_representative_fiscal_movement"),
-    "totvs_search_buyer_fiscal_movement":            ("analytics", "search_buyer_fiscal_movement"),
-    "totvs_search_operation_fiscal_movement":        ("analytics", "search_operation_fiscal_movement"),
-    "totvs_search_best_selling_products":            ("analytics", "search_best_selling_products"),
-    "totvs_search_sales_by_hour":                    ("analytics", "search_sales_quantity_hour"),
-    "totvs_search_sales_by_weekday":                 ("analytics", "search_sales_quantity_weekday"),
-    "totvs_search_total_receivable":                 ("analytics", "search_total_receivable"),
-    "totvs_search_total_payable":                    ("analytics", "search_total_payable"),
-    "totvs_search_top_customers":                    ("analytics", "search_ranking_customer_biggers"),
-    "totvs_search_top_debtors":                      ("analytics", "search_ranking_customer_debtors"),
-    "totvs_search_financial_income_statement":       ("analytics", "search_financial_income_statement"),
-    "totvs_search_biweekly":                         ("analytics", "search_biweekly"),
-    "totvs_search_top_suppliers":                    ("analytics", "search_ranking_supplier_biggers"),
-    "totvs_search_seller_panel_totals":              ("analytics", "search_seller_panel_totals"),
-    "totvs_search_seller_top_customers":             ("analytics", "search_seller_top_customers"),
-    "totvs_search_seller_period_birthday":           ("analytics", "search_seller_period_birthday"),
-    "totvs_search_seller_sales_target":              ("analytics", "search_seller_sales_target"),
-    "totvs_search_customer_purchased_products":      ("analytics", "search_customer_purchased_products"),
-    "totvs_search_seller_pending_conditionals":      ("analytics", "search_seller_pending_conditionals"),
-    } if ANALYTICS_ENABLED else {}),
     "totvs_get_payment_conditions":              ("general", "get_payment_conditions"),
     "totvs_get_operations":                      ("general", "get_operations"),
     "totvs_simulate_payment_plan":               ("general", "simulate_payment_plan"),
@@ -1256,7 +1127,7 @@ async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[types.T
 
 
 async def main() -> None:
-    logger.info(f"TOTVS Moda MCP Server v2.6 — {len(TOOLS)} tools | {len(get_modules())} módulos")
+    logger.info(f"TOTVS Moda MCP Server v3.0 — {len(TOOLS)} tools | {len(get_modules())} módulos")
     try:
         await context_cache.load(get_client())
     except Exception as e:
@@ -1266,7 +1137,7 @@ async def main() -> None:
             read_stream, write_stream,
             InitializationOptions(
                 server_name="totvs-moda-mcp",
-                server_version="2.6.0",
+                server_version="3.0.0",
                 capabilities=server.get_capabilities(
                     notification_options=NotificationOptions(),
                     experimental_capabilities={},
