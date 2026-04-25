@@ -51,13 +51,14 @@ async def load_context(client: TotvsClient) -> dict[str, Any]:
         "paymentConditions": [],
     }
 
-    # 1. Branches (filiais) — fundamental, vem do env
-    branches_raw = os.environ.get("TOTVS_BRANCH_CODES", "").strip()
-    if branches_raw:
-        try:
-            CACHE["branches"] = [int(x.strip()) for x in branches_raw.split(",") if x.strip()]
-        except ValueError:
-            logger.warning(f"TOTVS_BRANCH_CODES inválido: {branches_raw!r}")
+    # 1. Branches (filiais) — fundamental, vem do env (default "1" se não configurado)
+    branches_raw = os.environ.get("TOTVS_BRANCH_CODES", "1").strip()
+    try:
+        parsed = [int(x.strip()) for x in branches_raw.split(",") if x.strip().isdigit()]
+        CACHE["branches"] = parsed if parsed else [1]
+    except ValueError:
+        logger.warning(f"TOTVS_BRANCH_CODES inválido: {branches_raw!r}")
+        CACHE["branches"] = [1]
 
     # Tarefas paralelas pra ganhar tempo no startup
     tasks = [
@@ -89,7 +90,11 @@ async def _load_operations(client: TotvsClient) -> None:
     try:
         response = await client.get(
             "/api/totvsmoda/general/v2/operations",
-            params={"page": 1, "pageSize": 200}
+            params={
+                "StartChangeDate": "2000-01-01T00:00:00",
+                "EndChangeDate": "2099-12-31T23:59:59",
+                "PageSize": 1000,
+            }
         )
         items = response.get("items", []) if isinstance(response, dict) else []
         CACHE["operations"] = [
