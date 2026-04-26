@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.1.1] — 2026-04-26
+
+### Corrigido
+- `context_cache`: branches agora usa default `1` quando `TOTVS_BRANCH_CODES` não está configurado.
+- `context_cache._load_operations`: adicionados params de data obrigatórios; corrigido mapeamento de campos (`operationCode`/`description`).
+- `context_cache._discover_price_types`: corrigido formato do body — API exige `option.prices[{branchCode, priceCodeList}]`.
+- `context_cache._discover_cost_types`: corrigido formato do body — API exige `option.costs[{branchCode, costCodeList}]` + `filter.hasCost`/`branchCostCodeList`.
+- `search_costs`: corrigido body — agora usa `option.costs` e `filter.hasCost`/`branchCostCodeList` conforme exigido pela API.
+
+### Documentação
+- README reescrito com documentação técnica completa: tabela de tools por módulo, estrutura do projeto, variáveis de ambiente, exemplos de uso.
+
 ## [3.1.0] — 2026-04-25
 
 ### Corrigido
