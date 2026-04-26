@@ -225,7 +225,13 @@ async def _discover_price_types(client: TotvsClient, product_codes: list[int], b
 
 
 async def _discover_cost_types(client: TotvsClient, product_codes: list[int], branches: list[int]) -> None:
-    """Descobre costTypes ativos sondando costCode 1..N com os produtos top vendidos."""
+    """Descobre costTypes ativos sondando costCode 1..N com os produtos top vendidos.
+
+    O endpoint /costs/search exige:
+    - filter.hasCost=true, filter.branchCostCodeList, filter.costCodeList
+    - option.costs[{branchCode, costCodeList}]
+    Sondamos um código de cada vez, parando em 3 consecutivos não encontrados.
+    """
     branch = branches[0] if branches else 1
     seen: dict[int, dict[str, Any]] = {}
     consecutive_not_found = 0
@@ -237,9 +243,11 @@ async def _discover_cost_types(client: TotvsClient, product_codes: list[int], br
                 {
                     "filter": {
                         "productCodeList": product_codes[:5],
-                        "branchCode": branch,
+                        "hasCost": True,
+                        "branchCostCodeList": [branch],
                         "costCodeList": [cost_code],
                     },
+                    "option": {"costs": [{"branchCode": branch, "costCodeList": [cost_code]}]},
                     "page": 1,
                     "pageSize": 5,
                 }

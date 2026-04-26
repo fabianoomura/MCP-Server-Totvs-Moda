@@ -165,10 +165,23 @@ class ProductTools:
         return await self.client.get(f"{BASE}/price-tables-headers", params=params or None)
 
     async def search_costs(self, args: dict[str, Any]) -> Any:
-        """POST /costs/search."""
+        """POST /costs/search — requer option.costs[{branchCode, costCodeList}]."""
         args = inject_branch_defaults(args)
-        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order", "fields") and v is not None}
-        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        branch = args.get("branchCode", 1)
+        filter_fields = {"productCodeList", "referenceCodeList", "productName", "groupCodeList"}
+        flt: dict[str, Any] = {k: v for k, v in args.items() if k in filter_fields and v is not None}
+        cost_codes = args.get("costCodeList")
+        if not cost_codes:
+            raise ValueError("costCodeList é obrigatório.")
+        flt["hasCost"] = True
+        flt["branchCostCodeList"] = [branch]
+        flt["costCodeList"] = [int(c) for c in cost_codes]
+        body: dict[str, Any] = {
+            "filter": flt,
+            "option": {"costs": [{"branchCode": branch, "costCodeList": [int(c) for c in cost_codes]}]},
+            "page": args.get("page", 1),
+            "pageSize": args.get("pageSize", 100),
+        }
         if args.get("order"):
             body["order"] = args["order"]
         result = await self.client.post(f"{BASE}/costs/search", body)
