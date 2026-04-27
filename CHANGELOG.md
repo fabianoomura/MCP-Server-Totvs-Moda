@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.1.2] — 2026-04-27
+
+### Adicionado
+- `totvs_get_instructions` — guia completo do servidor para LLMs: tools por categoria, fluxo de status, dicas de uso. Resolve o problema de LLMs tentando criar scripts Python em vez de usar as tools MCP.
+- Variável de ambiente `TOTVS_OPERATION_CONTEXT`: permite injetar contexto operacional da empresa (ex: significado real dos status de pedido) no guia retornado pela tool.
+
 ## [3.1.1] — 2026-04-26
 
 ### Corrigido

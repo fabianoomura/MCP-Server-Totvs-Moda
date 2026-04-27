@@ -88,6 +88,98 @@ def get_modules() -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# Instructions builder
+# ---------------------------------------------------------------------------
+
+def _build_instructions() -> str:
+    """Monta guia de uso do servidor MCP.
+
+    Lê TOTVS_OPERATION_CONTEXT do ambiente para injetar contexto específico
+    da empresa (ex: significado real dos status de pedido, fluxo operacional).
+    """
+    operation_context = os.environ.get("TOTVS_OPERATION_CONTEXT", "").strip()
+
+    default_status = (
+        "Os status do TOTVS são genéricos — o significado real varia por operação.\n"
+        "Status padrão: Blocked=bloqueado, InProgress=em andamento, "
+        "InAnalysis=em análise, InComposition=em composição, "
+        "Attended=faturado/atendido, Canceled=cancelado.\n"
+        "Consulte o gestor da empresa para entender o fluxo real antes de interpretar os dados."
+    )
+
+    status_section = operation_context if operation_context else default_status
+
+    return f"""# TOTVS Moda MCP Server — Guia de uso
+
+## Regra fundamental
+TODAS as consultas e operações no TOTVS devem ser feitas via tools MCP disponíveis.
+Não crie scripts Python, não use requests/httpx diretamente, não tente acessar a API manualmente.
+Se uma informação não estiver disponível via tools, informe ao usuário em vez de improvisar.
+
+## Como começar
+1. Chame `totvs_get_context` para ver filiais, tabelas de preço/custo e operações da empresa
+2. Use as datas no formato ISO 8601 (YYYY-MM-DD ou YYYY-MM-DDTHH:MM:SS)
+3. Use o parâmetro `fields` nas buscas para reduzir tokens: ex. `fields=['orderCode','customerName','totalValue']`
+
+## Tools por categoria
+
+### Pedidos de venda
+- `totvs_search_orders` — busca por data, status, cliente, código. Use `expand='items'` APENAS quando precisar dos produtos
+- `totvs_orders_by_status_summary` — distribuição de pedidos por status (quantos bloqueados, faturados etc.)
+- `totvs_sales_summary_by_period` — faturamento agregado por filial, status ou dia
+- `totvs_top_customers` — ranking de clientes por faturamento no período
+- `totvs_create_order` — cria pedido de venda
+- `totvs_change_order_status` — altera status do pedido
+- `totvs_cancel_order` — cancela pedido (irreversível)
+- `totvs_add_order_items` / `totvs_remove_order_item` — adiciona/remove itens
+
+### Produtos
+- `totvs_search_products` — busca por nome, referência, código
+- `totvs_get_product` — dados completos de um produto
+- `totvs_search_product_prices` — preços por tabela (requer `priceCodeList` — veja em `totvs_get_context`)
+- `totvs_search_product_costs` — custos: `costCodeList=[1]`=reposição, `[2]`=última compra
+- `totvs_search_product_balances` — saldo em estoque por filial/grade
+- `totvs_update_product_price_only` — atualiza preço de venda
+- `totvs_update_product_cost` — atualiza custo
+- `totvs_update_product_simple` — atualiza dados básicos (peso, NCM, flags)
+- `totvs_get_products_sold` — ranking de produtos mais vendidos no período
+
+### Clientes
+- `totvs_search_individual_customers` — PF por nome ou CPF
+- `totvs_search_legal_customers` — PJ por nome ou CNPJ
+- `totvs_get_person_statistics` — histórico: total comprado, ticket médio, primeira/última compra
+- `totvs_create_or_update_individual_customer` — cadastra/atualiza PF
+- `totvs_create_or_update_legal_customer` — cadastra/atualiza PJ
+
+### Financeiro (contas a receber)
+- `totvs_search_receivable_documents` — títulos a receber com filtros por vencimento
+- `totvs_get_bank_slip` — boleto bancário
+- `totvs_get_payment_link` — link de pagamento
+- `totvs_search_customer_financial_balance` — saldo financeiro do cliente
+
+### Fiscal
+- `totvs_search_fiscal_invoices` — NF-e emitidas
+- `totvs_get_nfe_xml` — XML da NF-e
+- `totvs_get_danfe` — DANFE em PDF
+
+### Estoque / Logística
+- `totvs_low_stock_alert` — produtos abaixo de saldo mínimo
+- `totvs_get_kardex_movement` — movimentações de estoque
+- `totvs_create_material_movement` — movimentação de material
+
+## Fluxo de status de pedidos
+{status_section}
+
+## Dicas importantes
+- Tools marcadas com ⚠️ ESCRITA modificam dados no ERP — confirme com o usuário antes de executar
+- `totvs_get_context` retorna os `priceCode` e `costCode` válidos para esta empresa
+- Para agregar vendas por produto use `totvs_get_products_sold` (não busque pedidos e some manualmente)
+- Para ranking de clientes use `totvs_top_customers` (não busque pedidos e some manualmente)
+- `totvs_get_person_statistics` retorna o histórico de um cliente em uma chamada — não precisa buscar todos os pedidos dele
+"""
+
+
+# ---------------------------------------------------------------------------
 # Tools
 # ---------------------------------------------------------------------------
 
@@ -1104,6 +1196,18 @@ TOOLS: list[types.Tool] = [
     types.Tool(name="totvs_reactivate_package", description="⚠️ ESCRITA — Reativa pacote rejeitado, mudando situação para 'Em andamento'.",
         inputSchema={"type":"object","properties":{"packageId":{"type":"string","description":"ID do pacote rejeitado"}},"required":["packageId"]}),
 
+    # ── INSTRUCTIONS ──────────────────────────────────────────────────────────
+    types.Tool(
+        name="totvs_get_instructions",
+        description=(
+            "LEIA ISTO PRIMEIRO em uma nova conversa sobre o TOTVS. "
+            "Retorna guia completo: quais tools usar para cada tarefa, fluxo de status de pedidos, "
+            "contexto operacional da empresa, e dicas de uso. "
+            "Chame antes de qualquer outra tool quando não souber por onde começar."
+        ),
+        inputSchema={"type": "object", "properties": {}},
+    ),
+
     # ── CONTEXT ───────────────────────────────────────────────────────────────
     types.Tool(
         name="totvs_get_context",
@@ -1334,6 +1438,10 @@ async def handle_list_tools() -> list[types.Tool]:
 async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[types.TextContent]:
     logger.info(f"Tool: {name}")
 
+    # ── instructions tool ─────────────────────────────────────────────────────
+    if name == "totvs_get_instructions":
+        return [types.TextContent(type="text", text=_build_instructions())]
+
     # ── context tool ──────────────────────────────────────────────────────────
     if name == "totvs_get_context":
         if arguments.get("verbose"):
@@ -1368,7 +1476,7 @@ async def main() -> None:
             read_stream, write_stream,
             InitializationOptions(
                 server_name="totvs-moda-mcp",
-                server_version="3.1.0",
+                server_version="3.1.2",
                 capabilities=server.get_capabilities(
                     notification_options=NotificationOptions(),
                     experimental_capabilities={},
