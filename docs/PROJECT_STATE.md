@@ -74,7 +74,8 @@ totvs-moda-mcp/
 │   ├── data_package.py       # 7 métodos
 │   ├── image.py              # 6 métodos
 │   ├── other_modules.py      # ProductionOrder, Management, Global
-│   └── convenience.py        # search_customer_by_document, upsert_product_value
+│   ├── convenience.py        # search_customer_by_document, upsert_product_value
+│   └── product_engineering.py # Ficha de consumo (matéria-prima + serviços)
 └── tests/
     ├── conftest.py
     ├── test_aggregators.py        (8 tests)

@@ -35,6 +35,7 @@ from tools.other_modules import ManagementTools, GlobalTools, ProductionOrderToo
 from tools.data_package import DataPackageTools
 from tools.image import ImageTools
 from tools.aggregators import AggregatorTools
+from tools.product_engineering import ProductEngineeringTools
 
 logging.basicConfig(
     level=logging.INFO,
@@ -83,6 +84,7 @@ def get_modules() -> dict[str, Any]:
             "data_package":        DataPackageTools(c),
             "image":               ImageTools(c),
             "aggregators":         AggregatorTools(c),
+            "product_engineering": ProductEngineeringTools(c),
         }
     return _modules
 
@@ -197,6 +199,8 @@ TOOLS: list[types.Tool] = [
             "orderStatusList":{"type":"array","items":{"type":"string"},"description":"Digitado,Confirmado,Cancelado,Bloqueado,Faturado,EmFaturamento,Pendente,Encerrado"},
             "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos das filiais"},
             "operationCodeList":{"type":"array","items":{"type":"integer"}},
+            "representativeCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos dos representantes"},
+            "representativeCpfCnpjList":{"type":"array","items":{"type":"string"},"description":"CPF/CNPJ dos representantes"},
             "startBillingForecastDate":{"type":"string"},"endBillingForecastDate":{"type":"string"},
             "expand":{"type":"string","description":"items,invoices,shippingAddress,observations,classifications,discounts,commissioneds,counts"},
             "page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100},
@@ -448,6 +452,14 @@ TOOLS: list[types.Tool] = [
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"productCode":{"type":"integer"},"startDate":{"type":"string"},"endDate":{"type":"string"}},"required":["branchCode","productCode"]}),
     types.Tool(name="totvs_search_product_compositions", description="Composições de produto (ficha técnica). Use fields para reduzir tokens.",
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"productCodeList":{"type":"array","items":{"type":"integer"}},"fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."}}}),
+    types.Tool(name="totvs_search_consumption_sheet", description="Ficha de consumo de produto (matéria-prima + serviços). Retorna items[] com: productCode, productName, referenceCode, colorCode, size, rawMaterials[]={rawMaterialCode, rawMaterialDescription, consumptionQuantity, applicationCode, applicationDescription}, services[]={serviceCode, serviceDescription, serviceApplication, serviceAmount}. Use fields para reduzir tokens.",
+        inputSchema={"type":"object","properties":{
+            "productCodeList":{"type":"array","items":{"type":"integer"},"description":"Lista de códigos de produto"},
+            "referenceCode":{"type":"string","description":"Código de referência do produto"},
+            "page":{"type":"integer","default":1},
+            "pageSize":{"type":"integer","default":1000},
+            "fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens."}
+        }}),
     types.Tool(name="totvs_create_product_classification", description="⚠️ ESCRITA — Vincula classificações a uma lista de produtos em lote.",
         inputSchema={"type":"object","properties":{
             "productCodeList":{"type":"array","items":{"type":"integer"},"description":"Lista de códigos de produto"},
@@ -799,6 +811,50 @@ TOOLS: list[types.Tool] = [
         },"required":["branchCode","customerCode","receivableCode","installmentCode","chargeType"]}),
 
     # ── ACCOUNTS RECEIVABLE v2.3 (completes module) ───────────────────────────
+    types.Tool(name="totvs_settle_invoices", description="⚠️ ESCRITA — Baixa bancária de fatura a receber (somente para contas do tipo banco). Para pagamentos em dinheiro, cartão ou adiantamento use totvs_pay_invoices.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer","description":"Código da filial"},
+            "customerCode":{"type":"integer","description":"Código do cliente"},
+            "receivableCode":{"type":"integer","description":"Código da fatura"},
+            "installmentCode":{"type":"integer","description":"Código da parcela"},
+            "bankNumber":{"type":"integer","description":"Número do banco"},
+            "agencyNumber":{"type":"integer","description":"Número da agência"},
+            "account":{"type":"string","description":"Número da conta bancária"},
+        },"required":["branchCode","customerCode","receivableCode","installmentCode","bankNumber","agencyNumber","account"]}),
+    types.Tool(name="totvs_pay_invoices", description="⚠️ ESCRITA — Baixa/liquidação de faturas a receber com múltiplas formas de pagamento: cartão de crédito, débito, adiantamento (dinheiro/caixa), conta corrente ou CREDEV.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer","description":"Filial da liquidação"},
+            "settlementDate":{"type":"string","description":"Data da liquidação (ISO 8601, ex: 2026-04-27T00:00:00)"},
+            "invoices":{"type":"array","description":"Lista de faturas a baixar","items":{
+                "type":"object","properties":{
+                    "branchCode":{"type":"integer","description":"Filial da fatura"},
+                    "customerCode":{"type":"integer","description":"Código do cliente"},
+                    "customerCpfCnpj":{"type":"string","description":"CPF/CNPJ do cliente (alternativa ao customerCode)"},
+                    "receivableCode":{"type":"integer","description":"Código da fatura"},
+                    "installmentCode":{"type":"integer","description":"Código da parcela"},
+                    "paidValue":{"type":"number","description":"Valor pago"},
+                    "interestValue":{"type":"number","description":"Valor de juros"},
+                    "discountValue":{"type":"number","description":"Valor de desconto"},
+                    "grossUpValue":{"type":"number","description":"Valor de acréscimo"},
+                    "expensesValue":{"type":"number","description":"Valor de despesas financeiras"},
+                },"required":["branchCode","customerCode","receivableCode","installmentCode","paidValue"],
+            }},
+            "payments":{"type":"array","description":"Lista de pagamentos","items":{
+                "type":"object","properties":{
+                    "value":{"type":"number","description":"Valor do pagamento"},
+                    "paidType":{"type":"string","description":"Tipo: CreditCard, DebitCard, Advance (adiantamento/dinheiro), CurrentAccount (conta corrente), CREDEV","enum":["CreditCard","DebitCard","Advance","CurrentAccount","CREDEV"]},
+                    "card":{"type":"object","description":"Dados do cartão (obrigatório para CreditCard/DebitCard)","properties":{
+                        "nsu":{"type":"integer"},"autorization":{"type":"string"},"cardBrand":{"type":"string"},
+                        "cardOperator":{"type":"string"},"installmentQuantity":{"type":"integer"},
+                    }},
+                    "bank":{"type":"object","description":"Dados bancários (obrigatório para CurrentAccount)","properties":{
+                        "bankNumber":{"type":"integer"},"agencyNumber":{"type":"integer"},
+                        "account":{"type":"string"},"accountCode":{"type":"integer"},
+                    }},
+                    "movementDate":{"type":"string","description":"Data de movimento para conciliação (ISO 8601)"},
+                },"required":["value","paidType"],
+            }},
+        },"required":["branchCode","settlementDate","invoices","payments"]}),
     types.Tool(name="totvs_move_gift_check", description="⚠️ ESCRITA — Movimenta cheque presente.",
         inputSchema={"type":"object","properties":{
             "value":{"type":"number","description":"Valor da movimentação"},
@@ -1081,8 +1137,8 @@ TOOLS: list[types.Tool] = [
         inputSchema={"type":"object","properties":{"stateCode":{"type":"string"},"countryCode":{"type":"string"}}}),
 
     # ── PRODUCTION ORDER ──────────────────────────────────────────────────────
-    types.Tool(name="totvs_search_production_orders", description="Ordens de produção por filtro. Use fields para reduzir tokens.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"statusList":{"type":"array","items":{"type":"string"}},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100},"fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."}}}),
+    types.Tool(name="totvs_search_production_orders", description="Ordens de produção por filtro. Status: 20=Em andamento, 30=Finalizada, 40=Aberta (não iniciada). Retorna items[] com orderCode, quantity, finishedQuantity, pendingQuantity, status, insertDate, estimatedDeliveryDate, customerName. Use fields para reduzir tokens.",
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"startDate":{"type":"string"},"endDate":{"type":"string"},"statusList":{"type":"array","items":{"type":"integer"},"description":"Status: 20=Em andamento, 30=Finalizada, 40=Aberta"},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100},"fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."}}}),
     types.Tool(name="totvs_get_pending_material_consumption", description="Fichas de consumo de matéria-prima pendentes em ordens de produção.",
         inputSchema={"type":"object","properties":{
             "branchCode":{"type":"integer"},"orderCode":{"type":"integer"},
@@ -1302,6 +1358,7 @@ ROUTING: dict[str, tuple[str, str]] = {
     "totvs_search_product_batch":                ("product", "search_batch"),
     "totvs_get_kardex_movement":                 ("product", "get_kardex_movement"),
     "totvs_search_product_compositions":         ("product", "search_compositions"),
+    "totvs_search_consumption_sheet":            ("product_engineering", "search_consumption_sheet"),
     "totvs_create_product_classification":        ("product", "create_classification_relationship"),
     "totvs_create_product_value":                 ("product", "create_product_value"),
     "totvs_update_product_price":                ("product", "update_product_price"),
@@ -1338,6 +1395,8 @@ ROUTING: dict[str, tuple[str, str]] = {
     "totvs_get_payment_link":                    ("accounts_receivable", "get_payment_link"),
     "totvs_get_gift_check_balances":             ("accounts_receivable", "get_gift_check_balances"),
     "totvs_change_charge_type":                  ("accounts_receivable", "change_charge_type"),
+    "totvs_settle_invoices":                     ("accounts_receivable", "settle_invoices"),
+    "totvs_pay_invoices":                        ("accounts_receivable", "pay_invoices"),
     "totvs_create_gift_check":                   ("accounts_receivable", "create_gift_check"),
     "totvs_search_fiscal_invoices":              ("fiscal", "search_invoices"),
     "totvs_get_nfe_xml":                         ("fiscal", "get_xml_content"),

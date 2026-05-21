@@ -77,7 +77,11 @@ class ProductionOrderTools:
     async def search_production_orders(self, args: dict[str, Any]) -> Any:
         """POST /orders/search — Consulta ordens de produção."""
         args = inject_branch_defaults(args)
-        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order", "fields") and v is not None}
+        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order", "fields", "branchCode") and v is not None}
+        # API espera branchCodeList (array)
+        if "branchCodeList" not in flt:
+            if args.get("branchCode"):
+                flt["branchCodeList"] = [args["branchCode"]]
         body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
         if args.get("order"):
             body["order"] = args["order"]

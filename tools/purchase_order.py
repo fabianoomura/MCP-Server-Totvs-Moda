@@ -17,7 +17,12 @@ class PurchaseOrderTools:
         """POST /search — Consulta pedidos de compra."""
         args = inject_branch_defaults(args)
         flt: dict[str, Any] = {}
-        for field in ("branchCode", "orderCodeList", "startDate", "endDate", "statusList",
+        # API espera branchCodeList (array)
+        if args.get("branchCodeList"):
+            flt["branchCodeList"] = args["branchCodeList"]
+        elif args.get("branchCode"):
+            flt["branchCodeList"] = [args["branchCode"]]
+        for field in ("orderCodeList", "startDate", "endDate", "statusList",
                       "supplierCodeList", "operationCodeList"):
             if args.get(field) is not None:
                 flt[field] = args[field]
