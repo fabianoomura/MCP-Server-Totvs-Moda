@@ -12,6 +12,7 @@ import json
 import logging
 import os
 import sys
+import time
 from typing import Any
 
 import mcp.server.stdio
@@ -36,6 +37,8 @@ from tools.data_package import DataPackageTools
 from tools.image import ImageTools
 from tools.aggregators import AggregatorTools
 from tools.product_engineering import ProductEngineeringTools
+import usage_tracker
+import usage_analyzer
 
 logging.basicConfig(
     level=logging.INFO,
@@ -1356,6 +1359,12 @@ TOOLS: list[types.Tool] = [
             "productCodeList":{"type":"array","items":{"type":"integer"},"description":"Filtrar por códigos"},
             "minStock":{"type":"number","description":"Saldo mínimo (default 1)"}
         }}),
+
+    # ── Usage Intelligence ────────────────────────────────────────────
+    types.Tool(name="totvs_get_usage_insights", description="Análise de padrões de uso do MCP server. Retorna: tools mais usadas, sequências frequentes, horários de pico, padrões de parâmetros e sugestões de otimização. Use para entender como o sistema está sendo utilizado e onde otimizar. Dados locais, sem chamada externa.",
+        inputSchema={"type":"object","properties":{
+            "days":{"type":"integer","description":"Dias para análise (default 30)","default":30}
+        }}),
 ]
 
 
@@ -1529,18 +1538,27 @@ async def handle_list_tools() -> list[types.Tool]:
 @server.call_tool()
 async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[types.TextContent]:
     logger.info(f"Tool: {name}")
+    t0 = time.time()
 
     # ── instructions tool ─────────────────────────────────────────────────────
     if name == "totvs_get_instructions":
+        usage_tracker.track(name, arguments)
         return [types.TextContent(type="text", text=_build_instructions())]
 
     # ── context tool ──────────────────────────────────────────────────────────
     if name == "totvs_get_context":
+        usage_tracker.track(name, arguments)
         if arguments.get("verbose"):
             result = context_cache.get_full_context()
         else:
             result = context_cache.get_slim_context()
         return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False, default=str))]
+
+    # ── usage insights tool ──────────────────────────────────────────────────
+    if name == "totvs_get_usage_insights":
+        days = arguments.get("days", 30)
+        result = usage_analyzer.analyze(days)
+        return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False, indent=2))]
 
     route = ROUTING.get(name)
     if not route:
@@ -1551,8 +1569,12 @@ async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[types.T
 
     try:
         result = await getattr(module, method_name)(arguments)
+        duration = (time.time() - t0) * 1000
+        usage_tracker.track(name, arguments, duration_ms=duration)
         return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False, indent=2))]
     except Exception as exc:
+        duration = (time.time() - t0) * 1000
+        usage_tracker.track(name, arguments, duration_ms=duration)
         logger.exception(f"Erro: {name}")
         return [types.TextContent(type="text", text=json.dumps({"error": str(exc), "tool": name}, ensure_ascii=False))]
 

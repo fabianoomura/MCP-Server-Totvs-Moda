@@ -26,34 +26,38 @@ Exemplos reais do que funciona hoje:
 "Quais pedidos foram criados hoje na filial 1?"
 "Qual o faturamento da semana passada por filial?"
 "Me mostra os 10 clientes que mais compraram este mês"
-"Quais produtos estão com saldo abaixo de 10 unidades?"
+"Resumo do dia: vendas, contas a receber e a pagar"
+"Quais produtos estão com pronta entrega?"
+"Visão 360 do cliente CPF 123.456.789-00"
 "Qual o preço de venda e custo do produto 10000?"
-"Atualiza o preço do produto 10000 para R$ 357,00"
-"Atualiza o peso do produto 10000 para 1.5kg"
+"Ficha de consumo do produto 13020"
 "Quais títulos vencem até sexta no contas a receber?"
-"Cria ou atualiza o cadastro do cliente CPF 123.456.789-00"
-"Qual o saldo em estoque da referência X por tamanho e cor?"
-"Me mostra as últimas NFes emitidas e gera o XML da NF 1234"
-"Quais pedidos estão bloqueados e por qual motivo?"
+"O que tenho pra pagar essa semana?"
+"Me mostra os padrões de uso do sistema nos últimos 30 dias"
 ```
 
 ---
 
 ## Cobertura
 
-**+150 tools** organizadas em 18 módulos da API V2:
+**+155 tools** organizadas em 19 módulos da API V2:
 
 | Módulo | Principais operações |
 |---|---|
 | **Pedidos de venda** | Buscar, criar, alterar status, cancelar, adicionar/remover itens, alterar preços |
 | **Produtos** | Consultar, atualizar dados, preços, custos, peso, NCM, saldos, grades, imagens |
+| **Engenharia de produto** | Ficha de consumo (matéria-prima + serviços) |
 | **Clientes** | Cadastrar, atualizar PF/PJ, consultar histórico, saldo financeiro |
 | **Financeiro (CR)** | Títulos, boletos, link de pagamento, cheques-presente, vouchers |
+| **Financeiro (CP)** | Duplicatas a pagar, comissões |
 | **Fiscal** | NFes, XMLs, DANFEs, manifestação, faturas |
 | **Compras** | Pedidos de compra, pacotes de entrada/saída |
-| **Logística** | Movimentações de material, produção, lotes |
+| **Produção** | Ordens de produção, consumo de matéria-prima |
+| **Logística** | Movimentações de material, lotes |
 | **Geral** | Operações, condições de pagamento, classificações, CEP, cidades |
-| **Analytics** | Agregadores prontos: top clientes, produtos mais vendidos, resumo de faturamento, alerta de estoque |
+| **Painéis rápidos** | Dashboard do dia, visão 360 do cliente, estoque disponível |
+| **Analytics** | Top clientes, produtos mais vendidos, resumo de faturamento, alerta de estoque |
+| **Inteligência de uso** | Análise de padrões, sequências, horários de pico, sugestões de otimização |
 
 ---
 
@@ -101,12 +105,18 @@ pip install totvs-moda-mcp
 
 | Variável | Obrigatório | Descrição |
 |---|---|---|
-| `TOTVS_BASE_URL` | ✅ | URL base da API (ex: `https://totvs.empresa.com:9443`) |
-| `TOTVS_CLIENT_ID` | ✅ | Client ID OAuth2 |
-| `TOTVS_CLIENT_SECRET` | ✅ | Client Secret OAuth2 |
-| `TOTVS_USERNAME` | ✅ | Usuário TOTVS |
-| `TOTVS_PASSWORD` | ✅ | Senha TOTVS |
+| `TOTVS_BASE_URL` | sim | URL base da API (ex: `https://totvs.empresa.com:9443`) |
+| `TOTVS_CLIENT_ID` | sim | Client ID OAuth2 |
+| `TOTVS_CLIENT_SECRET` | sim | Client Secret OAuth2 |
+| `TOTVS_USERNAME` | sim | Usuário TOTVS |
+| `TOTVS_PASSWORD` | sim | Senha TOTVS |
 | `TOTVS_BRANCH_CODES` | — | Filiais separadas por vírgula (default: `1`) |
+| `TOTVS_CACHE_TTL` | — | Override global de TTL do cache em segundos |
+| `TOTVS_CACHE_ENABLED` | — | `false` para desativar o cache de respostas |
+| `TOTVS_USAGE_ENABLED` | — | `false` para desativar o rastreamento de uso |
+| `TOTVS_USAGE_FILE` | — | Caminho customizado para o arquivo de uso |
+| `TOTVS_OPERATION_CONTEXT` | — | Texto descrevendo o significado dos status de pedido na sua empresa |
+| `TOTVS_TLS_VERIFY` | — | `false` para desativar verificação TLS (self-signed certs) |
 
 ### Segurança
 
@@ -120,14 +130,48 @@ Evite expor credenciais diretamente no `mcp.json`. Use referências ao ambiente 
 
 ## Como funciona internamente
 
+### Infraestrutura
+
 - **Autenticação OAuth2** com refresh automático de token
-- **Retry com backoff exponencial** em falhas de rede
-- **Context cache** carregado no startup: filiais, operações, condições de pagamento, tipos de preço e custo descobertos automaticamente via produtos vendidos recentes
-- **Slim mode** no `get_context`: retorna ~5KB por padrão em vez de centenas de KB. Use `verbose=true` para o cache completo
-- **Auto-routing** em `update_product_data`: detecta se é um produto único (PUT `/products/{code}/{branch}`) ou lote (PUT `/data`)
-- **Upsert automático** em `update_product_price_only` e `update_product_cost`: tenta UPDATE, cai para CREATE se não existir
-- **Preenchimento automático** de `branchCode` via `TOTVS_BRANCH_CODES`
-- Tools organizadas por módulo em `tools/`
+- **Retry com backoff exponencial** em falhas de rede e 5xx
+- **Context cache** no startup: descobre automaticamente filiais, operações, tipos de preço/custo
+- **Response cache** com TTL por tier: evita chamadas repetidas à API durante uma sessão
+
+### Response Cache
+
+Cache em memória com TTL diferenciado por tipo de dado:
+
+| Tier | TTL | Tipo de dado |
+|------|-----|-------------|
+| REFERENCE | 24h | Filiais, operações, composições |
+| CATALOG | 1h | Produtos, clientes |
+| FINANCIAL | 15min | Contas a receber/pagar |
+| STOCK | 5min | Saldos de estoque |
+| SALES | 2min | Pedidos de venda |
+
+A primeira consulta busca da API normalmente. Consultas subsequentes dentro do TTL retornam instantaneamente do cache. Nenhum dado é hardcoded — cada empresa tem seus próprios dados cacheados.
+
+### Usage Intelligence
+
+O servidor registra cada chamada de tool localmente (`~/.totvs-moda-usage.jsonl`), sem envio externo. A tool `totvs_get_usage_insights` analisa o histórico e retorna:
+
+- **Top tools**: quais ferramentas são mais usadas
+- **Sequências**: padrões de navegação (ex: "sempre que busca pedidos, consulta NF em seguida")
+- **Horários de pico**: quando o sistema é mais usado
+- **Padrões de parâmetros**: filtros que se repetem em 70%+ das chamadas (candidatos a default)
+- **Sugestões**: recomendações automáticas de composite tools, cache e rotinas
+
+Esses dados ficam no computador do usuário e ajudam a evoluir o servidor com base em uso real.
+
+### Composite Tools (painéis rápidos)
+
+Tools que combinam múltiplas chamadas à API em uma única resposta:
+
+| Tool | O que agrega | Antes | Agora |
+|------|-------------|:-----:|:-----:|
+| `totvs_daily_dashboard` | Vendas + receber + pagar do dia | 3-6 calls | 1 call |
+| `totvs_customer_360` | Dados + histórico + recompra | 2-3 calls | 1 call |
+| `totvs_stock_available` | SKUs com estoque > 0 | 18+ páginas | 1 call |
 
 ---
 
@@ -142,12 +186,11 @@ Evite expor credenciais diretamente no `mcp.json`. Use referências ao ambiente 
 | `totvs_search_product_prices` | Preços por tipo de tabela |
 | `totvs_search_product_costs` | Custos (reposição, última compra etc.) |
 | `totvs_search_product_balances` | Saldos de estoque |
-| `totvs_update_product_price_only` | Atualiza preço de venda (valueType injetado) |
-| `totvs_update_product_cost` | Atualiza custo (valueType injetado) |
-| `totvs_update_product_simple` | Atualiza peso, NCM, CST e flags de um produto |
-| `totvs_update_product_data` | Atualiza dados (simples ou batch com auto-routing) |
-| `totvs_search_product_images` | Imagens do produto |
-| `totvs_upload_product_image` | Sobe imagem para o produto |
+| `totvs_search_consumption_sheet` | Ficha de consumo (matéria-prima + serviços) |
+| `totvs_update_product_price_only` | Atualiza preço de venda |
+| `totvs_update_product_cost` | Atualiza custo |
+| `totvs_update_product_simple` | Atualiza peso, NCM, CST e flags |
+| `totvs_update_product_data` | Atualiza dados (simples ou batch) |
 
 ### Pedidos de venda
 
@@ -171,7 +214,15 @@ Evite expor credenciais diretamente no `mcp.json`. Use referências ao ambiente 
 | `totvs_create_or_update_legal_customer` | Cadastra/atualiza PJ |
 | `totvs_get_person_statistics` | Histórico e estatísticas do cliente |
 
-### Analytics (aggregators)
+### Painéis rápidos
+
+| Tool | Descrição |
+|---|---|
+| `totvs_daily_dashboard` | Vendas + contas a receber + a pagar do dia |
+| `totvs_customer_360` | Visão completa do cliente com histórico e flag recompra |
+| `totvs_stock_available` | Produtos com estoque disponível, já filtrado |
+
+### Analytics
 
 | Tool | Descrição |
 |---|---|
@@ -180,12 +231,14 @@ Evite expor credenciais diretamente no `mcp.json`. Use referências ao ambiente 
 | `totvs_top_customers` | Top N clientes por faturamento |
 | `totvs_low_stock_alert` | Produtos abaixo de um saldo mínimo |
 | `totvs_orders_by_status_summary` | Distribuição de pedidos por status |
+| `totvs_get_usage_insights` | Padrões de uso, sequências e sugestões |
 
 ### Contexto
 
 | Tool | Descrição |
 |---|---|
-| `totvs_get_context` | Filiais, operações, condições de pagamento, priceTypes, costTypes. Use `verbose=true` para o cache completo |
+| `totvs_get_context` | Filiais, operações, priceTypes, costTypes |
+| `totvs_get_instructions` | Guia de uso completo do servidor |
 
 ---
 
@@ -211,19 +264,35 @@ totvs-moda-mcp/
 ├── server.py              # Entry point MCP, registro de tools e routing
 ├── totvs_client.py        # Cliente HTTP com OAuth2, retry e upsert
 ├── context_cache.py       # Cache de referência carregado no startup
+├── response_cache.py      # Cache TTL para respostas da API
+├── usage_tracker.py       # Rastreamento de uso (JSONL local)
+├── usage_analyzer.py      # Análise de padrões e sugestões
+├── decode_xml.py          # Decodificador de XML NF-e (base64)
 ├── tools/
-│   ├── product.py         # Produtos, preços, custos, saldos
 │   ├── sales_order.py     # Pedidos de venda
+│   ├── product.py         # Produtos, preços, custos, saldos
+│   ├── product_engineering.py  # Ficha de consumo
 │   ├── person.py          # Clientes PF/PJ
-│   ├── accounts_receivable.py
-│   ├── fiscal.py
-│   ├── logistics.py
-│   ├── general.py
-│   ├── convenience.py     # Aggregators e helpers
-│   ├── _value_types.py    # Normalização de Price/Cost com aliases
-│   ├── _defaults.py       # Injeção de branchCode via env
-│   └── _fields.py         # Filtro de campos na resposta
-└── tests/                 # 117 testes
+│   ├── accounts_receivable.py  # Contas a receber
+│   ├── account_payable.py # Contas a pagar
+│   ├── fiscal.py          # NF-e, XML, DANFE
+│   ├── purchase_order.py  # Pedidos de compra
+│   ├── other_modules.py   # Produção, management, localização
+│   ├── logistics.py       # Pacotes, expedição
+│   ├── seller.py          # Vendedores, representantes
+│   ├── voucher.py         # Vouchers
+│   ├── data_package.py    # Pacotes de dados
+│   ├── image.py           # Imagens de produto/pessoa
+│   ├── aggregators.py     # Painéis rápidos + analytics
+│   ├── convenience.py     # Helpers
+│   ├── _defaults.py       # Injeção automática de branchCode
+│   ├── _fields.py         # Filtro de campos na resposta
+│   └── _value_types.py    # Resolução de tipos de valor
+├── tests/                 # 117 testes (pytest + respx)
+└── docs/
+    ├── PROJECT_STATE.md   # Estado completo do projeto
+    ├── START.md           # Contexto rápido para novas conversas
+    └── PATTERNS.md        # Padrões obrigatórios de código
 ```
 
 ---
