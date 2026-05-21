@@ -166,8 +166,13 @@ Se uma informação não estiver disponível via tools, informe ao usuário em v
 
 ### Estoque / Logística
 - `totvs_low_stock_alert` — produtos abaixo de saldo mínimo
+- `totvs_stock_available` — **todos os produtos com estoque > 0 (já filtrado, pronta entrega)**
 - `totvs_get_kardex_movement` — movimentações de estoque
 - `totvs_create_material_movement` — movimentação de material
+
+### Painéis rápidos (1 chamada = resposta completa)
+- `totvs_daily_dashboard` — **vendas + receber + pagar do dia, tudo junto**
+- `totvs_customer_360` — **dados + histórico + recompra do cliente, tudo junto**
 
 ## Fluxo de status de pedidos
 {status_section}
@@ -175,9 +180,11 @@ Se uma informação não estiver disponível via tools, informe ao usuário em v
 ## Dicas importantes
 - Tools marcadas com ⚠️ ESCRITA modificam dados no ERP — confirme com o usuário antes de executar
 - `totvs_get_context` retorna os `priceCode` e `costCode` válidos para esta empresa
+- **PREFIRA tools compostas** para respostas rápidas: `totvs_daily_dashboard` em vez de sales+receivable+payable separados
+- **PREFIRA `totvs_customer_360`** em vez de buscar pedidos do cliente manualmente
+- **PREFIRA `totvs_stock_available`** em vez de paginar todos os saldos
 - Para agregar vendas por produto use `totvs_get_products_sold` (não busque pedidos e some manualmente)
 - Para ranking de clientes use `totvs_top_customers` (não busque pedidos e some manualmente)
-- `totvs_get_person_statistics` retorna o histórico de um cliente em uma chamada — não precisa buscar todos os pedidos dele
 """
 
 
@@ -748,7 +755,7 @@ TOOLS: list[types.Tool] = [
             "pageSize":{"type":"integer","default":500},
             "fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens."},
         }}),
-    types.Tool(name="totvs_search_receivable_documents", description="Busca documentos a receber (faturas, duplicatas). Retorna items[] com: branchCode, customerCode, customerName, receivableCode, installmentCode, issueDate, expiredDate, paymentDate, value, balanceValue, status (Open/Paid/Overdue), chargeType, billingType. Filtros úteis: startExpiredDate + endExpiredDate, statusList, customerCodeList, hasOpenInvoices=true. Para detectar clientes inadimplentes filtre por statusList=['Open'] + endExpiredDate < hoje. Suporta expand para cheque, fatura, comissionados e valores calculados.",
+    types.Tool(name="totvs_search_receivable_documents", description="Busca documentos a receber (faturas, duplicatas). Retorna items[] com: branchCode, customerCode, customerCpfCnpj, receivableCode, installmentCode, issueDate, expiredDate, paymentDate, installmentValue, paidValue, discountValue, interestValue, status (1=Normal, 2=Devolvido, 3=Cancelado, 4=Quebrado), chargeType, billingType, bearerCode, bearerName. Filtros úteis: startExpiredDate + endExpiredDate, statusList=[1], hasOpenInvoices=true. Para inadimplentes: statusList=[1] + endExpiredDate < hoje. Suporta expand: check, invoice, commissioneds, calculateValue.",
         inputSchema={"type":"object","properties":{
             "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos das filiais"},
             "customerCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos dos clientes"},
@@ -771,7 +778,7 @@ TOOLS: list[types.Tool] = [
             "order":{"type":"string","description":"Ordenação: branchCode, customerCode, receivableCode, installmentCode, maxChangeFilterDate"},
             "page":{"type":"integer","default":1},
             "pageSize":{"type":"integer","default":100},
-            "fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Ex: ['customerName','balanceValue','expiredDate']."},
+            "fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Ex: ['customerCode','installmentValue','expiredDate']."},
         }}),
     types.Tool(name="totvs_get_bank_slip", description="Base64 do boleto bancário de uma fatura. Requer código da fatura, parcela e cliente.",
         inputSchema={"type":"object","properties":{
@@ -1328,6 +1335,27 @@ TOOLS: list[types.Tool] = [
             "endDate":{"type":"string"},
             "branchCodeList":{"type":"array","items":{"type":"integer"}}
         },"required":["startDate","endDate"]}),
+
+    # ── Aggregators v3.3 — speed tools ────────────────────────────────
+    types.Tool(name="totvs_daily_dashboard", description="Painel completo do dia em 1 chamada: vendas (lista + total + por status) + contas a receber + contas a pagar (aberto vs pago). Use para 'como foi o dia', 'resumo de hoje', 'vendas + financeiro do dia'. Retorna: {date, sales: {totalOrders, totalValue, orders[], byStatus[]}, receivable: {count, totalValue, items[]}, payable: {count, totalOpen, totalPaid, open[], paid[]}}.",
+        inputSchema={"type":"object","properties":{
+            "date":{"type":"string","description":"YYYY-MM-DD (default=hoje)"},
+            "branchCodeList":{"type":"array","items":{"type":"integer"}}
+        }}),
+
+    types.Tool(name="totvs_customer_360", description="Visão 360 do cliente em 1 chamada: dados cadastrais + histórico completo de pedidos + flag recompra + ticket médio. Use para 'dados do cliente X', 'histórico de compras', 'é recompra?'. Retorna: {customer: {code, name, cpfCnpj}, orders: {count, totalValue, firstOrder, lastOrder, items[]}, isRepeatBuyer, averageTicket}.",
+        inputSchema={"type":"object","properties":{
+            "customerCode":{"type":"integer","description":"Código do cliente"},
+            "customerCpfCnpj":{"type":"string","description":"CPF ou CNPJ do cliente"}
+        }}),
+
+    types.Tool(name="totvs_stock_available", description="Produtos com estoque disponível (saldo > 0), já filtrado. Pagina internamente e retorna apenas SKUs em estoque. Use para 'pronta entrega', 'o que tem em estoque', 'produtos disponíveis'. Retorna: {branchCode, totalSkus, totalUnits, products: [{productCode, productName, colorName, sizeName, stock, salesOrder}]}.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer","description":"Filial (default 1)"},
+            "referenceCodeList":{"type":"array","items":{"type":"string"},"description":"Filtrar por referências"},
+            "productCodeList":{"type":"array","items":{"type":"integer"},"description":"Filtrar por códigos"},
+            "minStock":{"type":"number","description":"Saldo mínimo (default 1)"}
+        }}),
 ]
 
 
@@ -1485,6 +1513,11 @@ ROUTING: dict[str, tuple[str, str]] = {
     "totvs_top_customers":                      ("aggregators", "top_customers"),
     "totvs_low_stock_alert":                    ("aggregators", "low_stock_alert"),
     "totvs_orders_by_status_summary":           ("aggregators", "orders_by_status_summary"),
+
+    # Aggregators v3.3 — speed tools
+    "totvs_daily_dashboard":                    ("aggregators", "daily_dashboard"),
+    "totvs_customer_360":                       ("aggregators", "customer_360"),
+    "totvs_stock_available":                    ("aggregators", "stock_available"),
 }
 
 

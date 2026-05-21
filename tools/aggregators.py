@@ -16,7 +16,7 @@ that any fashion/apparel retailer using TOTVS Moda would ask.
 """
 import logging
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, date
 from typing import Any
 
 from totvs_client import TotvsClient
@@ -27,6 +27,7 @@ logger = logging.getLogger("totvs-moda-mcp.aggregators")
 BASE_SALES = "/api/totvsmoda/sales-order/v2"
 BASE_PRODUCT = "/api/totvsmoda/product/v2"
 BASE_AR = "/api/totvsmoda/accounts-receivable/v2"
+BASE_AP = "/api/totvsmoda/accounts-payable/v2"
 
 
 def _parse_iso_date(s: str) -> datetime:
@@ -346,4 +347,271 @@ class AggregatorTools:
             "totalOrders": len(orders),
             "totalValue": total_value,
             "byStatus": status_list,
+        }
+
+    # ------------------------------------------------------------------
+    # daily_dashboard
+    # ------------------------------------------------------------------
+    async def daily_dashboard(self, args: dict[str, Any]) -> Any:
+        """Painel do dia: vendas + contas a receber + contas a pagar.
+
+        Faz 3 consultas internas em paralelo e retorna tudo num único objeto.
+
+        Args:
+            date (optional): "YYYY-MM-DD", default=hoje
+            branchCodeList (optional)
+
+        Returns:
+            {date, sales: {totalOrders, totalValue, orders: [{orderCode, integrationCode,
+             customerName, statusOrder, totalAmountOrder}], byStatus: [{status, count, value}]},
+             receivable: {count, totalValue, items: [{customerCpfCnpj, installmentValue, bearerName}]},
+             payable: {count, totalOpen, totalPaid, open: [{expenseName, dueDate, duplicateValue}],
+                       paid: [{expenseName, dueDate, duplicateValue}]}}
+        """
+        import asyncio
+        args = inject_branch_defaults(args)
+        target = args.get("date") or date.today().isoformat()
+        branches = args.get("branchCodeList", [1])
+
+        async def _sales():
+            flt: dict[str, Any] = {"startOrderDate": target, "endOrderDate": target}
+            if branches:
+                flt["branchCodeList"] = branches
+            body = {"filter": flt, "page": 1, "pageSize": 500}
+            resp = await self.client.post(f"{BASE_SALES}/orders/search", body)
+            orders = resp.get("items", []) if isinstance(resp, dict) else []
+            by_status: dict[str, dict] = defaultdict(lambda: {"status": "", "count": 0, "value": 0.0})
+            order_list = []
+            total = 0.0
+            for o in orders:
+                val = float(o.get("totalAmountOrder", 0) or 0)
+                total += val
+                st = str(o.get("statusOrder", ""))
+                s = by_status[st]
+                s["status"] = st
+                s["count"] += 1
+                s["value"] += val
+                order_list.append({
+                    "orderCode": o.get("orderCode"),
+                    "integrationCode": o.get("integrationCode"),
+                    "customerName": o.get("customerName"),
+                    "statusOrder": st,
+                    "totalAmountOrder": val,
+                })
+            return {
+                "totalOrders": len(orders),
+                "totalValue": total,
+                "orders": sorted(order_list, key=lambda x: x["totalAmountOrder"], reverse=True),
+                "byStatus": sorted(by_status.values(), key=lambda x: x["value"], reverse=True),
+            }
+
+        async def _receivable():
+            body = {
+                "filter": {
+                    "branchCodeList": branches,
+                    "startExpiredDate": target,
+                    "endExpiredDate": target,
+                    "statusList": [1],
+                    "hasOpenInvoices": True,
+                },
+                "page": 1, "pageSize": 100,
+            }
+            resp = await self.client.post(f"{BASE_AR}/receivable-installments/search", body)
+            items = resp.get("items", []) if isinstance(resp, dict) else []
+            total = sum(float(i.get("installmentValue", 0) or 0) for i in items)
+            return {
+                "count": len(items),
+                "totalValue": total,
+                "items": [
+                    {
+                        "customerCpfCnpj": i.get("customerCpfCnpj"),
+                        "installmentValue": float(i.get("installmentValue", 0) or 0),
+                        "paidValue": float(i.get("paidValue", 0) or 0),
+                        "bearerName": i.get("bearerName"),
+                    }
+                    for i in items
+                ],
+            }
+
+        async def _payable():
+            body = {
+                "filter": {
+                    "branchCodeList": branches,
+                    "startExpiredDate": target,
+                    "endExpiredDate": target,
+                    "status": "Normal",
+                },
+                "page": 1, "pageSize": 100,
+            }
+            resp = await self.client.post(f"{BASE_AP}/duplicates/search", body)
+            items = resp.get("items", []) if isinstance(resp, dict) else []
+            open_items = []
+            paid_items = []
+            total_open = 0.0
+            total_paid = 0.0
+            for i in items:
+                val = float(i.get("duplicateValue", 0) or 0)
+                paid = float(i.get("paidValue", 0) or 0)
+                expense = i.get("expense", [{}])
+                expense_name = expense[0].get("expenseName", "") if expense else ""
+                entry = {
+                    "expenseName": expense_name,
+                    "dueDate": (i.get("dueDate") or "")[:10],
+                    "duplicateValue": val,
+                }
+                if paid >= val and val > 0:
+                    paid_items.append(entry)
+                    total_paid += val
+                else:
+                    open_items.append(entry)
+                    total_open += val
+            return {
+                "count": len(items),
+                "totalOpen": total_open,
+                "totalPaid": total_paid,
+                "open": sorted(open_items, key=lambda x: x["duplicateValue"], reverse=True),
+                "paid": sorted(paid_items, key=lambda x: x["duplicateValue"], reverse=True),
+            }
+
+        sales, receivable, payable = await asyncio.gather(_sales(), _receivable(), _payable())
+        return {"date": target, "sales": sales, "receivable": receivable, "payable": payable}
+
+    # ------------------------------------------------------------------
+    # customer_360
+    # ------------------------------------------------------------------
+    async def customer_360(self, args: dict[str, Any]) -> Any:
+        """Visão 360 do cliente: dados + histórico de pedidos + recompra.
+
+        Args:
+            customerCode (optional): código do cliente
+            customerCpfCnpj (optional): CPF/CNPJ do cliente
+            (pelo menos um é obrigatório)
+
+        Returns:
+            {customer: {code, name, cpfCnpj}, orders: {count, totalValue,
+             firstOrder, lastOrder, items: [{orderCode, orderDate, totalAmountOrder,
+             statusOrder}]}, isRepeatBuyer: bool, averageTicket: float}
+        """
+        import asyncio
+        code = args.get("customerCode")
+        cpf = args.get("customerCpfCnpj")
+
+        # Buscar pedidos do cliente
+        flt: dict[str, Any] = {"startOrderDate": "2020-01-01", "endOrderDate": date.today().isoformat()}
+        if code:
+            flt["customerCodeList"] = [code] if not isinstance(code, list) else code
+        elif cpf:
+            flt["customerCpfCnpjList"] = [cpf] if not isinstance(cpf, list) else cpf
+        else:
+            return {"error": "customerCode ou customerCpfCnpj obrigatório"}
+
+        body = {"filter": flt, "page": 1, "pageSize": 500, "order": "-orderDate"}
+        resp = await self.client.post(f"{BASE_SALES}/orders/search", body)
+        orders = resp.get("items", []) if isinstance(resp, dict) else []
+
+        if not orders:
+            return {"customer": {"code": code, "cpfCnpj": cpf}, "orders": {"count": 0}, "isRepeatBuyer": False}
+
+        first = orders[-1]
+        customer_info = {
+            "code": first.get("customerCode"),
+            "name": first.get("customerName"),
+            "cpfCnpj": first.get("customerCpfCnpj"),
+        }
+
+        order_list = []
+        total_value = 0.0
+        for o in orders:
+            val = float(o.get("totalAmountOrder", 0) or 0)
+            total_value += val
+            order_list.append({
+                "orderCode": o.get("orderCode"),
+                "orderDate": (o.get("orderDate") or "")[:10],
+                "totalAmountOrder": val,
+                "statusOrder": o.get("statusOrder"),
+                "integrationCode": o.get("integrationCode"),
+            })
+
+        return {
+            "customer": customer_info,
+            "orders": {
+                "count": len(orders),
+                "totalValue": total_value,
+                "firstOrder": order_list[-1]["orderDate"],
+                "lastOrder": order_list[0]["orderDate"],
+                "items": order_list,
+            },
+            "isRepeatBuyer": len(orders) > 1,
+            "averageTicket": total_value / len(orders) if orders else 0,
+        }
+
+    # ------------------------------------------------------------------
+    # stock_available
+    # ------------------------------------------------------------------
+    async def stock_available(self, args: dict[str, Any]) -> Any:
+        """Produtos com estoque disponível (saldo > 0), já filtrado.
+
+        Pagina internamente e retorna apenas SKUs com stock > 0.
+
+        Args:
+            branchCode (optional, default 1)
+            referenceCodeList (optional): filtrar por referências
+            productCodeList (optional): filtrar por códigos
+            minStock (optional, default 1): saldo mínimo para incluir
+
+        Returns:
+            {branchCode, totalSkus, totalUnits, products: [{productCode,
+             productName, colorName, sizeName, stock, salesOrder}]}
+        """
+        args = inject_branch_defaults(args)
+        branch = args.get("branchCode", 1)
+        min_stock = args.get("minStock", 1)
+
+        flt: dict[str, Any] = {}
+        if args.get("productCodeList"):
+            flt["productCodeList"] = args["productCodeList"]
+        if args.get("referenceCodeList"):
+            flt["referenceCodeList"] = args["referenceCodeList"]
+
+        all_products = []
+        page = 1
+        while True:
+            body = {
+                "filter": flt,
+                "option": {"balances": [{"branchCode": branch, "stockCodeList": [1]}]},
+                "page": page,
+                "pageSize": 1000,
+            }
+            resp = await self.client.post(f"{BASE_PRODUCT}/balances/search", body)
+            items = resp.get("items", []) if isinstance(resp, dict) else []
+
+            for item in items:
+                balances = item.get("balances", [])
+                stock = float(balances[0].get("stock", 0)) if balances else 0
+                sales_order = balances[0].get("salesOrder") if balances else None
+                if stock >= min_stock:
+                    all_products.append({
+                        "productCode": item.get("productCode"),
+                        "productName": item.get("productName", ""),
+                        "colorName": item.get("colorName", ""),
+                        "sizeName": item.get("sizeName", ""),
+                        "stock": stock,
+                        "salesOrder": float(sales_order) if sales_order else 0,
+                    })
+
+            has_next = resp.get("hasNext", False) if isinstance(resp, dict) else False
+            if not has_next:
+                break
+            page += 1
+            if page > 50:  # safety limit
+                break
+
+        all_products.sort(key=lambda x: x["productName"])
+        total_units = sum(p["stock"] for p in all_products)
+
+        return {
+            "branchCode": branch,
+            "totalSkus": len(all_products),
+            "totalUnits": total_units,
+            "products": all_products,
         }
