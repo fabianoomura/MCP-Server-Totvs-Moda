@@ -11,6 +11,7 @@ from typing import Any
 from totvs_client import TotvsClient
 from tools._fields import apply_fields
 from tools._defaults import inject_branch_defaults
+import response_cache as cache
 
 logger = logging.getLogger("totvs-moda-mcp.sales-order")
 
@@ -72,7 +73,12 @@ class SalesOrderTools:
         body["page"] = args.get("page", 1)
         body["pageSize"] = args.get("pageSize", 100)
 
+        cached = cache.get("orders", body, cache.SALES)
+        if cached is not None:
+            return apply_fields(cached, args)
+
         result = await self.client.post(f"{BASE}/orders/search", body)
+        cache.put("orders", body, result)
         return apply_fields(result, args)
 
     async def get_order_invoices(self, args: dict[str, Any]) -> Any:

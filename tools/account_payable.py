@@ -8,6 +8,7 @@ from typing import Any
 from totvs_client import TotvsClient
 from tools._fields import apply_fields
 from tools._defaults import inject_branch_defaults
+import response_cache as cache
 
 logger = logging.getLogger("totvs-moda-mcp.account-payable")
 BASE = "/api/totvsmoda/accounts-payable/v2"
@@ -48,7 +49,12 @@ class AccountPayableTools:
         if args.get("order"):
             body["order"] = args["order"]
 
+        cached = cache.get("payable", body, cache.FINANCIAL)
+        if cached is not None:
+            return apply_fields(cached, args)
+
         result = await self.client.post(f"{BASE}/duplicates/search", body)
+        cache.put("payable", body, result)
         return apply_fields(result, args)
 
     async def search_commissions_paid(self, args: dict[str, Any]) -> Any:

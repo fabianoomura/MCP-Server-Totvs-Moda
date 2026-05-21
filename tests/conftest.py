@@ -25,6 +25,15 @@ def _env_setup(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _clear_response_cache():
+    """Clear response cache between tests to avoid cross-test contamination."""
+    import response_cache
+    response_cache.invalidate()
+    yield
+    response_cache.invalidate()
+
+
+@pytest.fixture(autouse=True)
 def fake_context_cache_global(monkeypatch, request):
     """Provide a default context_cache with branches=[1] for all tests.
 

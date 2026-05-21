@@ -8,6 +8,7 @@ from typing import Any
 from totvs_client import TotvsClient
 from tools._fields import apply_fields
 from tools._defaults import inject_branch_defaults
+import response_cache as cache
 
 logger = logging.getLogger("totvs-moda-mcp.accounts-receivable")
 BASE = "/api/totvsmoda/accounts-receivable/v2"
@@ -92,7 +93,12 @@ class AccountsReceivableTools:
         if args.get("order"):
             body["order"] = args["order"]
 
+        cached = cache.get("receivable", body, cache.FINANCIAL)
+        if cached is not None:
+            return apply_fields(cached, args)
+
         result = await self.client.post(f"{BASE}/documents/search", body)
+        cache.put("receivable", body, result)
         return apply_fields(result, args)
 
     async def search_printed_invoices(self, args: dict[str, Any]) -> Any:

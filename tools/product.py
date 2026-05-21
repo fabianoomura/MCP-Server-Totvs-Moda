@@ -13,6 +13,7 @@ from typing import Any
 from totvs_client import TotvsClient
 from tools._fields import apply_fields
 from tools._defaults import inject_branch_defaults
+import response_cache as cache
 from tools._value_types import normalize_value_type
 
 logger = logging.getLogger("totvs-moda-mcp.product")
@@ -108,7 +109,12 @@ class ProductTools:
             body["order"] = args["order"]
         if args.get("expand"):
             body["expand"] = args["expand"]
+        cached = cache.get("balances", body, cache.STOCK)
+        if cached is not None:
+            return apply_fields(cached, args)
+
         result = await self.client.post(f"{BASE}/balances/search", body)
+        cache.put("balances", body, result)
         return apply_fields(result, args)
 
     async def search_prices(self, args: dict[str, Any]) -> Any:

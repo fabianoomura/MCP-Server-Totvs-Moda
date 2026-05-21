@@ -21,6 +21,7 @@ from typing import Any
 
 from totvs_client import TotvsClient
 from tools._defaults import inject_branch_defaults
+import response_cache as cache
 
 logger = logging.getLogger("totvs-moda-mcp.aggregators")
 
@@ -473,8 +474,15 @@ class AggregatorTools:
                 "paid": sorted(paid_items, key=lambda x: x["duplicateValue"], reverse=True),
             }
 
+        cache_key = {"fn": "daily_dashboard", "date": target, "branches": branches}
+        cached = cache.get("dashboard", cache_key, cache.SALES)
+        if cached is not None:
+            return cached
+
         sales, receivable, payable = await asyncio.gather(_sales(), _receivable(), _payable())
-        return {"date": target, "sales": sales, "receivable": receivable, "payable": payable}
+        result = {"date": target, "sales": sales, "receivable": receivable, "payable": payable}
+        cache.put("dashboard", cache_key, result)
+        return result
 
     # ------------------------------------------------------------------
     # customer_360
@@ -509,6 +517,11 @@ class AggregatorTools:
         resp = await self.client.post(f"{BASE_SALES}/orders/search", body)
         orders = resp.get("items", []) if isinstance(resp, dict) else []
 
+        cache_key = {"fn": "customer_360", "code": code, "cpf": cpf}
+        cached = cache.get("customer360", cache_key, cache.CATALOG)
+        if cached is not None:
+            return cached
+
         if not orders:
             return {"customer": {"code": code, "cpfCnpj": cpf}, "orders": {"count": 0}, "isRepeatBuyer": False}
 
@@ -532,7 +545,7 @@ class AggregatorTools:
                 "integrationCode": o.get("integrationCode"),
             })
 
-        return {
+        result = {
             "customer": customer_info,
             "orders": {
                 "count": len(orders),
@@ -544,6 +557,8 @@ class AggregatorTools:
             "isRepeatBuyer": len(orders) > 1,
             "averageTicket": total_value / len(orders) if orders else 0,
         }
+        cache.put("customer360", cache_key, result)
+        return result
 
     # ------------------------------------------------------------------
     # stock_available
@@ -566,6 +581,12 @@ class AggregatorTools:
         args = inject_branch_defaults(args)
         branch = args.get("branchCode", 1)
         min_stock = args.get("minStock", 1)
+
+        cache_key = {"fn": "stock_available", "branch": branch, "min": min_stock,
+                     "products": args.get("productCodeList"), "refs": args.get("referenceCodeList")}
+        cached = cache.get("stock", cache_key, cache.STOCK)
+        if cached is not None:
+            return cached
 
         flt: dict[str, Any] = {}
         if args.get("productCodeList"):
@@ -609,9 +630,11 @@ class AggregatorTools:
         all_products.sort(key=lambda x: x["productName"])
         total_units = sum(p["stock"] for p in all_products)
 
-        return {
+        result = {
             "branchCode": branch,
             "totalSkus": len(all_products),
             "totalUnits": total_units,
             "products": all_products,
         }
+        cache.put("stock", cache_key, result)
+        return result
