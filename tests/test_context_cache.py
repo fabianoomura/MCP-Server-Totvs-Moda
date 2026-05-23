@@ -42,6 +42,7 @@ def test_slim_context_excludes_heavy_fields():
         "costTypes": [],
         "operations": [{"code": i, "name": f"Op{i}"} for i in range(50)],
         "paymentConditions": [{"code": i, "name": f"Cond{i}"} for i in range(30)],
+        "operationalDefaults": {"priceCodeList": [1], "costCodeList": [1, 2, 3], "stockCodeList": [1]},
         "rawHugeData": "a" * 100000,  # 100KB de lixo
     }
 
@@ -52,6 +53,7 @@ def test_slim_context_excludes_heavy_fields():
     assert len(slim["paymentConditions"]) == 5
     assert slim["branches"] == [1]
     assert slim["priceTypes"][0]["priceCode"] == 1
+    assert slim["operationalDefaults"]["costCodeList"] == [1, 2, 3]
 
 
 def test_full_context_includes_everything():
@@ -75,6 +77,36 @@ def test_slim_context_handles_empty_cache():
     assert slim["branches"] == []
     assert slim["priceTypes"] == []
     assert slim["operations"] == []
+    assert slim["operationalDefaults"] == {}
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_operational_defaults_from_env(client, monkeypatch):
+    _mock_token()
+    monkeypatch.setenv("TOTVS_BRANCH_CODES", "1")
+    monkeypatch.setenv("TOTVS_DEFAULT_PRICE_CODES", "2,4")
+    monkeypatch.setenv("TOTVS_DEFAULT_COST_CODES", "5,6")
+    monkeypatch.setenv("TOTVS_DEFAULT_STOCK_CODES", "9")
+
+    respx.post(f"{TOTVS_BASE}/api/totvsmoda/sales-order/v2/orders/search").mock(
+        return_value=Response(200, json={"items": []})
+    )
+    respx.get(f"{TOTVS_BASE}/api/totvsmoda/general/v2/operations").mock(
+        return_value=Response(200, json={"items": []})
+    )
+    respx.get(f"{TOTVS_BASE}/api/totvsmoda/general/v2/payment-conditions").mock(
+        return_value=Response(200, json={"items": []})
+    )
+
+    cache = await context_cache.load_context(client)
+
+    assert cache["operationalDefaults"] == {
+        "priceCodeList": [2, 4],
+        "costCodeList": [5, 6],
+        "stockCodeList": [9],
+        "purchaseOrderOpenStatusList": [1, 3, 5],
+    }
 
 
 # ── Discovery de priceTypes/costTypes ──────────────────────────────────────

@@ -29,6 +29,15 @@ logger = logging.getLogger("totvs-moda-mcp.context_cache")
 CACHE: dict[str, Any] = {}
 
 
+def _parse_int_list(raw: str, fallback: list[int]) -> list[int]:
+    try:
+        parsed = [int(x.strip()) for x in raw.split(",") if x.strip()]
+        return parsed or fallback
+    except ValueError:
+        logger.warning(f"Lista numerica invalida: {raw!r}")
+        return fallback
+
+
 async def load_context(client: TotvsClient) -> dict[str, Any]:
     """Carrega dados de referência do TOTVS na inicialização.
 
@@ -49,6 +58,12 @@ async def load_context(client: TotvsClient) -> dict[str, Any]:
         "priceTypes": [],
         "costTypes": [],
         "paymentConditions": [],
+        "operationalDefaults": {
+            "priceCodeList": _parse_int_list(os.environ.get("TOTVS_DEFAULT_PRICE_CODES", "1"), [1]),
+            "costCodeList": _parse_int_list(os.environ.get("TOTVS_DEFAULT_COST_CODES", "1,2,3"), [1, 2, 3]),
+            "stockCodeList": _parse_int_list(os.environ.get("TOTVS_DEFAULT_STOCK_CODES", "1"), [1]),
+            "purchaseOrderOpenStatusList": [1, 3, 5],
+        },
     }
 
     # 1. Branches (filiais) — fundamental, vem do env (default "1" se não configurado)
@@ -288,6 +303,7 @@ def get_slim_context() -> dict[str, Any]:
         "costTypes": CACHE.get("costTypes", []),
         "operations": (CACHE.get("operations") or [])[:5],
         "paymentConditions": (CACHE.get("paymentConditions") or [])[:5],
+        "operationalDefaults": CACHE.get("operationalDefaults", {}),
     }
 
 

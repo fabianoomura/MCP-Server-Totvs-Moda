@@ -1,5 +1,22 @@
 # Changelog
 
+## [3.5.0] - 2026-05-22
+
+### Added
+- Fast 360 aggregators: `totvs_product_360`, `totvs_raw_material_360`, `totvs_order_360`, `totvs_invoice_360`.
+- Operational shortcuts: `totvs_sales_today_summary`, `totvs_new_customers_today`.
+- Fast open-order aggregators: `totvs_open_purchase_orders` and `totvs_open_production_orders`.
+- `docs/PERFORMANCE.md` with benchmark notes and guidance for fast composed tools.
+- Operational defaults in startup context: price, cost and stock code lists are now exposed via `operationalDefaults`.
+
+### Changed
+- `daily_dashboard` now uses the receivable documents endpoint and returns partial section errors instead of failing the whole dashboard.
+- Product and stock aggregators now read price/cost/stock defaults from startup context, with `.env` fallback.
+- Purchase order open statuses `[1,3,5]` documented as the standard TOTVS default.
+
+### Tests
+- Test suite expanded to 128 tests.
+
 ## [3.1.2] — 2026-04-27
 
 ### Adicionado

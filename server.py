@@ -176,6 +176,14 @@ Se uma informação não estiver disponível via tools, informe ao usuário em v
 ### Painéis rápidos (1 chamada = resposta completa)
 - `totvs_daily_dashboard` — **vendas + receber + pagar do dia, tudo junto**
 - `totvs_customer_360` — **dados + histórico + recompra do cliente, tudo junto**
+- `totvs_product_360` — **produto + estoque + preço + custo + ficha técnica**
+- `totvs_raw_material_360` — **matéria-prima + saldo/custo + usos na ficha**
+- `totvs_order_360` — **pedido + itens + notas + pendências**
+- `totvs_invoice_360` — **NF + produtos da nota**
+- `totvs_sales_today_summary` — **vendas do dia já agregadas**
+- `totvs_new_customers_today` — **clientes novos do dia por primeira compra**
+- `totvs_open_purchase_orders` — **pedidos de compra em aberto, paginado em paralelo**
+- `totvs_open_production_orders` — **ordens de produção em aberto, paginado em paralelo**
 
 ## Fluxo de status de pedidos
 {status_section}
@@ -185,7 +193,14 @@ Se uma informação não estiver disponível via tools, informe ao usuário em v
 - `totvs_get_context` retorna os `priceCode` e `costCode` válidos para esta empresa
 - **PREFIRA tools compostas** para respostas rápidas: `totvs_daily_dashboard` em vez de sales+receivable+payable separados
 - **PREFIRA `totvs_customer_360`** em vez de buscar pedidos do cliente manualmente
+- **PREFIRA `totvs_product_360`** para dados completos de produto
+- **PREFIRA `totvs_order_360`** para dados completos de pedido
+- **PREFIRA `totvs_invoice_360`** para dados completos de NF
+- **PREFIRA `totvs_sales_today_summary`** para vendas de hoje
+- **PREFIRA `totvs_new_customers_today`** para clientes novos hoje
 - **PREFIRA `totvs_stock_available`** em vez de paginar todos os saldos
+- **PREFIRA `totvs_open_purchase_orders`** para pedidos de compra em aberto
+- **PREFIRA `totvs_open_production_orders`** para ordens de produção em aberto
 - Para agregar vendas por produto use `totvs_get_products_sold` (não busque pedidos e some manualmente)
 - Para ranking de clientes use `totvs_top_customers` (não busque pedidos e some manualmente)
 """
@@ -1360,6 +1375,82 @@ TOOLS: list[types.Tool] = [
             "minStock":{"type":"number","description":"Saldo mínimo (default 1)"}
         }}),
 
+    types.Tool(name="totvs_product_360", description="Visão 360 do produto em 1 chamada: cadastro, saldos, preços, custos, composição e ficha de consumo em paralelo. Use para 'dados do produto X'.",
+        inputSchema={"type":"object","properties":{
+            "productCode":{"type":"integer","description":"Código do produto"},
+            "code":{"type":"integer","description":"Alias de productCode"},
+            "branchCode":{"type":"integer","description":"Filial (default 1)"},
+            "priceCodeList":{"type":"array","items":{"type":"integer"},"description":"Tabelas de preço (default do contexto inicial)"},
+            "costCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos de custo (default do contexto inicial)"},
+            "stockCodeList":{"type":"array","items":{"type":"integer"},"description":"Estoques (default do contexto inicial)"},
+            "pageSize":{"type":"integer","description":"Itens por seção (default 100)"}
+        }}),
+
+    types.Tool(name="totvs_raw_material_360", description="Visão 360 de matéria-prima em 1 chamada: dados de produto, estoque, custos e usos em ficha de consumo. Use para 'sobre a matéria-prima X'.",
+        inputSchema={"type":"object","properties":{
+            "rawMaterialCode":{"type":"integer","description":"Código da matéria-prima"},
+            "productCode":{"type":"integer","description":"Alias de rawMaterialCode"},
+            "code":{"type":"integer","description":"Alias de rawMaterialCode"},
+            "branchCode":{"type":"integer","description":"Filial (default 1)"},
+            "costCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos de custo (default do contexto inicial)"},
+            "stockCodeList":{"type":"array","items":{"type":"integer"},"description":"Estoques (default do contexto inicial)"},
+            "pageSize":{"type":"integer","description":"Itens por seção (default 100)"}
+        }}),
+
+    types.Tool(name="totvs_order_360", description="Visão 360 do pedido em 1 chamada: cabeçalho/itens, notas vinculadas e itens pendentes. Use para 'dados do pedido X'.",
+        inputSchema={"type":"object","properties":{
+            "orderCode":{"type":"integer","description":"Código do pedido"},
+            "branchCode":{"type":"integer","description":"Filial, se souber"},
+            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Filiais para localizar o pedido"},
+            "expand":{"type":"string","description":"Expand do pedido (default items)"}
+        },"required":["orderCode"]}),
+
+    types.Tool(name="totvs_invoice_360", description="Visão 360 da NF em 1 chamada: cabeçalho fiscal e produtos da nota em paralelo. Use para 'dados da nf X'.",
+        inputSchema={"type":"object","properties":{
+            "invoiceCode":{"type":"integer","description":"Número/código da NF"},
+            "invoiceSequence":{"type":"integer","description":"Sequencial interno da NF"},
+            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Filiais (default do contexto)"},
+            "pageSize":{"type":"integer","description":"Itens no cabeçalho (default 20)"},
+            "productPageSize":{"type":"integer","description":"Produtos da NF (default 100)"}
+        }}),
+
+    types.Tool(name="totvs_sales_today_summary", description="Resumo rápido de vendas de uma data: total, valor, status e ranking de pedidos. Use para 'o que vendi hoje'.",
+        inputSchema={"type":"object","properties":{
+            "date":{"type":"string","description":"YYYY-MM-DD (default=hoje)"},
+            "branchCodeList":{"type":"array","items":{"type":"integer"}},
+            "topN":{"type":"integer","description":"Pedidos no ranking (default 50)"},
+            "pageSize":{"type":"integer","description":"Itens lidos (default 500)"}
+        }}),
+
+    types.Tool(name="totvs_new_customers_today", description="Clientes novos em uma data por primeira compra no histórico. Use para 'algum cliente novo?'.",
+        inputSchema={"type":"object","properties":{
+            "date":{"type":"string","description":"YYYY-MM-DD (default=hoje)"},
+            "branchCodeList":{"type":"array","items":{"type":"integer"}},
+            "lookbackStartDate":{"type":"string","description":"Início do histórico (default 2020-01-01)"},
+            "concurrency":{"type":"integer","description":"Clientes verificados em paralelo (default 10, max 20)"},
+            "pageSize":{"type":"integer","description":"Pedidos do dia lidos (default 500)"}
+        }}),
+
+    types.Tool(name="totvs_open_purchase_orders", description="Pedidos de compra em aberto em 1 chamada rápida. Pagina em paralelo, filtra status abertos e retorna totais, resumo por status, mais recentes e maiores valores. Use para 'pedidos de compra em aberto'.",
+        inputSchema={"type":"object","properties":{
+            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Filiais (default do contexto)"},
+            "openStatusList":{"type":"array","items":{"type":"integer"},"description":"Status TOTVS considerados abertos (default padrão [1,3,5])"},
+            "topN":{"type":"integer","description":"Quantidade nos rankings (default 20)"},
+            "concurrency":{"type":"integer","description":"Paginas paralelas (default 10, max 20)"},
+            "pageSize":{"type":"integer","description":"Itens por pagina (default 100)"},
+            "maxPages":{"type":"integer","description":"Limite de seguranca de paginas (default 100)"}
+        }}),
+
+    types.Tool(name="totvs_open_production_orders", description="Ordens de produção em aberto em 1 chamada rápida. Pagina em paralelo, considera aberta quando pendingQuantity > 0 e endDate vazio, e retorna totais, status, atrasadas, recentes e maiores pendências. Use para 'ordens de produção em aberto'.",
+        inputSchema={"type":"object","properties":{
+            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Filiais (default do contexto)"},
+            "topN":{"type":"integer","description":"Quantidade nos rankings (default 20)"},
+            "concurrency":{"type":"integer","description":"Paginas paralelas (default 10, max 20)"},
+            "pageSize":{"type":"integer","description":"Itens por pagina (default 100)"},
+            "maxPages":{"type":"integer","description":"Limite de seguranca de paginas (default 100)"},
+            "asOfDate":{"type":"string","description":"YYYY-MM-DD para calcular atrasos (default=hoje)"}
+        }}),
+
     # ── Usage Intelligence ────────────────────────────────────────────
     types.Tool(name="totvs_get_usage_insights", description="Análise de padrões de uso do MCP server. Retorna: tools mais usadas, sequências frequentes, horários de pico, padrões de parâmetros e sugestões de otimização. Use para entender como o sistema está sendo utilizado e onde otimizar. Dados locais, sem chamada externa.",
         inputSchema={"type":"object","properties":{
@@ -1527,6 +1618,14 @@ ROUTING: dict[str, tuple[str, str]] = {
     "totvs_daily_dashboard":                    ("aggregators", "daily_dashboard"),
     "totvs_customer_360":                       ("aggregators", "customer_360"),
     "totvs_stock_available":                    ("aggregators", "stock_available"),
+    "totvs_product_360":                        ("aggregators", "product_360"),
+    "totvs_raw_material_360":                   ("aggregators", "raw_material_360"),
+    "totvs_order_360":                          ("aggregators", "order_360"),
+    "totvs_invoice_360":                        ("aggregators", "invoice_360"),
+    "totvs_sales_today_summary":                ("aggregators", "sales_today_summary"),
+    "totvs_new_customers_today":                ("aggregators", "new_customers_today"),
+    "totvs_open_purchase_orders":               ("aggregators", "open_purchase_orders"),
+    "totvs_open_production_orders":             ("aggregators", "open_production_orders"),
 }
 
 
@@ -1590,7 +1689,7 @@ async def main() -> None:
             read_stream, write_stream,
             InitializationOptions(
                 server_name="totvs-moda-mcp",
-                server_version="3.1.2",
+                server_version="3.5.0",
                 capabilities=server.get_capabilities(
                     notification_options=NotificationOptions(),
                     experimental_capabilities={},

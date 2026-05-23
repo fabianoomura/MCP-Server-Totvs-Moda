@@ -12,14 +12,30 @@ import sys
 import types
 import pytest
 
-from tools._defaults import inject_branch_defaults, MissingBranchDefaultError, with_branch_defaults
+from tools._defaults import (
+    get_default_cost_codes,
+    get_default_price_codes,
+    get_default_stock_codes,
+    get_purchase_order_open_statuses,
+    inject_branch_defaults,
+    MissingBranchDefaultError,
+    with_branch_defaults,
+)
 
 
 @pytest.fixture(autouse=True)
 def fake_context_cache(monkeypatch):
     """Provide a fake context_cache module for each test."""
     fake = types.ModuleType("context_cache")
-    fake.CACHE = {"branches": [1]}
+    fake.CACHE = {
+        "branches": [1],
+        "operationalDefaults": {
+            "priceCodeList": [2],
+            "costCodeList": [4, 5],
+            "stockCodeList": [9],
+            "purchaseOrderOpenStatusList": [1, 3, 5],
+        },
+    }
     monkeypatch.setitem(sys.modules, "context_cache", fake)
     yield fake
 
@@ -125,6 +141,24 @@ def test_env_var_invalid_format_gracefully_fails(empty_cache, monkeypatch):
     monkeypatch.setenv("TOTVS_BRANCH_CODES", "abc,xyz")
     with pytest.raises(MissingBranchDefaultError):
         inject_branch_defaults({})
+
+
+def test_operational_defaults_come_from_context():
+    assert get_default_price_codes() == [2]
+    assert get_default_cost_codes() == [4, 5]
+    assert get_default_stock_codes() == [9]
+    assert get_purchase_order_open_statuses() == [1, 3, 5]
+
+
+def test_operational_defaults_fallback_to_env(empty_cache, monkeypatch):
+    monkeypatch.setenv("TOTVS_DEFAULT_PRICE_CODES", "7")
+    monkeypatch.setenv("TOTVS_DEFAULT_COST_CODES", "8,9")
+    monkeypatch.setenv("TOTVS_DEFAULT_STOCK_CODES", "10")
+
+    assert get_default_price_codes() == [7]
+    assert get_default_cost_codes() == [8, 9]
+    assert get_default_stock_codes() == [10]
+    assert get_purchase_order_open_statuses() == [1, 3, 5]
 
 
 # ── Immutability ────────────────────────────────────────────────────────────

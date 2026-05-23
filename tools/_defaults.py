@@ -26,6 +26,58 @@ from typing import Any
 logger = logging.getLogger("totvs-moda-mcp.defaults")
 
 
+def _parse_int_list(raw: str, fallback: list[int]) -> list[int]:
+    try:
+        parsed = [int(x.strip()) for x in raw.split(",") if x.strip()]
+        return parsed or list(fallback)
+    except ValueError:
+        logger.warning(f"Invalid integer list: {raw!r}")
+        return list(fallback)
+
+
+def _get_cache() -> dict[str, Any]:
+    try:
+        import context_cache
+        return getattr(context_cache, "CACHE", None) or getattr(context_cache, "_cache", None) or {}
+    except Exception as exc:
+        logger.debug(f"context_cache unavailable: {exc}")
+        return {}
+
+
+def _get_operational_default(name: str, env_name: str, fallback: list[int]) -> list[int]:
+    cache = _get_cache()
+    defaults = cache.get("operationalDefaults") or {}
+    value = defaults.get(name)
+    if value:
+        return [int(x) for x in value]
+
+    import os
+    raw = os.environ.get(env_name, "").strip()
+    if raw:
+        return _parse_int_list(raw, fallback)
+
+    return list(fallback)
+
+
+def get_default_price_codes() -> list[int]:
+    return _get_operational_default("priceCodeList", "TOTVS_DEFAULT_PRICE_CODES", [1])
+
+
+def get_default_cost_codes() -> list[int]:
+    return _get_operational_default("costCodeList", "TOTVS_DEFAULT_COST_CODES", [1, 2, 3])
+
+
+def get_default_stock_codes() -> list[int]:
+    return _get_operational_default("stockCodeList", "TOTVS_DEFAULT_STOCK_CODES", [1])
+
+
+def get_purchase_order_open_statuses() -> list[int]:
+    cache = _get_cache()
+    defaults = cache.get("operationalDefaults") or {}
+    value = defaults.get("purchaseOrderOpenStatusList")
+    return [int(x) for x in value] if value else [1, 3, 5]
+
+
 class MissingBranchDefaultError(ValueError):
     """Raised when branch default is needed but not configured.
 
@@ -47,14 +99,10 @@ def _get_default_branches() -> list[int]:
     Import is lazy to avoid circular imports and to handle the case where
     context_cache hasn't been loaded yet.
     """
-    try:
-        import context_cache
-        cache = getattr(context_cache, "CACHE", None) or getattr(context_cache, "_cache", None) or {}
-        branches = cache.get("branches") or []
-        if branches:
-            return list(branches)
-    except Exception as exc:
-        logger.debug(f"context_cache unavailable: {exc}")
+    cache = _get_cache()
+    branches = cache.get("branches") or []
+    if branches:
+        return list(branches)
 
     # Fallback: read env var directly
     import os

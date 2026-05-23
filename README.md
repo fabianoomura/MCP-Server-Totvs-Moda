@@ -27,6 +27,9 @@ Exemplos reais do que funciona hoje:
 "Qual o faturamento da semana passada por filial?"
 "Me mostra os 10 clientes que mais compraram este mês"
 "Resumo do dia: vendas, contas a receber e a pagar"
+"Dados completos do produto 13180"
+"Dados da NF 143218"
+"Dados do pedido 120040"
 "Quais produtos estão com pronta entrega?"
 "Visão 360 do cliente CPF 123.456.789-00"
 "Qual o preço de venda e custo do produto 10000?"
@@ -55,7 +58,7 @@ Exemplos reais do que funciona hoje:
 | **Produção** | Ordens de produção, consumo de matéria-prima |
 | **Logística** | Movimentações de material, lotes |
 | **Geral** | Operações, condições de pagamento, classificações, CEP, cidades |
-| **Painéis rápidos** | Dashboard do dia, visão 360 do cliente, estoque disponível |
+| **Painéis rápidos** | Dashboard do dia, visões 360, estoque disponível, pedidos/OPs em aberto |
 | **Analytics** | Top clientes, produtos mais vendidos, resumo de faturamento, alerta de estoque |
 | **Inteligência de uso** | Análise de padrões, sequências, horários de pico, sugestões de otimização |
 

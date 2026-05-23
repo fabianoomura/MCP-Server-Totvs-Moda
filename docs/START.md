@@ -51,6 +51,7 @@ totvs-moda-mcp/
     ├── PROJECT_STATE.md   # Estado completo e histórico
     ├── ROADMAP.md         # Plano de fases v3.x
     ├── PATTERNS.md        # Padrões obrigatórios de código
+    ├── PERFORMANCE.md     # Benchmarks e tools rapidas
     └── MIGRATION_v3.0.md  # Migração v2.6.1 → v3.0.0
 ```
 
