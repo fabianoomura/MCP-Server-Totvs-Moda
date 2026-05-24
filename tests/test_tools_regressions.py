@@ -15,11 +15,16 @@ from tools.accounts_receivable import AccountsReceivableTools
 from tools.voucher import VoucherTools
 from tools.image import ImageTools
 from tools.logistics import LogisticsTools
+from tools.general import GeneralTools
+from tools.seller import SellerTools
 from tools.convenience import ConvenienceTools
 from tools.account_payable import AccountPayableTools
+from tools.purchase_order import PurchaseOrderTools
 from tools.product_engineering import ProductEngineeringTools
 from tools.material_request import MaterialRequestTools
 from tools.product_prototype import ProductPrototypeTools
+from tools.other_modules import ProductionOrderTools
+from tools.analytics import AnalyticsTools
 
 from conftest import TOTVS_BASE, TOKEN_URL
 
@@ -36,6 +41,58 @@ def _mock_token():
 def _body(route):
     import json
     return json.loads(route.calls.last.request.content)
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_analytics_gateway_get_uses_registered_endpoint_and_params(client):
+    _mock_token()
+    route = respx.get(f"{TOTVS_BASE}/api/totvsmoda/analytics/v2/branch-sale").mock(
+        return_value=Response(200, json={"items": [{"branchCode": 1, "value": 10, "ignored": True}]})
+    )
+
+    tools = AnalyticsTools(client)
+    result = await tools.call_endpoint({
+        "endpoint": "analytics_v2_branch_sale",
+        "params": {"Page": 1, "PageSize": 10},
+        "fields": ["branchCode", "value"],
+    })
+
+    assert route.called
+    params = route.calls.last.request.url.params
+    assert params["Page"] == "1"
+    assert params["PageSize"] == "10"
+    assert result == {"items": [{"branchCode": 1, "value": 10}]}
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_analytics_gateway_post_uses_registered_endpoint_and_body(client):
+    _mock_token()
+    route = respx.post(f"{TOTVS_BASE}/api/totvsmoda/financial-panel/v2/total-payable/search").mock(
+        return_value=Response(200, json={"items": []})
+    )
+
+    tools = AnalyticsTools(client)
+    body = {"filter": {"branchCodeList": [1]}, "page": 1, "pageSize": 100}
+    await tools.call_endpoint({"endpoint": "financial_panel_v2_total_payable_search", "body": body})
+
+    assert route.called
+    assert _body(route) == body
+
+
+@pytest.mark.asyncio
+async def test_analytics_gateway_rejects_unknown_endpoint(client):
+    tools = AnalyticsTools(client)
+    with pytest.raises(ValueError, match="Endpoint Analytics desconhecido"):
+        await tools.call_endpoint({"endpoint": "nao_existe"})
+
+
+@pytest.mark.asyncio
+async def test_pending_material_consumption_requires_material_filter(client):
+    tools = ProductionOrderTools(client)
+    with pytest.raises(ValueError, match="rawMaterialCodeList"):
+        await tools.get_pending_material_consumption({"branchCodeList": [1]})
 
 
 @pytest.mark.asyncio
@@ -245,6 +302,254 @@ async def test_product_composition_get_requires_filter(client, method_name):
     tools = ProductTools(client)
     with pytest.raises(ValueError, match="productCodeList"):
         await getattr(tools, method_name)({})
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_general_search_transactions_uses_official_query_params(client):
+    _mock_token()
+    route = respx.get(f"{TOTVS_BASE}/api/totvsmoda/general/v2/transactions/search").mock(
+        return_value=Response(200, json={"items": []})
+    )
+
+    tools = GeneralTools(client)
+    await tools.search_transactions({
+        "branchCode": 1,
+        "transactionCodeList": [9001],
+        "customerCpfCnpjList": ["12345678000199"],
+        "expand": "originDestination,additionalInformation",
+        "order": "-transactionCode",
+        "page": 2,
+        "pageSize": 50,
+        "fields": ["transactionCode"],
+    })
+
+    assert route.called
+    query = route.calls.last.request.url.params
+    assert query.get_list("BranchCodeList") == ["1"]
+    assert query.get_list("TransactionCodeList") == ["9001"]
+    assert query.get_list("CustomerCPFCNPJList") == ["12345678000199"]
+    assert query["Expand"] == "originDestination,additionalInformation"
+    assert query["Order"] == "-transactionCode"
+    assert query["Page"] == "2"
+    assert query["PageSize"] == "50"
+    assert "Fields" not in dict(query)
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_seller_operational_area_state_uses_pascal_query(client):
+    _mock_token()
+    route = respx.get(f"{TOTVS_BASE}/api/totvsmoda/seller/v2/operational-area-state").mock(
+        return_value=Response(200, json={"items": []})
+    )
+
+    tools = SellerTools(client)
+    await tools.get_operational_area_state({
+        "operationalAreaCode": 7,
+        "startChangeDate": "2026-05-01T00:00:00",
+        "order": "-operationalAreaCode,maxChangeFilterDate",
+        "page": 1,
+        "pageSize": 100,
+        "fields": ["stateCode"],
+    })
+
+    assert route.called
+    query = route.calls.last.request.url.params
+    assert query["OperationalAreaCode"] == "7"
+    assert query["StartChangeDate"] == "2026-05-01T00:00:00"
+    assert query["Order"] == "-operationalAreaCode,maxChangeFilterDate"
+    assert query["Page"] == "1"
+    assert query["PageSize"] == "100"
+    assert "Fields" not in dict(query)
+
+
+@pytest.mark.asyncio
+@respx.mock
+@pytest.mark.parametrize(
+    ("method_name", "path", "args"),
+    [
+        (
+            "create_financial_compensation",
+            "/api/totvsmoda/general/v2/financial-compensations",
+            {"branchCode": 1, "items": [{"value": 10.5}]},
+        ),
+        (
+            "add_product_count_additional_count",
+            "/api/totvsmoda/general/v2/product-counts/additional-count",
+            {"branchCode": 1, "countNumber": 99, "items": [{"productCode": 10001, "quantity": 2}]},
+        ),
+        (
+            "create_relationship_counts",
+            "/api/totvsmoda/general/v2/relationship-counts",
+            {"branchCode": 1, "transactionCode": 123, "transactionDate": "2026-05-24", "counts": [{"countNumber": 99}]},
+        ),
+        (
+            "create_transaction_classification_relationship",
+            "/api/totvsmoda/general/v2/transaction-classification-relationship/create",
+            {
+                "branchCode": 1,
+                "transactionCode": 123,
+                "transactionDate": "2026-05-24",
+                "classifications": [{"typeCode": 11, "code": "7"}],
+            },
+        ),
+    ],
+)
+async def test_general_write_contracts_post_exact_body(client, method_name, path, args):
+    _mock_token()
+    route = respx.post(f"{TOTVS_BASE}{path}").mock(return_value=Response(200, json={"ok": True}))
+
+    tools = GeneralTools(client)
+    await getattr(tools, method_name)(args)
+
+    assert route.called
+    assert _body(route) == args
+
+
+@pytest.mark.asyncio
+@respx.mock
+@pytest.mark.parametrize(
+    ("method_name", "path", "args"),
+    [
+        (
+            "link_purchase_order_batch",
+            "/api/totvsmoda/purchase-order/v2/purchase-order/batch-link",
+            {
+                "branchCode": 1,
+                "batchCode": 700,
+                "sequence": 1,
+                "orderCode": 120040,
+                "invoice": {"branchCode": 1, "invoiceSequence": 143218},
+            },
+        ),
+        (
+            "update_purchase_order_item_quantities",
+            "/api/totvsmoda/purchase-order/v2/quantity-items",
+            {
+                "branchCode": 1,
+                "orderCode": 120040,
+                "items": [{"productCode": 1000258, "quantity": 12.5}],
+            },
+        ),
+    ],
+)
+async def test_purchase_order_write_contracts_post_exact_body(client, method_name, path, args):
+    _mock_token()
+    route = respx.post(f"{TOTVS_BASE}{path}").mock(return_value=Response(200, json={"ok": True}))
+
+    tools = PurchaseOrderTools(client)
+    await getattr(tools, method_name)(args)
+
+    assert route.called
+    assert _body(route) == args
+
+
+@pytest.mark.asyncio
+@respx.mock
+@pytest.mark.parametrize(
+    ("method_name", "method", "path", "args"),
+    [
+        (
+            "update_batch_info",
+            "put",
+            "/api/totvsmoda/product/v2/batch-info",
+            {"branchCode": 1, "batchCode": 700, "sequence": 1, "weight": 12.5},
+        ),
+        (
+            "create_batch_preferential_sales_order",
+            "post",
+            "/api/totvsmoda/product/v2/batch-preferentialsalesorder",
+            {"branchCode": 1, "batchCode": 700, "sequence": 1, "orderCode": 120358},
+        ),
+        (
+            "upsert_color",
+            "post",
+            "/api/totvsmoda/product/v2/colors",
+            {"code": "AZUL", "description": "Azul"},
+        ),
+        (
+            "create_grid",
+            "post",
+            "/api/totvsmoda/product/v2/grids",
+            {"gridCode": 10, "description": "Grade teste", "sizes": [{"sequence": 1, "sizeName": "P"}]},
+        ),
+    ],
+)
+async def test_product_remaining_write_contracts_use_exact_body(client, method_name, method, path, args):
+    _mock_token()
+    route = getattr(respx, method)(f"{TOTVS_BASE}{path}").mock(return_value=Response(200, json={"ok": True}))
+
+    tools = ProductTools(client)
+    await getattr(tools, method_name)(args)
+
+    assert route.called
+    assert _body(route) == args
+
+
+@pytest.mark.asyncio
+@respx.mock
+@pytest.mark.parametrize(
+    ("method_name", "path", "args"),
+    [
+        (
+            "create_pdv_transaction",
+            "/api/totvsmoda/sales-order/v2/pdv-transactions",
+            {"branchCode": 1, "orderCode": 120358, "transactions": [{"transactionCode": 99}]},
+        ),
+        (
+            "create_relationship_batch_items",
+            "/api/totvsmoda/sales-order/v2/relationship-batch-items",
+            {"branchCode": 1, "orderCode": 120358, "items": [{"productCode": 14679, "batchCode": 700}]},
+        ),
+        (
+            "suggest_batch_items_by_nuance",
+            "/api/totvsmoda/sales-order/v2/suggest-batch-items-nuance",
+            {"branchCode": 1, "orderCode": 120358, "items": [{"productCode": 14679}]},
+        ),
+    ],
+)
+async def test_sales_order_remaining_write_contracts_post_exact_body(client, method_name, path, args):
+    _mock_token()
+    route = respx.post(f"{TOTVS_BASE}{path}").mock(return_value=Response(200, json={"ok": True}))
+
+    tools = SalesOrderTools(client)
+    await getattr(tools, method_name)(args)
+
+    assert route.called
+    assert _body(route) == args
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_product_engineering_references_posts_exact_body(client):
+    _mock_token()
+    route = respx.post(f"{TOTVS_BASE}/api/totvsmoda/product-engineering/v2/references").mock(
+        return_value=Response(200, json={"ok": True})
+    )
+
+    tools = ProductEngineeringTools(client)
+    args = {"branchCode": 1, "references": [{"referenceCode": "REF-TESTE"}]}
+    await tools.create_references_from_engineering(args)
+
+    assert route.called
+    assert _body(route) == args
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_person_remove_classification_relationship_posts_exact_body(client):
+    _mock_token()
+    route = respx.post(f"{TOTVS_BASE}/api/totvsmoda/person/v2/classification-relationship/remove").mock(
+        return_value=Response(200, json={"ok": True})
+    )
+
+    tools = PersonTools(client)
+    args = {"personCode": 5066, "classifications": [{"typeCode": 11, "code": "7"}]}
+    await tools.remove_classification_relationship(args)
+
+    assert route.called
+    assert _body(route) == args
 
 
 @pytest.mark.asyncio
@@ -846,6 +1151,80 @@ async def test_upload_product_image_uses_product_endpoint(client):
 # ════════════════════════════════════════════════════════════════════════════
 # PHASE 1 BUG #3 — voucher search uses GET, not POST
 # ════════════════════════════════════════════════════════════════════════════
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_import_image_no_link_uses_imports_endpoint_and_aliases_body(client):
+    _mock_token()
+    route = respx.post(f"{TOTVS_BASE}/api/totvsmoda/image/V2/imports").mock(
+        return_value=Response(201, json={"ok": True})
+    )
+
+    tools = ImageTools(client)
+    await tools.import_image_no_link({"imageBase64": "abc123", "fileName": "foto.jpg"})
+
+    assert route.called
+    assert _body(route) == {"base64": "abc123", "name": "foto.jpg"}
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_upload_person_image_posts_persons_endpoint_and_aliases_body(client):
+    _mock_token()
+    route = respx.post(f"{TOTVS_BASE}/api/totvsmoda/image/v2/persons").mock(
+        return_value=Response(201, json={"ok": True})
+    )
+
+    tools = ImageTools(client)
+    await tools.upload_person_image({
+        "imageBase64": "abc123",
+        "fileName": "cliente.jpg",
+        "personCode": 5066,
+        "defaultImage": True,
+    })
+
+    assert route.called
+    assert _body(route) == {
+        "base64": "abc123",
+        "name": "cliente.jpg",
+        "personCode": 5066,
+        "defaultImage": True,
+    }
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_list_person_images_uses_persons_get_query(client):
+    _mock_token()
+    route = respx.get(f"{TOTVS_BASE}/api/totvsmoda/image/v2/persons").mock(
+        return_value=Response(200, json={"items": []})
+    )
+
+    tools = ImageTools(client)
+    await tools.list_person_images({"personCode": 5066, "personCpfCnpj": "12345678900", "page": 1, "pageSize": 20})
+
+    assert route.called
+    query = route.calls.last.request.url.params
+    assert query["PersonCode"] == "5066"
+    assert query["CpfCnpj"] == "12345678900"
+    assert query["Page"] == "1"
+    assert query["PageSize"] == "20"
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_get_person_image_base64_uses_person_images_endpoint(client):
+    _mock_token()
+    route = respx.get(f"{TOTVS_BASE}/api/totvsmoda/image/v2/person-images").mock(
+        return_value=Response(200, json={"base64": "abc123"})
+    )
+
+    tools = ImageTools(client)
+    await tools.get_person_image_base64({"imageId": 42})
+
+    assert route.called
+    assert route.calls.last.request.url.params["ImageCode"] == "42"
+
 
 @pytest.mark.asyncio
 @respx.mock

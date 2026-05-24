@@ -40,6 +40,7 @@ from tools.aggregators import AggregatorTools
 from tools.product_engineering import ProductEngineeringTools
 from tools.material_request import MaterialRequestTools
 from tools.product_prototype import ProductPrototypeTools
+from tools.analytics import AnalyticsTools
 import usage_tracker
 import usage_analyzer
 
@@ -54,6 +55,7 @@ server = Server("totvs-moda-mcp")
 
 _client: TotvsClient | None = None
 _modules: dict[str, Any] = {}
+ANALYTICS_ENABLED = os.environ.get("TOTVS_ENABLE_ANALYTICS", "").lower() in {"1", "true", "yes", "sim"}
 
 
 def get_client() -> TotvsClient:
@@ -94,6 +96,7 @@ def get_modules() -> dict[str, Any]:
             "product_engineering": ProductEngineeringTools(c),
             "material_request":     MaterialRequestTools(c),
             "product_prototype":    ProductPrototypeTools(c),
+            "analytics":            AnalyticsTools(c),
         }
     return _modules
 
@@ -366,6 +369,27 @@ TOOLS: list[types.Tool] = [
             "orderId":{"type":"string"},
             "counts":{"type":"array","description":"Lista de contagens (countCode, etc)","items":{"type":"object"}}
         },"required":["counts"]}),
+    types.Tool(name="totvs_create_pdv_transaction", description="⚠️ ESCRITA — Grava dados de transação TOTVS Moda PDV no pedido.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},
+            "orderCode":{"type":"integer"},
+            "orderId":{"type":"string"},
+            "transactions":{"type":"array","items":{"type":"object"}}
+        }}),
+    types.Tool(name="totvs_create_order_relationship_batch_items", description="⚠️ ESCRITA — Relaciona item de lote ao item do pedido de venda.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},
+            "orderCode":{"type":"integer"},
+            "orderId":{"type":"string"},
+            "items":{"type":"array","items":{"type":"object"}}
+        }}),
+    types.Tool(name="totvs_suggest_order_batch_items_by_nuance", description="⚠️ ESCRITA — Sugere e grava relacionamento de lote com item do pedido por nuance de cor.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},
+            "orderCode":{"type":"integer"},
+            "orderId":{"type":"string"},
+            "items":{"type":"array","items":{"type":"object"}}
+        }}),
 
     types.Tool(name="totvs_create_order", description="⚠️ Cria um pedido de venda B2C.",
         inputSchema={"type":"object","properties":{
@@ -620,6 +644,12 @@ TOOLS: list[types.Tool] = [
             "classificationCodeList":{"type":"array","items":{"type":"string"}},
             "classificationType":{"type":"integer"},
             "fields":{"type":"array","items":{"type":"string"}}
+        }}),
+    types.Tool(name="totvs_create_engineering_references", description="⚠️ ESCRITA — Cadastra produto a partir da engenharia padrão.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},
+            "references":{"type":"array","items":{"type":"object"}},
+            "items":{"type":"array","items":{"type":"object"}}
         }}),
     types.Tool(name="totvs_search_material_requests", description="Consulta requisicoes/solicitacoes de material. Use expand='items,classifications,observations'. Status: 0=Pendente, 1=Liberada, 2=Nao liberada, 3=Aprovada, 4=Atendida, 5=Nao atendida, 6=Cancelada.",
         inputSchema={"type":"object","properties":{
@@ -1011,6 +1041,34 @@ TOOLS: list[types.Tool] = [
         },"required":["branchCode","productCode","batchCode"]}),
 
     # ── PERSON ───────────────────────────────────────────────────────────────
+    types.Tool(name="totvs_update_product_batch_info", description="⚠️ ESCRITA — Altera dados de item de lote.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},
+            "batchCode":{"type":"integer"},
+            "sequence":{"type":"integer"},
+            "batchItemBarCode":{"type":"string"}
+        }}),
+    types.Tool(name="totvs_create_product_batch_preferential_sales_order", description="⚠️ ESCRITA — Cadastra relacionamento de item de lote com pedido de venda preferencial.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},
+            "batchCode":{"type":"integer"},
+            "sequence":{"type":"integer"},
+            "batchItemBarCode":{"type":"string"},
+            "orderCode":{"type":"integer"}
+        }}),
+    types.Tool(name="totvs_upsert_product_color", description="⚠️ ESCRITA — Inclui ou altera dados de cor.",
+        inputSchema={"type":"object","properties":{
+            "code":{"type":"string"},
+            "description":{"type":"string"},
+            "isInactive":{"type":"boolean"}
+        }}),
+    types.Tool(name="totvs_create_product_grid", description="⚠️ ESCRITA — Inclui dados de grade.",
+        inputSchema={"type":"object","properties":{
+            "gridCode":{"type":"integer"},
+            "description":{"type":"string"},
+            "sizes":{"type":"array","items":{"type":"object"}}
+        }}),
+
     types.Tool(name="totvs_search_individual_customers", description="Busca pessoas físicas/clientes PF por CPF, código, telefone, aniversário, classificações e flags funcionais. Use expand apenas quando precisar dados ricos.",
         inputSchema={"type":"object","properties":{
             "filter":{"type":"object","description":"IndividualFilterModel oficial; se informado, substitui os filtros soltos."},
@@ -1087,6 +1145,11 @@ TOOLS: list[types.Tool] = [
         }}),
     types.Tool(name="totvs_get_person_classifications", description="Classificações de pessoa disponíveis.",
         inputSchema={"type":"object","properties":{}}),
+    types.Tool(name="totvs_remove_person_classification_relationship", description="⚠️ DESTRUTIVO — Remove relacionamento de classificação com pessoa. Use somente após confirmação explícita.",
+        inputSchema={"type":"object","properties":{
+            "personCode":{"type":"integer"},
+            "classifications":{"type":"array","items":{"type":"object"}}
+        },"required":["personCode"]}),
     types.Tool(name="totvs_get_email_types", description="Tipos de e-mail disponíveis para cadastro de pessoa.",
         inputSchema={"type":"object","properties":{}}),
     types.Tool(name="totvs_get_phone_types", description="Tipos de telefone disponíveis para cadastro de pessoa.",
@@ -1452,6 +1515,22 @@ TOOLS: list[types.Tool] = [
             "BranchCode":{"type":"integer"},"TransactionCode":{"type":"integer"},
             "TransactionDate":{"type":"string"}
         }}),
+    types.Tool(name="totvs_search_transactions", description="Lista transacoes por filial, cliente, data, alteracao e expansao. Use para consultar movimentos/transacoes sem saber o codigo exato.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer","description":"Filial; usado para montar branchCodeList quando branchCodeList nao vier"},
+            "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Obrigatorio no Swagger"},
+            "transactionCodeList":{"type":"array","items":{"type":"integer"}},
+            "transactionDate":{"type":"string"},
+            "customerCodeList":{"type":"array","items":{"type":"integer"}},
+            "customerCpfCnpjList":{"type":"array","items":{"type":"string"}},
+            "startChangeDate":{"type":"string"},
+            "endChangeDate":{"type":"string"},
+            "expand":{"type":"string","description":"itemPromotionalEngines,originDestination,additionalInformation"},
+            "order":{"type":"string","description":"branchCode,transactionCode,transactionDate,maxChangeFilterDate"},
+            "page":{"type":"integer","default":1},
+            "pageSize":{"type":"integer","default":100,"description":"Maximo 500 no Swagger"},
+            "fields":{"type":"array","items":{"type":"string"}}
+        }}),
     types.Tool(name="totvs_get_classifications", description="Classificações de produto disponíveis.",
         inputSchema={"type":"object","properties":{}}),
     types.Tool(name="totvs_create_devolution", description="⚠️ Grava dados de devolução.",
@@ -1468,6 +1547,31 @@ TOOLS: list[types.Tool] = [
         inputSchema={"type":"object","properties":{
             "branchCode":{"type":"integer"},"products":{"type":"array","items":{"type":"object"}}
         },"required":["branchCode","products"]}),
+    types.Tool(name="totvs_create_financial_compensation", description="⚠️ ESCRITA — Cria compensacao financeira conforme payload oficial do Swagger.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},
+            "items":{"type":"array","items":{"type":"object"}}
+        }}),
+    types.Tool(name="totvs_add_product_count_additional_count", description="⚠️ ESCRITA — Adiciona contagem complementar a uma contagem de produto.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},
+            "countNumber":{"type":"integer"},
+            "items":{"type":"array","items":{"type":"object"}}
+        }}),
+    types.Tool(name="totvs_create_relationship_counts", description="⚠️ ESCRITA — Relaciona contagens a uma transacao.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},
+            "transactionCode":{"type":"integer"},
+            "transactionDate":{"type":"string"},
+            "counts":{"type":"array","items":{"type":"object"}}
+        }}),
+    types.Tool(name="totvs_create_transaction_classification_relationship", description="⚠️ ESCRITA — Vincula classificacoes a uma transacao.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},
+            "transactionCode":{"type":"integer"},
+            "transactionDate":{"type":"string"},
+            "classifications":{"type":"array","items":{"type":"object"}}
+        }}),
 
     # ── ACCOUNT PAYABLE ───────────────────────────────────────────────────────
     types.Tool(name="totvs_search_payable_duplicates", description="Consulta duplicatas de contas a pagar com filtros flexíveis de vencimento, emissão, fornecedor e status.",
@@ -1590,11 +1694,37 @@ TOOLS: list[types.Tool] = [
         },"required":["branchCode","orderCode","newStatus"]}),
 
     # ── SELLER ────────────────────────────────────────────────────────────────
+    types.Tool(name="totvs_link_purchase_order_batch", description="⚠️ ESCRITA — Cria ou atualiza vinculo de item de lote com pedido de compra e nota fiscal.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},
+            "batchCode":{"type":"integer"},
+            "sequence":{"type":"integer"},
+            "batchItemBarCode":{"type":"string"},
+            "orderCode":{"type":"integer"},
+            "invoice":{"type":"object"}
+        }}),
+    types.Tool(name="totvs_update_purchase_order_item_quantities", description="⚠️ ESCRITA — Altera quantidade solicitada dos itens de um pedido de compra.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer"},
+            "orderCode":{"type":"integer"},
+            "items":{"type":"array","items":{"type":"object"}}
+        }}),
+
     types.Tool(name="totvs_search_sellers", description="Lista vendedores e empresas vinculadas. Use fields para reduzir tokens.",
         inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"sellerCodeList":{"type":"array","items":{"type":"integer"}},"page":{"type":"integer","default":1},"pageSize":{"type":"integer","default":100},"fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."}}}),
     types.Tool(name="totvs_get_seller_operational_area", description="Regiões de atuação de vendedores.",
         inputSchema={"type":"object","properties":{
             "sellerCode":{"type":"integer"},"branchCode":{"type":"integer"}
+        }}),
+    types.Tool(name="totvs_get_seller_operational_area_state", description="Regiões de atuação de vendedores por estado.",
+        inputSchema={"type":"object","properties":{
+            "startChangeDate":{"type":"string"},
+            "endChangeDate":{"type":"string"},
+            "operationalAreaCode":{"type":"integer"},
+            "order":{"type":"string","description":"operationalAreaCode,maxChangeFilterDate"},
+            "page":{"type":"integer","default":1},
+            "pageSize":{"type":"integer","default":1000},
+            "fields":{"type":"array","items":{"type":"string"}}
         }}),
     types.Tool(name="totvs_get_seller_area_by_cep", description="Vendedor responsável por um CEP.",
         inputSchema={"type":"object","properties":{
@@ -1953,6 +2083,31 @@ TOOLS: list[types.Tool] = [
         }}),
 ]
 
+if ANALYTICS_ENABLED:
+    TOOLS.append(
+        types.Tool(
+            name="totvs_analytics_call",
+            description=(
+                "Gateway opcional para Analytics/painel do TOTVS Moda. "
+                "Use somente quando TOTVS_ENABLE_ANALYTICS=true e o modulo estiver contratado. "
+                "Informe endpoint, params para GET ou body para POST. Use fields para reduzir retorno."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "endpoint": {
+                        "type": "string",
+                        "description": "Chave do endpoint em tools.analytics.ENDPOINTS, ex. financial_panel_v2_total_payable_search.",
+                    },
+                    "params": {"type": "object", "description": "Query params para endpoints GET."},
+                    "body": {"type": "object", "description": "Body JSON para endpoints POST."},
+                    "fields": {"type": "array", "items": {"type": "string"}},
+                },
+                "required": ["endpoint"],
+            },
+        )
+    )
+
 
 # ---------------------------------------------------------------------------
 # Routing table
@@ -1970,6 +2125,9 @@ ROUTING: dict[str, tuple[str, str]] = {
     "totvs_update_order_header":                 ("sales_order", "update_order_header"),
     "totvs_get_order_classifications":           ("sales_order", "get_classifications"),
     "totvs_get_discount_types":                  ("sales_order", "get_discount_types"),
+    "totvs_create_pdv_transaction":              ("sales_order", "create_pdv_transaction"),
+    "totvs_create_order_relationship_batch_items": ("sales_order", "create_relationship_batch_items"),
+    "totvs_suggest_order_batch_items_by_nuance": ("sales_order", "suggest_batch_items_by_nuance"),
     "totvs_search_products":                     ("product", "search_products"),
     "totvs_get_product":                         ("product", "get_product"),
     "totvs_search_product_balances":             ("product", "search_balances"),
@@ -1994,6 +2152,7 @@ ROUTING: dict[str, tuple[str, str]] = {
     "totvs_search_engineering_applications":     ("product_engineering", "search_applications"),
     "totvs_search_engineering_default":          ("product_engineering", "search_engineering_default"),
     "totvs_get_engineering_configurations":      ("product_engineering", "get_engineering_configurations"),
+    "totvs_create_engineering_references":       ("product_engineering", "create_references_from_engineering"),
     "totvs_search_material_requests":            ("material_request", "search_material_requests"),
     "totvs_create_material_request":             ("material_request", "create_material_request"),
     "totvs_add_material_request_items":          ("material_request", "add_items"),
@@ -2027,6 +2186,10 @@ ROUTING: dict[str, tuple[str, str]] = {
     "totvs_update_product_branch_info_batch":    ("product", "update_product_branch_info_batch"),
     "totvs_create_product_barcode":              ("product", "create_barcode"),
     "totvs_create_product_batch":                ("product", "create_batch"),
+    "totvs_update_product_batch_info":           ("product", "update_batch_info"),
+    "totvs_create_product_batch_preferential_sales_order": ("product", "create_batch_preferential_sales_order"),
+    "totvs_upsert_product_color":                ("product", "upsert_color"),
+    "totvs_create_product_grid":                 ("product", "create_grid"),
     "totvs_search_individual_customers":         ("person", "search_individuals"),
     "totvs_search_legal_customers":              ("person", "search_legal_entities"),
     "totvs_get_customer_bonus_balance":          ("person", "list_bonus_balance"),
@@ -2036,6 +2199,7 @@ ROUTING: dict[str, tuple[str, str]] = {
     "totvs_get_branches_list":                   ("person", "get_branches_list"),
     "totvs_search_representatives":              ("person", "search_representatives"),
     "totvs_get_person_classifications":          ("person", "get_classifications"),
+    "totvs_remove_person_classification_relationship": ("person", "remove_classification_relationship"),
     "totvs_get_email_types":                     ("person", "get_email_types"),
     "totvs_get_phone_types":                     ("person", "get_phone_types"),
     "totvs_get_contact_types":                   ("person", "get_contact_types"),
@@ -2071,10 +2235,15 @@ ROUTING: dict[str, tuple[str, str]] = {
     "totvs_search_devolutions":                  ("general", "search_devolutions"),
     "totvs_get_payment_plans":                   ("general", "get_payment_plans"),
     "totvs_get_transactions":                    ("general", "get_transactions"),
+    "totvs_search_transactions":                 ("general", "search_transactions"),
     "totvs_get_classifications":                 ("general", "get_classifications"),
     "totvs_create_devolution":                   ("general", "create_devolution"),
     "totvs_create_transaction":                  ("general", "create_transaction"),
     "totvs_create_product_count":                ("general", "create_product_count"),
+    "totvs_create_financial_compensation":       ("general", "create_financial_compensation"),
+    "totvs_add_product_count_additional_count":  ("general", "add_product_count_additional_count"),
+    "totvs_create_relationship_counts":          ("general", "create_relationship_counts"),
+    "totvs_create_transaction_classification_relationship": ("general", "create_transaction_classification_relationship"),
     "totvs_search_payable_duplicates":           ("account_payable", "search_duplicates"),
     "totvs_search_commissions_paid":             ("account_payable", "search_commissions_paid"),
     "totvs_create_duplicate":                    ("account_payable", "create_duplicate"),
@@ -2083,8 +2252,11 @@ ROUTING: dict[str, tuple[str, str]] = {
     "totvs_create_purchase_order":               ("purchase_order", "create_purchase_order"),
     "totvs_cancel_purchase_order":               ("purchase_order", "cancel_purchase_order"),
     "totvs_change_purchase_order_status":        ("purchase_order", "change_purchase_order_status"),
+    "totvs_link_purchase_order_batch":           ("purchase_order", "link_purchase_order_batch"),
+    "totvs_update_purchase_order_item_quantities": ("purchase_order", "update_purchase_order_item_quantities"),
     "totvs_search_sellers":                      ("seller", "search_sellers"),
     "totvs_get_seller_operational_area":         ("seller", "get_operational_area"),
+    "totvs_get_seller_operational_area_state":   ("seller", "get_operational_area_state"),
     "totvs_get_seller_area_by_cep":              ("seller", "get_operational_area_by_cep"),
     "totvs_get_seller_area_by_city":             ("seller", "get_operational_area_by_city"),
     "totvs_search_voucher":                      ("voucher", "search_voucher"),
@@ -2156,6 +2328,7 @@ ROUTING: dict[str, tuple[str, str]] = {
     "totvs_new_customers_today":                ("aggregators", "new_customers_today"),
     "totvs_open_purchase_orders":               ("aggregators", "open_purchase_orders"),
     "totvs_open_production_orders":             ("aggregators", "open_production_orders"),
+    "totvs_analytics_call":                     ("analytics", "call_endpoint"),
 }
 
 

@@ -110,6 +110,11 @@ class ProductionOrderTools:
 
     async def get_pending_material_consumption(self, args: dict[str, Any]) -> Any:
         """POST /pending-material-consumption — Fichas de consumo pendentes."""
+        required_filters = ("rawMaterialCodeList", "materialClassificationList")
+        if not any(args.get(key) for key in required_filters):
+            raise ValueError(
+                "Informe rawMaterialCodeList ou materialClassificationList para consultar consumo pendente."
+            )
         flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order") and v is not None}
         body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
         if args.get("order"):

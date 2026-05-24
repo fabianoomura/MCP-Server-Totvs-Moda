@@ -16,10 +16,12 @@ MCP Server para API V2 do TOTVS Moda. Permite que agentes/LLMs consultem e execu
 
 Atualizado em 2026-05-24.
 
-- Testes: `176 passed`
+- Testes: `202 passed`
 - Endpoint harness: `docs/API_ENDPOINT_MATRIX.md` e `.json`
 - Swagger local: pasta `json/`
-- Cobertura atual do harness: `169/251` endpoints mapeados por path
+- Cobertura atual do harness: `251/251` endpoints mapeados por path
+- Cobertura do nucleo nao-Analytics: `190/190`
+- Analytics: `61/61` mapeado via gateway opcional `totvs_analytics_call` (`TOTVS_ENABLE_ANALYTICS=true`)
 - Areas fechadas ou quase fechadas:
   - Fiscal: `11/11`
   - Accounts payable: `4/4`
@@ -27,9 +29,13 @@ Atualizado em 2026-05-24.
   - Material request: `9/9`
   - Product prototype: `3/3`
   - Logistics: `4/4`
-  - Person: `19/20` (faltou apenas endpoint destrutivo de remover relacionamento de classificacao)
-  - Product engineering: `6/7`
-  - Product: `38/42`
+  - Person: `20/20`
+  - Product engineering: `7/7`
+  - Product: `42/42`
+  - Purchase Order: `6/6`
+  - Seller: `5/5`
+  - General: `15/15`
+  - Image: `6/6`
 
 ## Arquivos importantes
 
@@ -87,8 +93,8 @@ python scripts\build_endpoint_harness.py --write
 
 ## Proximo ataque sugerido
 
-Proximo bloco recomendado:
+O harness esta completo, incluindo Analytics como modulo opcional isolado. Proximo bloco sugerido:
 
-- Purchase Order: avaliar os 2 writes restantes com cautela.
-- General: completar `GET /transactions/search` antes dos writes.
-- Product: restam apenas writes auxiliares mais sensiveis.
+- Rodar smoke tests read-only em ambiente real para os endpoints de Analytics/painel que forem contratados.
+- Refinar schemas dos writes mais complexos com exemplos do Swagger.
+- Criar smoke tests read-only selecionados para os novos reads.

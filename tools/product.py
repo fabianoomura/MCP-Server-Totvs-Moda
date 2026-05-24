@@ -522,6 +522,26 @@ class ProductTools:
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/batch/create", body)
 
+    async def update_batch_info(self, args: dict[str, Any]) -> Any:
+        """PUT /batch-info - altera dados de item de lote."""
+        body = {k: v for k, v in args.items() if v is not None}
+        return await self.client.put(f"{BASE}/batch-info", body)
+
+    async def create_batch_preferential_sales_order(self, args: dict[str, Any]) -> Any:
+        """POST /batch-preferentialsalesorder - vincula item de lote a pedido preferencial."""
+        body = {k: v for k, v in args.items() if v is not None}
+        return await self.client.post(f"{BASE}/batch-preferentialsalesorder", body)
+
+    async def upsert_color(self, args: dict[str, Any]) -> Any:
+        """POST /colors - inclui ou altera cor."""
+        body = {k: v for k, v in args.items() if v is not None}
+        return await self.client.post(f"{BASE}/colors", body)
+
+    async def create_grid(self, args: dict[str, Any]) -> Any:
+        """POST /grids - inclui grade."""
+        body = {k: v for k, v in args.items() if v is not None}
+        return await self.client.post(f"{BASE}/grids", body)
+
     async def create_reference(self, args: dict[str, Any]) -> Any:
         """POST /references — ⚠️ Inclui nova referência de produto. NEW in v2.3.
 

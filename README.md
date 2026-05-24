@@ -43,7 +43,12 @@ Exemplos reais do que funciona hoje:
 
 ## Cobertura
 
-**+155 tools** organizadas em 19 módulos da API V2:
+**200+ tools** organizadas por módulos da API V2:
+
+- Harness de endpoints: `251/251` caminhos do Swagger local mapeados
+- Núcleo não-Analytics: `190/190`
+- Analytics/painéis: `61/61` via gateway opcional, desabilitado por padrão
+- Suite local: `202` testes
 
 | Módulo | Principais operações |
 |---|---|
@@ -59,7 +64,7 @@ Exemplos reais do que funciona hoje:
 | **Logística** | Movimentações de material, lotes |
 | **Geral** | Operações, condições de pagamento, classificações, CEP, cidades |
 | **Painéis rápidos** | Dashboard do dia, visões 360, estoque disponível, pedidos/OPs em aberto |
-| **Analytics** | Top clientes, produtos mais vendidos, resumo de faturamento, alerta de estoque |
+| **Analytics / painéis** | Gateway opcional para endpoints de Analytics, habilitado apenas por ambiente |
 | **Inteligência de uso** | Análise de padrões, sequências, horários de pico, sugestões de otimização |
 
 ---
@@ -89,8 +94,7 @@ pip install totvs-moda-mcp
 {
   "servers": {
     "totvs-moda": {
-      "command": "python",
-      "args": ["-m", "totvs_moda_mcp"],
+      "command": "totvs-moda-mcp",
       "env": {
         "TOTVS_BASE_URL": "https://seu-servidor:9443",
         "TOTVS_CLIENT_ID": "seu_client_id",
@@ -120,6 +124,10 @@ pip install totvs-moda-mcp
 | `TOTVS_USAGE_FILE` | — | Caminho customizado para o arquivo de uso |
 | `TOTVS_OPERATION_CONTEXT` | — | Texto descrevendo o significado dos status de pedido na sua empresa |
 | `TOTVS_TLS_VERIFY` | — | `false` para desativar verificação TLS (self-signed certs) |
+| `TOTVS_ENABLE_ANALYTICS` | — | `true` para habilitar o gateway opcional `totvs_analytics_call` |
+| `TOTVS_DEFAULT_PRICE_CODES` | — | Tabelas de preço padrão, ex: `1` |
+| `TOTVS_DEFAULT_COST_CODES` | — | Tipos de custo padrão, ex: `1,2,3` |
+| `TOTVS_DEFAULT_STOCK_CODES` | — | Tipos de saldo padrão, ex: `1` |
 
 ### Segurança
 
@@ -175,6 +183,8 @@ Tools que combinam múltiplas chamadas à API em uma única resposta:
 | `totvs_daily_dashboard` | Vendas + receber + pagar do dia | 3-6 calls | 1 call |
 | `totvs_customer_360` | Dados + histórico + recompra | 2-3 calls | 1 call |
 | `totvs_stock_available` | SKUs com estoque > 0 | 18+ páginas | 1 call |
+| `totvs_open_purchase_orders` | Pedidos de compra abertos | dezenas de páginas | 1 call |
+| `totvs_open_production_orders` | OPs abertas | dezenas de páginas | 1 call |
 
 ---
 
@@ -227,8 +237,11 @@ Tools que combinam múltiplas chamadas à API em uma única resposta:
 
 ### Analytics
 
+Analytics/painéis do TOTVS Moda podem depender de módulo contratado ou permissão específica. Por isso, o projeto mantém esses endpoints em um gateway isolado e desabilitado por padrão.
+
 | Tool | Descrição |
 |---|---|
+| `totvs_analytics_call` | Gateway opcional para os 61 endpoints Analytics/painel (`TOTVS_ENABLE_ANALYTICS=true`) |
 | `totvs_get_products_sold` | Top N produtos mais vendidos no período |
 | `totvs_sales_summary_by_period` | Resumo de vendas por filial, status ou dia |
 | `totvs_top_customers` | Top N clientes por faturamento |
@@ -256,7 +269,7 @@ pip install -e ".[dev]"
 PYTHONPATH=. pytest tests/ -v
 ```
 
-117 testes cobrindo os módulos principais.
+202 testes cobrindo contratos de endpoints, agregadores, defaults, campos e cliente HTTP.
 
 ---
 
@@ -286,12 +299,13 @@ totvs-moda-mcp/
 │   ├── voucher.py         # Vouchers
 │   ├── data_package.py    # Pacotes de dados
 │   ├── image.py           # Imagens de produto/pessoa
-│   ├── aggregators.py     # Painéis rápidos + analytics
+│   ├── aggregators.py     # Painéis rápidos e consultas compostas
+│   ├── analytics.py       # Gateway opcional de Analytics/painéis
 │   ├── convenience.py     # Helpers
 │   ├── _defaults.py       # Injeção automática de branchCode
 │   ├── _fields.py         # Filtro de campos na resposta
 │   └── _value_types.py    # Resolução de tipos de valor
-├── tests/                 # 117 testes (pytest + respx)
+├── tests/                 # 202 testes (pytest + respx)
 └── docs/
     ├── PROJECT_STATE.md   # Estado completo do projeto
     ├── START.md           # Contexto rápido para novas conversas

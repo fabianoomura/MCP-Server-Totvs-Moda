@@ -45,6 +45,10 @@ def _mock_token():
     )
 
 
+def _body(route):
+    return json.loads(route.calls.last.request.content)
+
+
 # ── get_products_sold ───────────────────────────────────────────────────────
 
 @pytest.mark.asyncio
@@ -136,6 +140,44 @@ async def test_get_products_sold_order_by_value(client):
 
     assert by_qty["topProducts"][0]["productCode"] == 1
     assert by_val["topProducts"][0]["productCode"] == 2
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_customer_360_injects_branch_defaults(client):
+    _mock_token()
+    route = respx.post(f"{TOTVS_BASE}/api/totvsmoda/sales-order/v2/orders/search").mock(
+        return_value=Response(200, json={
+            "items": [
+                {
+                    "orderCode": 10,
+                    "customerCode": 123,
+                    "customerName": "Cliente",
+                    "customerCpfCnpj": "12345678901",
+                    "orderDate": "2026-05-01T00:00:00",
+                    "totalAmountOrder": 100.0,
+                    "statusOrder": "Attended",
+                },
+                {
+                    "orderCode": 9,
+                    "customerCode": 123,
+                    "customerName": "Cliente",
+                    "customerCpfCnpj": "12345678901",
+                    "orderDate": "2024-01-15T00:00:00",
+                    "totalAmountOrder": 50.0,
+                    "statusOrder": "Attended",
+                },
+            ]
+        })
+    )
+
+    tools = AggregatorTools(client)
+    result = await tools.customer_360({"customerCode": 123})
+
+    assert result["customer"]["code"] == 123
+    assert result["orders"]["firstOrder"] == "2024-01-15"
+    assert result["orders"]["lastOrder"] == "2026-05-01"
+    assert _body(route)["filter"]["branchCodeList"] == [1]
 
 
 # ── sales_summary_by_period ─────────────────────────────────────────────────

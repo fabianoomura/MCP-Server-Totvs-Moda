@@ -82,3 +82,13 @@ class PurchaseOrderTools:
         args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/orders/change-status", body)
+
+    async def link_purchase_order_batch(self, args: dict[str, Any]) -> Any:
+        """POST /purchase-order/batch-link - cria/atualiza vinculo de lote com pedido e NF."""
+        body = {k: v for k, v in args.items() if v is not None}
+        return await self.client.post(f"{BASE}/purchase-order/batch-link", body)
+
+    async def update_purchase_order_item_quantities(self, args: dict[str, Any]) -> Any:
+        """POST /quantity-items - altera quantidade solicitada dos itens."""
+        body = {k: v for k, v in args.items() if v is not None}
+        return await self.client.post(f"{BASE}/quantity-items", body)

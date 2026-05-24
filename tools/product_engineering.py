@@ -118,3 +118,8 @@ class ProductEngineeringTools:
         )
         result = await self.client.get(f"{BASE}/engineering-configurations", params=params)
         return apply_fields(result, args)
+
+    async def create_references_from_engineering(self, args: dict[str, Any]) -> Any:
+        """POST /references - cadastra produto a partir da engenharia padrao."""
+        body = {k: v for k, v in args.items() if v is not None}
+        return await self.client.post(f"{BASE}/references", body)

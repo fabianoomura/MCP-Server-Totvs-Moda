@@ -80,6 +80,11 @@ class PersonTools:
         """GET /classifications — Classificações de pessoa."""
         return await self.client.get(f"{BASE}/classifications")
 
+    async def remove_classification_relationship(self, args: dict[str, Any]) -> Any:
+        """POST /classification-relationship/remove - remove vinculo de classificacao de pessoa."""
+        body = {k: v for k, v in args.items() if v is not None}
+        return await self.client.post(f"{BASE}/classification-relationship/remove", body)
+
     async def get_email_types(self, args: dict[str, Any]) -> Any:
         """GET /email-types — Tipos de e-mail disponíveis."""
         return await self.client.get(f"{BASE}/email-types", params=_pascal_params(args) or None)

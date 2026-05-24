@@ -7,8 +7,10 @@ Este roadmap substitui o plano antigo por fases baseadas na matriz real de Swagg
 ## Situacao atual
 
 - Total no harness: 251 endpoints
-- Mapeados: 169
-- Testes: 176 passing
+- Mapeados: 251
+- Nucleo nao-Analytics: 190/190
+- Analytics/painel: 61/61 via gateway opcional
+- Testes: 202 passing
 - Swagger local: `json/*.json`
 
 ## Principios
@@ -24,7 +26,7 @@ Este roadmap substitui o plano antigo por fases baseadas na matriz real de Swagg
 
 Prioridade alta. Melhora agentes de Produto, PCP e Comercial.
 
-Status: concluida para endpoints read-only.
+Status: concluida.
 
 Implementados:
 
@@ -36,7 +38,7 @@ Implementados:
 - `GET /api/totvsmoda/product/v2/price-table-scales`
 - `GET /api/totvsmoda/product/v2/product-grouper-configuration`
 
-Writes de produto que exigem cuidado:
+Tambem implementados com contrato mockado:
 
 - `PUT /batch-info`
 - `POST /batch-preferentialsalesorder`
@@ -45,16 +47,14 @@ Writes de produto que exigem cuidado:
 
 ## Fase B - Purchase Order final
 
-Restam 2 endpoints:
+Status: concluida.
 
 - `POST /api/totvsmoda/purchase-order/v2/purchase-order/batch-link`
 - `POST /api/totvsmoda/purchase-order/v2/quantity-items`
 
-Ambos sao write. Implementar somente com contrato bem descrito e testes mock.
-
 ## Fase C - General
 
-Restam endpoints uteis para agentes operacionais:
+Status: concluida.
 
 - `POST /financial-compensations`
 - `POST /product-counts/additional-count`
@@ -62,54 +62,46 @@ Restam endpoints uteis para agentes operacionais:
 - `POST /transaction-classification-relationship/create`
 - `GET /transactions/search`
 
-Priorizar `GET /transactions/search` antes dos writes.
-
 ## Fase D - Image
 
-Restam:
+Status: concluida.
 
 - `GET /image/v2/person-images`
 - `GET /image/v2/persons`
 - `POST /image/v2/persons`
 - `POST /image/V2/imports`
 
-Implementar primeiro os GETs. Writes de imagem exigem schema e payload base64 claros.
-
 ## Fase E - Seller
 
-Fechar:
+Status: concluida.
 
 - `GET /api/totvsmoda/seller/v2/operational-area-state`
 
-Baixo risco.
-
 ## Fase F - Product Engineering final
 
-Resta:
+Status: concluida.
 
 - `POST /api/totvsmoda/product-engineering/v2/references`
 
-Write complexo. Implementar apenas se houver caso de uso claro.
-
 ## Fase G - Sales Order gaps
 
-Restam:
+Status: concluida.
 
 - `POST /pdv-transactions`
 - `POST /relationship-batch-items`
 - `POST /suggest-batch-items-nuance`
 
-Todos writes. Avaliar com Swagger e testes mock.
-
 ## Fase H - Analytics / paineis internos
 
-Analytics aparece com 61 endpoints no Swagger, mas pode depender de modulo contratado ou permissao especifica.
+Status: concluida como gateway opcional.
+
+Analytics aparece com 61 endpoints no Swagger, mas pode depender de modulo contratado ou permissao especifica. Por isso foi mapeado em `tools/analytics.py` e exposto como uma unica tool opcional, `totvs_analytics_call`, habilitada somente com `TOTVS_ENABLE_ANALYTICS=true`.
 
 Recomendacao:
 
 1. Fazer apenas testes read-only pequenos quando necessario.
-2. Se nao funcionar no ambiente, manter fora do MCP principal.
-3. Se funcionar, criar modulo opcional/isolado para dashboards.
+2. Se nao funcionar no ambiente, manter desabilitado no MCP principal.
+3. Se houver uso recorrente, promover os paineis mais importantes para tools dedicadas.
 
 ## Rotina de implementacao por fase
 

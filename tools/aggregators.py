@@ -540,11 +540,16 @@ class AggregatorTools:
              statusOrder}]}, isRepeatBuyer: bool, averageTicket: float}
         """
         import asyncio
+        args = inject_branch_defaults(args)
         code = args.get("customerCode")
         cpf = args.get("customerCpfCnpj")
 
         # Buscar pedidos do cliente
-        flt: dict[str, Any] = {"startOrderDate": "2020-01-01", "endOrderDate": date.today().isoformat()}
+        flt: dict[str, Any] = {
+            "branchCodeList": args.get("branchCodeList"),
+            "startOrderDate": "2020-01-01",
+            "endOrderDate": date.today().isoformat(),
+        }
         if code:
             flt["customerCodeList"] = [code] if not isinstance(code, list) else code
         elif cpf:
@@ -584,13 +589,17 @@ class AggregatorTools:
                 "integrationCode": o.get("integrationCode"),
             })
 
+        dated_orders = [o for o in order_list if o.get("orderDate")]
+        first_order_date = min((o["orderDate"] for o in dated_orders), default=None)
+        last_order_date = max((o["orderDate"] for o in dated_orders), default=None)
+
         result = {
             "customer": customer_info,
             "orders": {
                 "count": len(orders),
                 "totalValue": total_value,
-                "firstOrder": order_list[-1]["orderDate"],
-                "lastOrder": order_list[0]["orderDate"],
+                "firstOrder": first_order_date,
+                "lastOrder": last_order_date,
                 "items": order_list,
             },
             "isRepeatBuyer": len(orders) > 1,

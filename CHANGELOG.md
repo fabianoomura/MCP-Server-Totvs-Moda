@@ -1,5 +1,22 @@
 # Changelog
 
+## [3.7.0] - 2026-05-24
+
+### Added
+- Optional Analytics gateway with `totvs_analytics_call`, enabled only with `TOTVS_ENABLE_ANALYTICS=true`.
+- Full Swagger path coverage in the endpoint harness: `251/251` endpoints mapped.
+- Remaining non-Analytics endpoints mapped for General, Image, Seller, Product, Product Engineering, Purchase Order, Sales Order and Person.
+- Contract tests for the new endpoints and the optional Analytics gateway.
+
+### Changed
+- `customer_360` now injects branch defaults in its internal sales-order search.
+- `customer_360` now calculates first/last purchase dates by actual order date instead of trusting API order.
+- Pending material consumption now validates required material/classification filters before calling the API.
+- Documentation refreshed for endpoint coverage, testing status and optional Analytics behavior.
+
+### Tests
+- Test suite expanded to 202 tests.
+
 ## [3.6.0] - 2026-05-24
 
 ### Added

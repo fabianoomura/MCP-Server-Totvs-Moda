@@ -275,6 +275,21 @@ class SalesOrderTools:
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/relationship-counts", body)
 
+    async def create_pdv_transaction(self, args: dict[str, Any]) -> Any:
+        """POST /pdv-transactions - grava dados de transacao PDV."""
+        body = {k: v for k, v in args.items() if v is not None}
+        return await self.client.post(f"{BASE}/pdv-transactions", body)
+
+    async def create_relationship_batch_items(self, args: dict[str, Any]) -> Any:
+        """POST /relationship-batch-items - relaciona item de lote ao item do pedido."""
+        body = {k: v for k, v in args.items() if v is not None}
+        return await self.client.post(f"{BASE}/relationship-batch-items", body)
+
+    async def suggest_batch_items_by_nuance(self, args: dict[str, Any]) -> Any:
+        """POST /suggest-batch-items-nuance - sugere e grava lote por nuance de cor."""
+        body = {k: v for k, v in args.items() if v is not None}
+        return await self.client.post(f"{BASE}/suggest-batch-items-nuance", body)
+
     async def update_order_header(self, args: dict[str, Any]) -> Any:
         """
         POST /header

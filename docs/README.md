@@ -36,7 +36,7 @@ Ultima validacao local documentada:
 
 ```powershell
 python -m pytest -q
-# 176 passed
+# 202 passed
 ```
 
 ## Importante

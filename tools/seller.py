@@ -9,6 +9,10 @@ logger = logging.getLogger("totvs-moda-mcp.seller")
 BASE = "/api/totvsmoda/seller/v2"
 
 
+def _pascal_params(args: dict[str, Any]) -> dict[str, Any]:
+    return {k[:1].upper() + k[1:]: v for k, v in args.items() if v is not None and k != "fields"}
+
+
 class SellerTools:
     def __init__(self, client: TotvsClient) -> None:
         self.client = client
@@ -40,3 +44,8 @@ class SellerTools:
         args = inject_branch_defaults(args)
         params = {k: v for k, v in args.items() if v is not None}
         return await self.client.get(f"{BASE}/operational-area-city", params=params or None)
+
+    async def get_operational_area_state(self, args: dict[str, Any]) -> Any:
+        """GET /operational-area-state - regioes de atuacao de vendedores por estado."""
+        result = await self.client.get(f"{BASE}/operational-area-state", params=_pascal_params(args) or None)
+        return apply_fields(result, args)

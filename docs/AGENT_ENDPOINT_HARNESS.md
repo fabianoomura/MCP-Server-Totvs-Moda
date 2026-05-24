@@ -50,7 +50,7 @@ Risk levels:
 As of 2026-05-24:
 
 - Total endpoints: 251
-- Mapped endpoints: 162
+- Mapped endpoints: 251
 - Current matrix files: `docs/API_ENDPOINT_MATRIX.md` and `docs/API_ENDPOINT_MATRIX.json`
 
 High-coverage areas:
@@ -61,7 +61,8 @@ High-coverage areas:
 - Material request: 9/9
 - Product prototype: 3/3
 - Logistics: 4/4
-- Person: 19/20
+- Person: 20/20
+- Analytics/painel: 61/61 via gateway opcional `totvs_analytics_call`
 
 ## Implementation Order
 
@@ -72,7 +73,7 @@ Current priority:
 3. Seller remaining read endpoint
 4. Image read endpoints
 5. Remaining writes with explicit contracts
-6. Analytics only if the module works in the target environment
+6. Promote high-use Analytics endpoints to dedicated tools only after real usage validates them
 
 Within each area:
 

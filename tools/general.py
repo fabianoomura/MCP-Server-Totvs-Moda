@@ -8,9 +8,20 @@ import logging
 from typing import Any
 from totvs_client import TotvsClient
 from tools._defaults import inject_branch_defaults
+from tools._fields import apply_fields
 
 logger = logging.getLogger("totvs-moda-mcp.general")
 BASE = "/api/totvsmoda/general/v2"
+
+
+def _pascal_params(args: dict[str, Any]) -> dict[str, Any]:
+    special = {"customerCpfCnpjList": "CustomerCPFCNPJList"}
+    params: dict[str, Any] = {}
+    for key, value in args.items():
+        if value is None or key in {"branchCode", "fields"}:
+            continue
+        params[special.get(key, key[:1].upper() + key[1:])] = value
+    return params
 
 
 class GeneralTools:
@@ -52,6 +63,17 @@ class GeneralTools:
         """GET /classifications — Classificações disponíveis."""
         return await self.client.get(f"{BASE}/classifications")
 
+    async def search_transactions(self, args: dict[str, Any]) -> Any:
+        """GET /transactions/search - lista transacoes por filial, cliente, data e alteracao."""
+        args = inject_branch_defaults(args)
+        args = dict(args)
+        if not args.get("branchCodeList") and args.get("branchCode") is not None:
+            args["branchCodeList"] = [args["branchCode"]]
+        if not args.get("branchCodeList"):
+            raise ValueError("branchCode ou branchCodeList e obrigatorio.")
+        result = await self.client.get(f"{BASE}/transactions/search", params=_pascal_params(args))
+        return apply_fields(result, args)
+
     async def create_devolution(self, args: dict[str, Any]) -> Any:
         """POST /devolutions/create — ⚠️ Grava dados de devolução."""
         args = inject_branch_defaults(args)
@@ -69,3 +91,23 @@ class GeneralTools:
         args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/product-counts", body)
+
+    async def create_financial_compensation(self, args: dict[str, Any]) -> Any:
+        """POST /financial-compensations - write financeiro."""
+        body = {k: v for k, v in args.items() if v is not None}
+        return await self.client.post(f"{BASE}/financial-compensations", body)
+
+    async def add_product_count_additional_count(self, args: dict[str, Any]) -> Any:
+        """POST /product-counts/additional-count - adiciona contagem complementar."""
+        body = {k: v for k, v in args.items() if v is not None}
+        return await self.client.post(f"{BASE}/product-counts/additional-count", body)
+
+    async def create_relationship_counts(self, args: dict[str, Any]) -> Any:
+        """POST /relationship-counts - relaciona contagens a transacao."""
+        body = {k: v for k, v in args.items() if v is not None}
+        return await self.client.post(f"{BASE}/relationship-counts", body)
+
+    async def create_transaction_classification_relationship(self, args: dict[str, Any]) -> Any:
+        """POST /transaction-classification-relationship/create - vincula classificacoes a transacao."""
+        body = {k: v for k, v in args.items() if v is not None}
+        return await self.client.post(f"{BASE}/transaction-classification-relationship/create", body)
