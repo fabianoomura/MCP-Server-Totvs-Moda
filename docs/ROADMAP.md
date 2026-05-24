@@ -1,259 +1,136 @@
-# TOTVS Moda MCP Server — Roadmap
+# TOTVS Moda MCP - Roadmap
 
-> Plano de evolução do projeto da v3.0 em diante. Cada fase é uma thread separada com Claude.
+Atualizado em 2026-05-24.
 
----
+Este roadmap substitui o plano antigo por fases baseadas na matriz real de Swagger em `docs/API_ENDPOINT_MATRIX.md`.
 
-## Visão geral
+## Situacao atual
 
-A API V2 do TOTVS Moda tem aproximadamente **350 endpoints**. O projeto atual mapeia ~135. A v3.x amplia gradualmente a cobertura, com 4-6 fases que podem ser executadas em qualquer ordem (por prioridade do uso).
+- Total no harness: 251 endpoints
+- Mapeados: 169
+- Testes: 176 passing
+- Swagger local: `json/*.json`
 
-Cada fase é independente — pode ser feita em uma thread separada sem precisar das outras.
+## Principios
 
----
+1. Preservar retrocompatibilidade das tools existentes.
+2. Priorizar read-only antes de writes.
+3. Tratar writes com upsert quando a TOTVS separar incluir/alterar.
+4. Evitar logica especifica de uma empresa no codigo open source.
+5. Nao executar destructive writes na API real sem confirmacao explicita.
+6. Cada endpoint novo precisa de teste.
 
-## v3.0.0 — Limpeza estrutural (esta thread)
+## Fase A - Product auxiliares
 
-**Objetivo:** remover o módulo Analytics do projeto.
+Prioridade alta. Melhora agentes de Produto, PCP e Comercial.
 
-**Razão:** Analytics é módulo opcional do TOTVS, não vem por padrão. Manter no projeto adiciona 24 tools que a maioria dos usuários nunca usa, polui a lista vista pelo LLM, e gera erros 401/403 quando o LLM tenta usar sem o módulo contratado.
+Status: concluida para endpoints read-only.
 
-**Decisão:** quem precisar de analytics no futuro pode contribuir via PR ou fork. O projeto principal foca no que a maioria das empresas tem.
+Implementados:
 
-**Mudanças:**
-- Remover `tools/analytics.py`
-- Remover bloco condicional de analytics do `server.py`
-- Remover variável `TOTVS_ENABLE_ANALYTICS` (não precisa mais)
-- Remover entradas do ROUTING para tools de analytics
-- Remover import `AnalyticsTools` do `server.py`
-- Documentar a remoção no CHANGELOG e README
-- Bump para v3.0.0 (major bump por remoção de funcionalidade)
+- `GET /api/totvsmoda/product/v2/additional-fields-types`
+- `GET /api/totvsmoda/product/v2/classificationType`
+- `GET /api/totvsmoda/product/v2/composition-group-product`
+- `GET /api/totvsmoda/product/v2/composition-product`
+- `GET /api/totvsmoda/product/v2/instruction-items`
+- `GET /api/totvsmoda/product/v2/price-table-scales`
+- `GET /api/totvsmoda/product/v2/product-grouper-configuration`
 
-**Testes:** suite continua em 91 passing (analytics não tinha testes específicos).
+Writes de produto que exigem cuidado:
 
-**Estimativa:** 1 thread, 30-45 min.
+- `PUT /batch-info`
+- `POST /batch-preferentialsalesorder`
+- `POST /colors`
+- `POST /grids`
 
----
+## Fase B - Purchase Order final
 
-## v3.1.0 — Módulo Product completo
+Restam 2 endpoints:
 
-**Objetivo:** ampliar cobertura do módulo Product de ~30 para ~80 endpoints + corrigir gaps conhecidos.
+- `POST /api/totvsmoda/purchase-order/v2/purchase-order/batch-link`
+- `POST /api/totvsmoda/purchase-order/v2/quantity-items`
 
-**Pontos pendentes que entram aqui:**
+Ambos sao write. Implementar somente com contrato bem descrito e testes mock.
 
-1. **Adicionar campos no schema de `update_product_data`:**
-   - `grossWeight`, `netWeight`, `height`, `width`, `depth`
-   - Outros campos que o `product.json` revelar
+## Fase C - General
 
-2. **Separar Preço (P) e Custo (C):**
-   - Identificar endpoints distintos pra preço de venda vs custo
-   - Criar tools separadas: `totvs_search_product_prices` (já existe) vs `totvs_search_product_costs`
-   - Mesma coisa pra updates: `update_product_price` vs `update_product_cost`
+Restam endpoints uteis para agentes operacionais:
 
-3. **Endpoints de classificação completos:**
-   - `update_classification_type`
-   - `delete_classification_type`
-   - `link_classifications_to_products` (lote)
+- `POST /financial-compensations`
+- `POST /product-counts/additional-count`
+- `POST /relationship-counts`
+- `POST /transaction-classification-relationship/create`
+- `GET /transactions/search`
 
-4. **Endpoints de cor, grade, batch que faltam**
+Priorizar `GET /transactions/search` antes dos writes.
 
-5. **Composição de produto (ficha técnica):**
-   - Cobertura é parcial hoje. Mapear o que é viável via API.
+## Fase D - Image
 
-**Pré-requisitos:**
-- Ler `product.json` (Postman collection, 376 KB) inteiro
-- Comparar com `tools/product.py` atual (linha por linha)
-- Identificar gaps
+Restam:
 
-**Entregáveis:**
-- Pacote zip com tools/product.py atualizado
-- server.py com schemas novos/atualizados
-- Testes para cada endpoint novo
-- Manual de aplicação
+- `GET /image/v2/person-images`
+- `GET /image/v2/persons`
+- `POST /image/v2/persons`
+- `POST /image/V2/imports`
 
-**Estimativa:** 2-3 threads, 4-6 horas total.
+Implementar primeiro os GETs. Writes de imagem exigem schema e payload base64 claros.
 
----
+## Fase E - Seller
 
-## v3.2.0 — Módulo Accounts Receivable completo
+Fechar:
 
-**Objetivo:** ampliar cobertura de ~14 para ~25 endpoints.
+- `GET /api/totvsmoda/seller/v2/operational-area-state`
 
-**Endpoints conhecidos faltantes:**
-- `settle_invoice` (liquidação)
-- `renegotiate_invoices`
-- `create_invoice` (inclusão direta)
-- `pay_invoices` (lote)
-- Vários endpoints de gift_check
-- Operações de adiantamento e crédito
-- Cancelamento de faturas
+Baixo risco.
 
-**Pré-requisitos:**
-- Ler `accounts_receivable.json` (160 KB)
-- Comparar com `tools/accounts_receivable.py`
+## Fase F - Product Engineering final
 
-**Estimativa:** 1-2 threads.
+Resta:
 
----
+- `POST /api/totvsmoda/product-engineering/v2/references`
 
-## v3.3.0 — Módulo Accounts Payable completo
+Write complexo. Implementar apenas se houver caso de uso claro.
 
-**Objetivo:** ampliar cobertura de 3 para ~10 endpoints.
+## Fase G - Sales Order gaps
 
-**Status atual:** subdimensionado. Tem só search de duplicatas, search de comissões pagas e create de duplicata. Falta:
-- `update_duplicate`
-- `cancel_duplicate`
-- `pay_duplicate` (liquidação)
-- `change_duplicate_charge_type`
-- Outros que o JSON revelar
+Restam:
 
-**Pré-requisitos:**
-- Ler `account_payable.json` (67 KB)
+- `POST /pdv-transactions`
+- `POST /relationship-batch-items`
+- `POST /suggest-batch-items-nuance`
 
-**Estimativa:** 1 thread.
+Todos writes. Avaliar com Swagger e testes mock.
 
----
+## Fase H - Analytics / paineis internos
 
-## v3.4.0 — Módulo Fiscal completo
+Analytics aparece com 61 endpoints no Swagger, mas pode depender de modulo contratado ou permissao especifica.
 
-**Objetivo:** ampliar cobertura de ~10 para ~25 endpoints.
+Recomendacao:
 
-**Status atual:** parcial. Tem search/get básico de NF-e. Falta:
-- Inutilização de NF-e (cancelamento)
-- Carta de correção (CCe)
-- Manifestação adicional (já tem 1)
-- Reimpressão
-- Exportação SPED
+1. Fazer apenas testes read-only pequenos quando necessario.
+2. Se nao funcionar no ambiente, manter fora do MCP principal.
+3. Se funcionar, criar modulo opcional/isolado para dashboards.
 
-**Pré-requisitos:**
-- Ler `fiscal.json` (153 KB)
+## Rotina de implementacao por fase
 
-**Estimativa:** 1-2 threads.
+1. Ler o bloco da area em `docs/API_ENDPOINT_MATRIX.md`.
+2. Conferir o schema no JSON local em `json/`.
+3. Implementar no arquivo `tools/<area>.py`.
+4. Adicionar tool no `server.py`.
+5. Adicionar rota no `ROUTING`.
+6. Criar teste mock em `tests/test_tools_regressions.py` ou arquivo especifico.
+7. Rodar:
 
----
-
-## v3.5.0 — Módulo Person completo
-
-**Objetivo:** ampliar cobertura de ~12 para ~40 endpoints.
-
-**Endpoints faltantes prováveis:**
-- Endereços do cliente (CRUD)
-- Telefones (CRUD)
-- E-mails (CRUD)
-- Bancos do cliente
-- Histórico de mudanças
-- Importação em lote
-- Bloqueio/desbloqueio
-
-**Pré-requisitos:**
-- Ler `person.json` (212 KB)
-
-**Estimativa:** 2 threads.
-
----
-
-## v3.6.0 — Módulo Sales Order endpoints faltantes
-
-**Objetivo:** completar gaps após o salto da v2.3.
-
-**Endpoints prováveis:**
-- Liberação de pedido bloqueado
-- Reserva manual de itens
-- Composição/edição de kit
-- Acompanhamento de logística (timeline)
-
-**Pré-requisitos:**
-- Ler `pedido_venda.json` (252 KB)
-
-**Estimativa:** 1-2 threads.
-
----
-
-## v3.7.0 — Módulos pequenos consolidados
-
-Combinando em uma única release:
-- `purchase_order` — completar
-- `production_order` — completar
-- `voucher` — completar
-- `seller` — completar
-- `image` — completar
-- `data_package` — completar
-- `general` — completar
-
-**Estimativa:** 2-3 threads.
-
----
-
-## v3.8.0 — Documentação + PyPI release
-
-**Objetivo:** consolidar tudo, atualizar README, publicar versão major no PyPI.
-
-- README atualizado com todas as novas tools
-- CHANGELOG completo
-- Exemplos de uso atualizados
-- Build e upload no PyPI
-- Tag `v3.8.0` no GitHub
-- Anúncio no LinkedIn (se Fabiano quiser)
-
-**Estimativa:** 1 thread.
-
----
-
-## Como executar uma fase em thread nova
-
-### Mensagem de abertura padrão
-
-```
-Estou retomando o projeto MCP Server TOTVS Moda.
-
-Estado atual: [colar conteúdo de PROJECT_STATE.md]
-
-Roadmap: [colar conteúdo de ROADMAP.md]
-
-Padrões: [colar conteúdo de PATTERNS.md]
-
-Quero executar a fase v3.X.0 (descrição da fase).
-
-Tenho anexado o JSON Postman collection do módulo: [arquivo].
+```powershell
+python -m compileall -q server.py tools
+python -m pytest -q
+python scripts\build_endpoint_harness.py --write
 ```
 
-### Anexos necessários por fase
+## Criterio de pronto
 
-| Fase | JSON necessário | Tamanho |
-|------|----------------|---------|
-| v3.1 product | product.json | 376 KB |
-| v3.2 receivable | accounts_receivable.json | 160 KB |
-| v3.3 payable | account_payable.json | 67 KB |
-| v3.4 fiscal | fiscal.json | 153 KB |
-| v3.5 person | person.json | 212 KB |
-| v3.6 sales order | pedido_venda.json | 252 KB |
-| v3.7 small modules | múltiplos JSONs | ~200 KB total |
-
----
-
-## Princípios para todas as fases
-
-**Manter retrocompatibilidade.** Tools existentes não devem mudar de nome ou parâmetros required. Adições são bem-vindas, mudanças não.
-
-**Aplicar os 3 padrões da v2.4-v2.6:**
-- `apply_fields` em tools de busca
-- `inject_branch_defaults` em tools que precisam de branchCode
-- Descrições ricas com hint de fields e redirecionamento
-
-**Cada endpoint novo precisa de teste.** Sem exceção.
-
-**Bump de versão só major (3.x.0).** Patches e minor (3.x.y) são reservados pra hotfixes.
-
-**MOOUI não vaza.** Nenhuma fase deve introduzir lógica específica da MOOUI no código público. Se aparecer caso de uso interno, vira script privado, não entra no projeto.
-
----
-
-## Princípios para retomar em qualquer thread
-
-1. Sempre cole `PROJECT_STATE.md` no início
-2. Sempre cole `ROADMAP.md` se for fase específica
-3. Sempre cole `PATTERNS.md` antes de pedir código
-4. Diga claramente qual fase está executando
-5. Se for fase de auditoria, anexe o JSON do módulo
-
-Sem esses 4 passos, Claude na thread nova não vai ter contexto e vai inventar coisa.
+- Testes passando.
+- Harness atualizado.
+- Tool com descricao clara.
+- Writes marcados com risco.
+- Docs atualizados quando houver novo padrao ou mudanca de cobertura.

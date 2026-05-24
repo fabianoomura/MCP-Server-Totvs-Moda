@@ -1,0 +1,1097 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "API Seller",
+    "description": "TOTVS.Moda API Swagger Surface",
+    "contact": {
+      "name": "TOTVS.Moda Atendimento",
+      "url": "https://totvssuporte.zendesk.com",
+      "email": "atendimentova@totvs.com.br"
+    },
+    "license": {
+      "name": "TOTVS",
+      "url": "https://www.totvs.com/"
+    },
+    "version": "1.0.02"
+  },
+  "paths": {
+    "/api/totvsmoda/seller/v2/search": {
+      "post": {
+        "tags": [
+          "Seller"
+        ],
+        "summary": "Obter lista de vendedores, empresas e clientes.",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SellerSearchInDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SellerSearchInDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SellerSearchInDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SellerSearchOutDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/seller/v2/operational-area": {
+      "get": {
+        "tags": [
+          "Seller"
+        ],
+        "summary": "Obter lista de região de atuação de vendedores.",
+        "parameters": [
+          {
+            "name": "StartChangeDate",
+            "in": "query",
+            "description": "Data/hora inicial de alteração. Campo \"Operador/Atualização\" do componente PEDFL035.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "EndChangeDate",
+            "in": "query",
+            "description": "Data/hora final de alteração. Campo \"Operador/Atualização\" do componente PEDFL035.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "OperationalAreaCode",
+            "in": "query",
+            "description": "Código da região de atuação dos vendedores. Campo \"Código\" do bloco \"Região de atuação\" do componente PESFL035.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "OperationalAreaType",
+            "in": "query",
+            "description": "Tipo de região de atuação. Campo 'Tipo' do componente PESFL035.\r\n<br>1 - Representative(Representante).<br>2 - ShippingCompany(Transportadora).<br>3 - DeliveryDate(Prazo de entrea).<br>4 - CreditLocation(Local de crédito).",
+            "schema": {
+              "$ref": "#/components/schemas/OperationalAreaType"
+            }
+          },
+          {
+            "name": "OperationalAreaGroupCode",
+            "in": "query",
+            "description": "Agrupamento da região de atuação dos vendedores. Campo \"Agrupamento\" do bloco \"Região de atuação\" do componente PESFL035.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Order",
+            "in": "query",
+            "description": " Lista de campos para ordenação separados por \",\". Para ordenação descendente utilizar o caracter \"-\".\r\n As seguintes expressões são suportadas: \"operationalAreaCode\", \"operationalAreaType\", \"operationalAreaGroupCode\" e \"maxChangeFilterDate\"\r\nEx.: \"order\": \"-operationalAreaCode,operationalAreaType\"",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Page",
+            "in": "query",
+            "description": "Número da página. Página inicial é 1.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Quantidade de itens por página. Valor padrão é 1000. Valor máximo é 1000.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ValidationResult.IsValid",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "ValidationResult.Errors",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ValidationFailure"
+              }
+            }
+          },
+          {
+            "name": "ValidationResult.RuleSetsExecuted",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationalAreaOutDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/seller/v2/operational-area-state": {
+      "get": {
+        "tags": [
+          "Seller"
+        ],
+        "summary": "Obter lista de região de atuação de vendedores por estado.",
+        "parameters": [
+          {
+            "name": "StartChangeDate",
+            "in": "query",
+            "description": "Data/hora inicial de alteração. Campo \"Operador/Atualização\" do bloco \"Estado\" do componente PESFM006.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "EndChangeDate",
+            "in": "query",
+            "description": "Data/hora final de alteração. Campo \"Operador/Atualização\" do bloco \"Estado\" do componente PESFM006.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "OperationalAreaCode",
+            "in": "query",
+            "description": "Código da região de atuação dos vendedores. Campo \"Código\" do bloco \"Reigão de atuação\" do componente PESFM006.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Order",
+            "in": "query",
+            "description": " Lista de campos para ordenação separados por \",\". Para ordenação descendente utilizar o caracter \"-\".\r\n As seguintes expressões são suportadas: \"operationalAreaCode\" e \"maxChangeFilterDate\"\r\nEx.: \"order\": \"-operationalAreaCode,maxChangeFilterDate\"",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Page",
+            "in": "query",
+            "description": "Número da página. Página inicial é 1.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Quantidade de itens por página. Valor padrão é 1000. Valor máximo é 1000.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ValidationResult.IsValid",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "ValidationResult.Errors",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ValidationFailure"
+              }
+            }
+          },
+          {
+            "name": "ValidationResult.RuleSetsExecuted",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationalAreaStateOutDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/seller/v2/operational-area-cep": {
+      "get": {
+        "tags": [
+          "Seller"
+        ],
+        "summary": "Obter lista de região de atuação de vendedores por CEP.",
+        "parameters": [
+          {
+            "name": "StartChangeDate",
+            "in": "query",
+            "description": "Data/hora inicial de alteração. Campo \"Operador/Atualização\" do bloco \"Estado\" do componente PESFM006.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "EndChangeDate",
+            "in": "query",
+            "description": "Data/hora final de alteração. Campo \"Operador/Atualização\" do bloco \"Estado\" do componente PESFM006.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "OperationalAreaCode",
+            "in": "query",
+            "description": "Código da região de atuação dos vendedores. Campo \"Código\" do bloco \"Região de atuação\" do componente PESFL035.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Order",
+            "in": "query",
+            "description": " Lista de campos para ordenação separados por \",\". Para ordenação descendente utilizar o caracter \"-\".\r\n As seguintes expressões são suportadas: \"operationalAreaCode\" e \"maxChangeFilterDate\"\r\nEx.: \"order\": \"-operationalAreaCode,maxChangeFilterDate\"",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Page",
+            "in": "query",
+            "description": "Número da página. Página inicial é 1.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Quantidade de itens por página. Valor padrão é 1000. Valor máximo é 1000.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ValidationResult.IsValid",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "ValidationResult.Errors",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ValidationFailure"
+              }
+            }
+          },
+          {
+            "name": "ValidationResult.RuleSetsExecuted",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationalAreaCepOutDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/seller/v2/operational-area-city": {
+      "get": {
+        "tags": [
+          "Seller"
+        ],
+        "summary": "Obter lista de região de atuação de vendedores por cidade.",
+        "parameters": [
+          {
+            "name": "StartChangeDate",
+            "in": "query",
+            "description": "Data/hora inicial de alteração. Campo \"Operador/Atualização\" do bloco \"Estado\" do componente PESFM006.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "EndChangeDate",
+            "in": "query",
+            "description": "Data/hora final de alteração. Campo \"Operador/Atualização\" do bloco \"Estado\" do componente PESFM006.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "OperationalAreaCode",
+            "in": "query",
+            "description": "Código da região de atuação dos vendedores. Campo \"Código\" do bloco \"Região de atuação\" do componente PESFL035.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Order",
+            "in": "query",
+            "description": " Lista de campos para ordenação separados por \",\". Para ordenação descendente utilizar o caracter \"-\".\r\n As seguintes expressões são suportadas: \"operationalAreaCode\" e \"maxChangeFilterDate\"\r\nEx.: \"order\": \"-operationalAreaCode,maxChangeFilterDate\"",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Page",
+            "in": "query",
+            "description": "Número da página. Página inicial é 1.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Quantidade de itens por página. Valor padrão é 1000. Valor máximo é 1000.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ValidationResult.IsValid",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "ValidationResult.Errors",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ValidationFailure"
+              }
+            }
+          },
+          {
+            "name": "ValidationResult.RuleSetsExecuted",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationalAreaCityOutDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CustomerDto": {
+        "type": "object",
+        "properties": {
+          "personCode": {
+            "type": "integer",
+            "description": "Código do cliente. Campo \"Cód. cliente\" do componente PESTM029.",
+            "format": "int32"
+          },
+          "document": {
+            "type": "string",
+            "description": "Documento do cliente.",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome do cliente. Campo à frente \"Cód. cliente\" do componente PESTM029.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DomainNotificationMessage": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          },
+          "detailedMessage": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "OperationalAreaCepModel": {
+        "type": "object",
+        "properties": {
+          "operationalAreaCode": {
+            "type": "integer",
+            "description": "Código de região de atuação. Campo \"Código\" do bloco 'Região de atuação' do componente PESFL035.",
+            "format": "int32"
+          },
+          "operationalAreaName": {
+            "type": "string",
+            "description": "Descrição da região de atuação. Campo \"Descrição\" do bloco 'Região de atuação' do componente PESFL035.",
+            "nullable": true
+          },
+          "cep": {
+            "type": "string",
+            "description": "Cep. Primeiro campo da coluna \"Logradouro\" do bloco 'Logradouro' do componente PESFM006.",
+            "nullable": true
+          },
+          "maxChangeFilterDate": {
+            "type": "string",
+            "description": "Maior data de alteração dentro do filtro de intervalo de data. Campo populado apenas quando os campos \"startChangeDate\" e \"endChangeDate\" são informados.",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "OperationalAreaCepOutDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasNext": {
+            "type": "boolean"
+          },
+          "totalItems": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OperationalAreaCepModel"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "OperationalAreaCityModel": {
+        "type": "object",
+        "properties": {
+          "cityCode": {
+            "type": "integer",
+            "description": "Código da cidade de atuação. Primeiro campo da coluna \"Município\" do bloco 'Município' do componente PESFM006.",
+            "format": "int32"
+          },
+          "cityName": {
+            "type": "string",
+            "description": "Nome da cidade de atuação. Segundo campo da coluna \"Município\" do bloco 'Município' do componente PESFM006.",
+            "nullable": true
+          },
+          "stateCode": {
+            "type": "integer",
+            "description": "Código do estado referente ao município da região de atuação. Campo \"Código\" do bloco 'Estado' do componente PESFL077.",
+            "format": "int32"
+          },
+          "stateAbbreviation": {
+            "type": "string",
+            "description": "Sigla do estado referente ao município da região de atuação. Primeiro campo da coluna \"Estado\" do bloco 'Município' do componente PESFM006.",
+            "nullable": true
+          },
+          "stateName": {
+            "type": "string",
+            "description": "Nome do estado referente ao município da região de atuação. Segundo campo da coluna \"Estado\" do bloco 'Município' do componente PESFM006.",
+            "nullable": true
+          },
+          "operationalAreaCode": {
+            "type": "integer",
+            "description": "Código de região de atuação. Primeiro campo do \"Código\" do bloco 'Região de atuação' do componente PESFM006.",
+            "format": "int32"
+          },
+          "operationalAreaName": {
+            "type": "string",
+            "description": "Descrição da região de atuação. Segundo campo do \"Código\" do bloco 'Região de atuação' do componente PESFM006.",
+            "nullable": true
+          },
+          "maxChangeFilterDate": {
+            "type": "string",
+            "description": "Maior data de alteração dentro do filtro de intervalo de data. Campo populado apenas quando os campos \"startChangeDate\" e \"endChangeDate\" são informados.",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "OperationalAreaCityOutDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasNext": {
+            "type": "boolean"
+          },
+          "totalItems": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OperationalAreaCityModel"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "OperationalAreaModel": {
+        "type": "object",
+        "properties": {
+          "operationalAreaCode": {
+            "type": "integer",
+            "description": "Código de região de atuação. Campo \"Código\" do bloco 'Região de atuação' do componente PESFL035.",
+            "format": "int32"
+          },
+          "operationalAreaName": {
+            "type": "string",
+            "description": "Descrição da região de atuação. Campo \"Descrição\" do bloco 'Região de atuação' do componente PESFL035.",
+            "nullable": true
+          },
+          "operationalAreaType": {
+            "$ref": "#/components/schemas/OperationalAreaType"
+          },
+          "operationalAreaGroupCode": {
+            "type": "integer",
+            "description": "Código do agrupamento da região de atuação. Campo \"Agrupamento\" do bloco 'Região de atuação' do componente PESFL035.",
+            "format": "int32",
+            "nullable": true
+          },
+          "operationalAreaGroupDescription": {
+            "type": "string",
+            "description": "Descrição do agrupamento da região de atuação. Campo \"Agrupamento\" do bloco 'Região de atuação' do componente PESFL035.",
+            "nullable": true
+          },
+          "numberOfDays": {
+            "type": "integer",
+            "description": "Quantidade de dias da região de atuação. Campo \"Qt. dia\" do bloco 'Região de atuação' do componente PESFL035.",
+            "format": "int32",
+            "nullable": true
+          },
+          "maxChangeFilterDate": {
+            "type": "string",
+            "description": "Maior data de alteração dentro do filtro de intervalo de data. Campo populado apenas quando os campos \"startChangeDate\" e \"endChangeDate\" são informados.",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "OperationalAreaOutDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasNext": {
+            "type": "boolean"
+          },
+          "totalItems": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OperationalAreaModel"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "OperationalAreaStateModel": {
+        "type": "object",
+        "properties": {
+          "stateCode": {
+            "type": "integer",
+            "description": "Código do estado. Campo \"Código\" do bloco 'Estado' do componente PESFL077.",
+            "format": "int32"
+          },
+          "stateName": {
+            "type": "string",
+            "description": "Descrição do estado. Campo \"Nome\" do bloco 'Estado' do componente PESFL077.",
+            "nullable": true
+          },
+          "operationalAreaCode": {
+            "type": "integer",
+            "description": "Código de região de atuação. Campo \"Código\" do bloco 'Região de atuação' do componente PESFL035.",
+            "format": "int32"
+          },
+          "operationalAreaName": {
+            "type": "string",
+            "description": "Descrição da região de atuação. Campo \"Descrição\" do bloco 'Região de atuação' do componente PESFL035.",
+            "nullable": true
+          },
+          "maxChangeFilterDate": {
+            "type": "string",
+            "description": "Maior data de alteração dentro do filtro de intervalo de data. Campo populado apenas quando os campos \"startChangeDate\" e \"endChangeDate\" são informados.",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "OperationalAreaStateOutDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasNext": {
+            "type": "boolean"
+          },
+          "totalItems": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OperationalAreaStateModel"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "OperationalAreaType": {
+        "enum": [
+          "Representative",
+          "ShippingCompany",
+          "DeliveryDate",
+          "CreditLocation"
+        ],
+        "type": "string",
+        "description": "Tipo de região de atuação. Campo 'Tipo' do componente PESFL035. \r\n<br>1 - Representative(Representante).<br>2 - ShippingCompany(Transportadora).<br>3 - DeliveryDate(Prazo de entrea).<br>4 - CreditLocation(Local de crédito)."
+      },
+      "SellerBranchInformationDto": {
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Código da empresa. Campo \"Empresa\" no bloco \"Informação do vendedor\" do componente PESFM009.",
+            "format": "int32"
+          },
+          "auxiliaryCode": {
+            "type": "integer",
+            "description": "Código auxiliar. Campo \"Cód. auxiliar\" no bloco \"Informação do vendedor\" do componente PESFM009.",
+            "format": "int32",
+            "nullable": true
+          },
+          "isInactive": {
+            "type": "boolean",
+            "description": "Situação do vendedor. Campo \"Inativo\" no bloco \"Informação do vendedor\" do componente PESFM009.",
+            "nullable": true
+          },
+          "sellerTypeCode": {
+            "type": "integer",
+            "description": "Código do tipo de vendedor. Código do campo \"Tipo vendedor\" no bloco \"Informação do vendedor\" do componente PESFM009.",
+            "format": "int32",
+            "nullable": true
+          },
+          "sellerTypeDescription": {
+            "type": "string",
+            "description": "Descrição do tipo de vendedor. Campo \"Tipo vendedor\" no bloco \"Informação do vendedor\" do componente PESFM009.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SellerDto": {
+        "type": "object",
+        "properties": {
+          "sellerCode": {
+            "type": "integer",
+            "description": "Código do vendedor. Campo \"Código\" do componente PESFM009.",
+            "format": "int32"
+          },
+          "sellerName": {
+            "type": "string",
+            "description": "Nome do vendedor. Campo à frente do \"Código\" do componente PESFM009.",
+            "nullable": true
+          },
+          "personCode": {
+            "type": "integer",
+            "description": "Código da pessoa. Campo \"Pessoa\" do componente PESFM009.",
+            "format": "int32",
+            "nullable": true
+          },
+          "personName": {
+            "type": "string",
+            "description": "Nome da pessoa. Campo à frente da \"Pessoa\" do componente PESFM009.",
+            "nullable": true
+          },
+          "maxChangeFilterDate": {
+            "type": "string",
+            "description": "Maior data de alteração.\r\nMaior data do campo \"Operador / Atualização\" do Vendedor ou da Informação do vendedor do componente PESFM009.",
+            "format": "date-time"
+          },
+          "branchInformations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SellerBranchInformationDto"
+            },
+            "description": "Informação do vendedor. Bloco \"Informação do vendedor\" do componente PESFM009.",
+            "nullable": true
+          },
+          "customers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerDto"
+            },
+            "description": "Lista de clientes do vendedor.\r\nNão há componente que lista os clientes do vendedor. Componente para vincular um vendedor ao cliente PESTM029.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SellerSearchChangeDto": {
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "type": "string",
+            "description": "Data/Hora inicial de alteração",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endDate": {
+            "type": "string",
+            "description": "Data/Hora final de alteração",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Filtro de período de alteração de vendedor"
+      },
+      "SellerSearchFilterDto": {
+        "type": "object",
+        "properties": {
+          "change": {
+            "$ref": "#/components/schemas/SellerSearchChangeDto"
+          },
+          "branchCodeList": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Lista de código de empresa",
+            "nullable": true
+          },
+          "personCode": {
+            "type": "integer",
+            "description": "Código da pessoa",
+            "format": "int32",
+            "nullable": true
+          },
+          "sellerCode": {
+            "type": "integer",
+            "description": "Código do vendedor",
+            "format": "int32",
+            "nullable": true
+          },
+          "isInactive": {
+            "type": "boolean",
+            "description": "Situação do vendedor",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SellerSearchInDto": {
+        "type": "object",
+        "properties": {
+          "filter": {
+            "$ref": "#/components/schemas/SellerSearchFilterDto"
+          },
+          "page": {
+            "type": "integer",
+            "description": "Número da página. Página inicial é 1.",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "description": "Quantidade de itens por página. Valor padrão é 500 e o máximo é 500.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SellerSearchOutDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "description": "Total de registros obtidos na consulta.",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "description": "Total de páginas da consulta.",
+            "format": "int32"
+          },
+          "hasNext": {
+            "type": "boolean",
+            "description": "Possui mais páginas."
+          },
+          "totalItems": {
+            "type": "integer",
+            "description": "Total de registros da lista de itens.",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SellerDto"
+            },
+            "description": "Lista de itens.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Severity": {
+        "enum": [
+          "Error",
+          "Warning",
+          "Info"
+        ],
+        "type": "integer",
+        "format": "int32"
+      },
+      "ValidationFailure": {
+        "type": "object",
+        "properties": {
+          "propertyName": {
+            "type": "string",
+            "nullable": true
+          },
+          "errorMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "attemptedValue": {
+            "nullable": true
+          },
+          "customState": {
+            "nullable": true
+          },
+          "severity": {
+            "$ref": "#/components/schemas/Severity"
+          },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "formattedMessageArguments": {
+            "type": "array",
+            "items": { },
+            "nullable": true,
+            "deprecated": true
+          },
+          "formattedMessagePlaceholderValues": {
+            "type": "object",
+            "additionalProperties": { },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "apiKey",
+        "description": "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        "name": "Authorization",
+        "in": "header"
+      }
+    }
+  },
+  "security": [
+    {
+      "Bearer": [ ]
+    }
+  ]
+}

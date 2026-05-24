@@ -551,3 +551,43 @@ async def test_daily_dashboard_returns_partial_errors(client):
     assert result["sales"]["totalOrders"] == 1
     assert "error" in result["receivable"]
     assert "error" in result["payable"]
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_stock_available_maps_finished_product_kind(client):
+    _mock_token()
+
+    route = respx.post(f"{TOTVS_BASE}/api/totvsmoda/product/v2/balances/search").mock(
+        return_value=Response(200, json={"items": [
+            {
+                "productCode": 14679,
+                "productName": "LENCOL ELASTICO CANTEIRO DE FLORES CASAL",
+                "colorName": "CANTEIRO DE FLORES",
+                "sizeName": "CASAL",
+                "balances": [{"stock": 8, "salesOrder": 0}],
+            },
+            {
+                "productCode": 1,
+                "productName": "SEM ESTOQUE",
+                "balances": [{"stock": 0}],
+            },
+        ], "hasNext": False})
+    )
+
+    tools = AggregatorTools(client)
+    result = await tools.stock_available({"branchCode": 1, "productKind": "finished", "minStock": 1})
+
+    body = json.loads(route.calls.last.request.content)
+    assert body["filter"]["branchInfo"] == {
+        "branchCode": 1,
+        "isActive": True,
+        "isFinishedProduct": True,
+        "isRawMaterial": False,
+        "isBulkMaterial": False,
+    }
+    assert result["productKind"] == "finished"
+    assert result["onlyActive"] is True
+    assert result["totalSkus"] == 1
+    assert result["pageStats"]["pages"] == 1
+    assert result["products"][0]["productCode"] == 14679

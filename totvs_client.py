@@ -254,5 +254,23 @@ class TotvsClient:
                 return {"operation": "created", "result": result}
             raise
 
+    async def create_or_update(self, create_path: str, update_path: str, body: dict) -> dict:
+        """Try create first; fall back to update if record already exists.
+
+        Use this for TOTVS endpoints where "incluir" fails with AlreadyExist
+        and the correct operation becomes "alterar".
+
+        Returns {"operation": "created"|"updated", "result": <api response>}.
+        Raises TotvsApiError for any error other than AlreadyExist.
+        """
+        try:
+            result = await self.post(create_path, body)
+            return {"operation": "created", "result": result}
+        except TotvsApiError as exc:
+            if exc.has_code("AlreadyExist"):
+                result = await self.post(update_path, body)
+                return {"operation": "updated", "result": result}
+            raise
+
     async def aclose(self) -> None:
         await self._http.aclose()

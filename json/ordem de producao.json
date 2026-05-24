@@ -1,0 +1,1664 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "API Production Order",
+    "description": "TOTVS.Moda API Swagger Surface",
+    "contact": {
+      "name": "TOTVS.Moda Atendimento",
+      "url": "https://totvssuporte.zendesk.com",
+      "email": "atendimentova@totvs.com.br"
+    },
+    "license": {
+      "name": "TOTVS",
+      "url": "https://www.totvs.com/"
+    },
+    "version": "2.8.05"
+  },
+  "paths": {
+    "/api/totvsmoda/production-order/v2/materials/movement": {
+      "post": {
+        "tags": [
+          "Materials"
+        ],
+        "summary": "Movimentação da matéria prima da ordem de produção.",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RawMaterialMovementCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RawMaterialMovementCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RawMaterialMovementCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TomasRawMaterialMovementResponseModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/production-order/v2/orders/search": {
+      "post": {
+        "tags": [
+          "Order"
+        ],
+        "summary": "Consultar Ordem de Produção.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductionOrderSearchModel"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductionOrderSearchModel"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductionOrderSearchModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductionOrderSearchResponseModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotification"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/production-order/v2/pending-material-consumption": {
+      "post": {
+        "tags": [
+          "Order"
+        ],
+        "summary": "Obter dados de Fichas de Consumo.",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialConsumptionRequestModel"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialConsumptionRequestModel"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialConsumptionRequestModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialConsumptionResponseModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AdditionalFieldType": {
+        "enum": [
+          "String",
+          "Number",
+          "Date"
+        ],
+        "type": "integer",
+        "description": "Tipo de campo adicional.\r\n<br>1 - String.<br>2 - Numérico.<br>3 - Data.",
+        "format": "int32"
+      },
+      "BatchItemsModel": {
+        "type": "object",
+        "properties": {
+          "barCode": {
+            "type": "string",
+            "description": "Código de barras do item de lote. Campo \"Lote cliente\" do componente \"PRDFM059\".\r\n<br>Tamanho máximo de 40 caracteres.",
+            "nullable": true
+          },
+          "movementQuantity": {
+            "type": "number",
+            "description": "Quantidade a movimentar do item de lote.\r\n<br>Tamanho máximo de 8 inteiros e 6 casas decimais",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DomainNotification": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          },
+          "source": {
+            "type": "string",
+            "nullable": true
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DomainNotificationMessage": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Código da mensagem.",
+            "nullable": true,
+            "readOnly": true
+          },
+          "message": {
+            "type": "string",
+            "description": "Conteúdo da mensagem.",
+            "nullable": true,
+            "readOnly": true
+          },
+          "detailedMessage": {
+            "type": "string",
+            "description": "Detalhamento adicional da mensagem.",
+            "nullable": true,
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "FinishedProductMaterialModel": {
+        "type": "object",
+        "properties": {
+          "finishedProductCode": {
+            "type": "integer",
+            "description": "Produto acabado que a matéria prima da ordem de produção pertence",
+            "format": "int32"
+          },
+          "finishedProductName": {
+            "type": "string",
+            "description": "Descrição do produto acabado que a matéria prima da ordem de produção pertence",
+            "nullable": true
+          },
+          "materialProductCode": {
+            "type": "integer",
+            "description": "Código da matéria prima da ordem de produção pertence - PCPFM144 -> Matéria-prima",
+            "format": "int32"
+          },
+          "materialProductName": {
+            "type": "string",
+            "description": "Descrição da matéria prima da ordem de produção pertence - PCPFM144 -> Matéria-prima",
+            "nullable": true
+          },
+          "materialColorCode": {
+            "type": "string",
+            "description": "Código da cor da matéria prima - PCPFM144 -> Matéria-prima - Código da cor correspondente a matéria prima na grade",
+            "nullable": true
+          },
+          "materialColorName": {
+            "type": "string",
+            "description": "Descrição da cor da matéria prima - PCPFM144 -> Matéria-prima - Descrição da cor correspondente a matéria prima na grade",
+            "nullable": true
+          },
+          "materialSizeCode": {
+            "type": "integer",
+            "description": "Código do tamanho da matéria prima - PCPFM144 -> Matéria-prima - Código do tamanho correspondente a matéria prima na grade",
+            "format": "int32",
+            "nullable": true
+          },
+          "materialSizeName": {
+            "type": "string",
+            "description": "Descrição do tamanho da matéria prima - PCPFM144 -> Matéria-prima - Descrição do tamanho correspondente a matéria prima na grade",
+            "nullable": true
+          },
+          "materialReferenceCode": {
+            "type": "string",
+            "description": "Código da referencia da matéria prima - PCPFM144 -> Matéria-prima - Código da referencia da matéria prima.",
+            "nullable": true
+          },
+          "materialReferenceName": {
+            "type": "string",
+            "description": "Descrição da referencia da matéria prima - PCPFM144 -> Matéria-prima - Descrição da referencia da matéria prima.",
+            "nullable": true
+          },
+          "estimatedQuantity": {
+            "type": "number",
+            "description": "Quantidade estimada da matéria prima - PCPFM144 -> Matéria-prima - Quantidade da matéria prima na grade da O.P.",
+            "format": "double",
+            "nullable": true
+          },
+          "retiredQuantity": {
+            "type": "number",
+            "description": "Quantidade retirada da matéria prima - PCPFM144 -> Matéria-prima - Quantidade retirada da matéria prima.",
+            "format": "double",
+            "nullable": true
+          },
+          "returnedQuantity": {
+            "type": "number",
+            "description": "Quantidade retornada da matéria prima - PCPFM144 -> Matéria-prima - Quantidade retornada da matéria prima.",
+            "format": "double",
+            "nullable": true
+          },
+          "lowClosingDate": {
+            "type": "string",
+            "description": "Data de fechamento da matéria prima - PCPFM144 -> Matéria-prima - Data de fechamento da matéria prima.",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Matérias primas da Ordem de Produção"
+      },
+      "LocalizationOrderModel": {
+        "type": "object",
+        "properties": {
+          "locationCode": {
+            "type": "integer",
+            "description": "Código da Local - PCPFM144 -> Localização -> Campo local No PCPFC021.",
+            "format": "int32"
+          },
+          "locationName": {
+            "type": "string",
+            "description": "Descrição da Local - PCPFM144 -> Localização -> Campo local No PCPFC021.",
+            "nullable": true
+          },
+          "productCode": {
+            "type": "integer",
+            "description": "Código do produto.",
+            "format": "int32"
+          },
+          "productName": {
+            "type": "string",
+            "description": "Descrição do produto.",
+            "nullable": true
+          },
+          "referenceCode": {
+            "type": "string",
+            "description": "Código do nível do grupo - PCPFM144 -> Campo código da lista de grupo.",
+            "nullable": true
+          },
+          "referenceName": {
+            "type": "string",
+            "description": "Descrição do nível do grupo - PCPFM144 -> Campo descrição da lista de grupo.",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantidade do produto no local - PCPFM144 -> Localização -> Quantidade da grade correspondente ao produto no PCPFC021.",
+            "format": "double",
+            "nullable": true
+          },
+          "entryDate": {
+            "type": "string",
+            "description": "Data de entrada do produto no local - PCPFM144 -> Localização -> Campo data entrada no PCPFC021.",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Localizações da Ordem de Produção"
+      },
+      "MaterialClassificationFilterModelList": {
+        "type": "object",
+        "properties": {
+          "typeCode": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "classificationCodeList": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MaterialClassificationModelList": {
+        "type": "object",
+        "properties": {
+          "typeCode": {
+            "type": "integer",
+            "description": "Tipo de classificação Campo \"Tipo\" do frame classificação do componente PRDFM319.\r\n<br>Máximo de 4 caracteres.",
+            "format": "int32"
+          },
+          "classificationCode": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Codigo de Classificação. Campo \"Classificação\" do frame classificação do componente PRDFM319.\r\n<br>Máximo de 10 caracteres.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Classificações da Ordem de Produção"
+      },
+      "MaterialConsumptionModel": {
+        "type": "object",
+        "properties": {
+          "rawMaterialCode": {
+            "type": "integer",
+            "description": "Codigo do frame \"Matéria-prima\". Campo \"Código\" do componente PCPFP164.",
+            "format": "int32"
+          },
+          "rawMaterialDescription": {
+            "type": "string",
+            "description": "Descrição da Matéria-prima. Campo \"Descrição\"do componente PCPFP164.",
+            "nullable": true
+          },
+          "waitReleaseOrderQuantity": {
+            "type": "number",
+            "description": "Quantidade de materiais aguardando liberação. Campo \"Ag.Liber\" do componente PCPFP164.",
+            "format": "double"
+          },
+          "progressOrderQuantity": {
+            "type": "number",
+            "description": "Quantidade de materiais em andamento. Campo \"Andamento\" do componente PCPFP164.",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MaterialConsumptionRequestModel": {
+        "type": "object",
+        "properties": {
+          "rawMaterialCodeList": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Codigo do frame \"Matéria-prima\". Campo \"Código\" do componente PCPFP164.\r\n<br>Tamanho máximo permitido: 100 itens.",
+            "nullable": true
+          },
+          "balanceType": {
+            "type": "integer",
+            "description": "Codigo do campo \"Saldo produto\". do componente PCPFP164.",
+            "format": "int32"
+          },
+          "branchCode": {
+            "type": "integer",
+            "description": "Código da empresa do lote. Campo \"Empresa\" do componente PRDFM365.\r\n<br>Tamanho máximo: 4 caracteres",
+            "format": "int32"
+          },
+          "materialClassificationList": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MaterialClassificationModelList"
+            },
+            "description": "Filtro de tipo de classificação de matéria-prima -> PRDFM319 -> frame classificação.",
+            "nullable": true
+          },
+          "page": {
+            "type": "integer",
+            "description": "Número da página. Página inicial é 1.",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "description": "Quantidade de itens por página. Valor padrão é 1000. Valor máximo é 1000.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MaterialConsumptionResponseModel": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasNext": {
+            "type": "boolean"
+          },
+          "totalItems": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MaterialConsumptionModel"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MaterialModel": {
+        "type": "object",
+        "properties": {
+          "orderMaterials": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderMaterialModel"
+            },
+            "nullable": true
+          },
+          "finishedProductMaterials": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FinishedProductMaterialModel"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MovementType": {
+        "enum": [
+          "Consumption",
+          "Return"
+        ],
+        "type": "integer",
+        "description": "Tipo de movimento da matéria-prima. Campo \"Tipo\" do frame \"Movimentação\" do componente PCPFP073.\r\n<br>1 - Consumo<br>2 - Retorno",
+        "format": "int32"
+      },
+      "OperationalSequenceModel": {
+        "type": "object",
+        "properties": {
+          "operationCode": {
+            "type": "integer",
+            "description": "Código da operação.",
+            "format": "int32"
+          },
+          "operationName": {
+            "type": "string",
+            "description": "Descrição da operação.",
+            "nullable": true
+          },
+          "time": {
+            "type": "number",
+            "description": "Tempo da operação.",
+            "format": "double"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantidade da operação.",
+            "format": "double"
+          },
+          "value": {
+            "type": "number",
+            "description": "Valor da operação.",
+            "format": "double"
+          },
+          "observation": {
+            "type": "string",
+            "description": "Observação.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "OrderClassificationModel": {
+        "type": "object",
+        "properties": {
+          "typeCode": {
+            "type": "integer",
+            "description": "Campo tipo de classificação - PCPFM144 -> Classificação -> Lista de classificação.",
+            "format": "int32"
+          },
+          "typeName": {
+            "type": "string",
+            "description": "Campo tipo de classificação - PCPFM144 -> Classificação -> Lista de classificação.",
+            "nullable": true
+          },
+          "code": {
+            "type": "string",
+            "description": "Campo classificação - PCPFM144 -> Classificação -> Lista de classificação.",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "description": "Campo classificação - PCPFM144 -> Classificação -> Lista de classificação.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Classificações da Ordem de Produção"
+      },
+      "OrderFinishedQuantityTypeModel": {
+        "type": "object",
+        "properties": {
+          "normalFinishedQuantity": {
+            "type": "number",
+            "description": "Quantidade finalizada normal - PCPFP037 -> Análise de Finalização de Ordem de Produção.\r\n<br>Tamanho máximo de 9 inteiros e 3 casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "sacrificedFinishedQuantity": {
+            "type": "number",
+            "description": "Quantidade sacrificada de finalização - PCPFP037 -> Análise de Finalização de Ordem de Produção.\r\n<br>Tamanho máximo de 9 inteiros e 3 casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "secondFinishedQuantity": {
+            "type": "number",
+            "description": "Quantidade finalizada de segunda qualidade - PCPFP037 -> Análise de Finalização de Ordem de Produção (quantidade acumulada no campo 'Defeito').\r\n<br>Tamanho máximo de 9 inteiros e 3 casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "thirdFinishedQuantity": {
+            "type": "number",
+            "description": "Quantidade finalizada de terceira qualidade - PCPFP037 -> Análise de Finalização de Ordem de Produção (quantidade acumulada no campo 'Defeito').\r\n<br>Tamanho máximo de 9 inteiros e 3 casas decimais.",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Tipos de quantidades finalizadas da Ordem de Produção\r\n<br>Os campos que não possuírem valor serão omitidos."
+      },
+      "OrderGroupModel": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Código do nível do grupo -> PCPFM144 -> Campo código da lista de grupo.",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "description": "Descrição do nível do grupo -> PCPFM144 -> Campo descrição da lista de grupo.",
+            "nullable": true
+          },
+          "operationalSequences": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OperationalSequenceModel"
+            },
+            "description": "Será retornado a sequência operacional do grupo da Ordem de Produção (PCPFM144 -> Opções -> Seq. Operacional O.P.),\r\n<br>Caso a Ordem de Produção não possuir sequência operacional, será retornado a sequência operacional do grupo,<br>que é cadastrada no CDFFM024, e também pode ser acessado pelo PCPFM144 -> Seq. operacional.<br>Observação: O tempo da operação retornado é sempre centesimal",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Grupos da Ordem de Produção -> PCPFM144 -> Lista de grupo."
+      },
+      "OrderItemModel": {
+        "type": "object",
+        "properties": {
+          "productCode": {
+            "type": "integer",
+            "description": "Código do produto - PCPFM144 -> Código corresponde do produto na grade da O.P.",
+            "format": "int32"
+          },
+          "productName": {
+            "type": "string",
+            "description": "Descrição do produto - PCPFM144 -> Descrição corresponde do produto na grade da O.P.",
+            "nullable": true
+          },
+          "colorCode": {
+            "type": "string",
+            "description": "Código da cor do produto - PCPFM144 -> Código da cor correspondente ao produdo na grade da O.P.",
+            "nullable": true
+          },
+          "colorName": {
+            "type": "string",
+            "description": "Descrição da cor do produto - PCPFM144 -> Descrição da cor correspondente ao produdo na grade da O.P.",
+            "nullable": true
+          },
+          "sizeCode": {
+            "type": "integer",
+            "description": "Código do tamanho do produto - PCPFM144 -> Código do tamanho correspondente ao produdo na grade da O.P.",
+            "format": "int32",
+            "nullable": true
+          },
+          "sizeName": {
+            "type": "string",
+            "description": "Descrição do tamanho do produto - PCPFM144 -> Descrição do tamanho correspondente ao produdo na grade da O.P.",
+            "nullable": true
+          },
+          "referenceCode": {
+            "type": "string",
+            "description": "Código da referencia do produto - PCPFM144 -> Código da referencia na lista de grupo.",
+            "nullable": true
+          },
+          "referenceName": {
+            "type": "string",
+            "description": "Descrição da referencia do produto - PCPFM144 -> Descrição da referencia na lista de grupo.",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantidade atual do produto na Ordem de produção - PCPFM144 -> Quantidade do produto na grade da O.P.",
+            "format": "double",
+            "nullable": true
+          },
+          "finishedQuantity": {
+            "type": "number",
+            "description": "Quantidade finalizada do produto - PCPFM144 -> Campo finalizada",
+            "format": "double",
+            "nullable": true
+          },
+          "pendingQuantity": {
+            "type": "number",
+            "description": "Quantidade pendente do produto -> PCPFM144 -> Campo pendente",
+            "format": "double",
+            "nullable": true
+          },
+          "isStartMovement": {
+            "type": "string",
+            "description": "Indica se o prodto já possui movimento inicial -> PCPFM144",
+            "nullable": true
+          },
+          "productClassification": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductClassificationModel"
+            },
+            "description": "Lista de classificação do produto da Ordem de Produção",
+            "nullable": true
+          },
+          "productAdditionalField": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductAdditionalFieldModel"
+            },
+            "description": "Lista de campo adicional do produto da Ordem de Produção",
+            "nullable": true
+          },
+          "productFinishedQuantitiesTypes": {
+            "$ref": "#/components/schemas/ProductFinishedQuantityTypeModel"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Itens da Ordem de Produção"
+      },
+      "OrderLotLowMaterialModel": {
+        "type": "object",
+        "properties": {
+          "lotBranchCode": {
+            "type": "integer",
+            "description": "Empresa do lote - PCPFM144 - Matéria-prima",
+            "format": "int32"
+          },
+          "lotNumber": {
+            "type": "integer",
+            "description": "Numero do lote - PCPFM144 - Matéria-prima",
+            "format": "int32"
+          },
+          "lotItemNumber": {
+            "type": "integer",
+            "description": "Numero do item de lote - PCPFM144 - Matéria-prima",
+            "format": "int32"
+          },
+          "lotBarCode": {
+            "type": "string",
+            "description": "Código de barras do item de lote - PCPFM144 - Matéria-prima",
+            "nullable": true
+          },
+          "lotLowQuantity": {
+            "type": "number",
+            "description": "Quantidade de baixa do item de lote - PCPFM144 - Matéria-prima",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Item de lote de matéria prima."
+      },
+      "OrderMaterialModel": {
+        "type": "object",
+        "properties": {
+          "materialProductCode": {
+            "type": "integer",
+            "description": "Código da matéria prima da ordem de produção pertence - PCPFM144 -> Matéria-prima",
+            "format": "int32"
+          },
+          "materialProductName": {
+            "type": "string",
+            "description": "Descrição da matéria prima da ordem de produção pertence - PCPFM144 -> Matéria-prima",
+            "nullable": true
+          },
+          "materialColorCode": {
+            "type": "string",
+            "description": "Código da cor da matéria prima - PCPFM144 -> Matéria-prima - Código da cor correspondente a matéria prima na grade",
+            "nullable": true
+          },
+          "materialColorName": {
+            "type": "string",
+            "description": "Descrição da cor da matéria prima - PCPFM144 -> Matéria-prima - Descrição da cor correspondente a matéria prima na grade",
+            "nullable": true
+          },
+          "materialSizeCode": {
+            "type": "integer",
+            "description": "Código do tamanho da matéria prima - PCPFM144 -> Matéria-prima - Código do tamanho correspondente a matéria prima na grade",
+            "format": "int32",
+            "nullable": true
+          },
+          "materialSizeName": {
+            "type": "string",
+            "description": "Descrição do tamanho da matéria prima - PCPFM144 -> Matéria-prima - Descrição do tamanho correspondente a matéria prima na grade",
+            "nullable": true
+          },
+          "materialReferenceCode": {
+            "type": "string",
+            "description": "Código da referencia da matéria prima - PCPFM144 -> Matéria-prima - Código da referencia da matéria prima.",
+            "nullable": true
+          },
+          "materialReferenceName": {
+            "type": "string",
+            "description": "Descrição da referencia da matéria prima - PCPFM144 -> Matéria-prima - Descrição da referencia da matéria prima.",
+            "nullable": true
+          },
+          "estimatedQuantity": {
+            "type": "number",
+            "description": "Quantidade estimada da matéria prima - PCPFM144 -> Matéria-prima - Quantidade da matéria prima na grade da O.P.",
+            "format": "double",
+            "nullable": true
+          },
+          "retiredQuantity": {
+            "type": "number",
+            "description": "Quantidade retirada da matéria prima - PCPFM144 -> Matéria-prima - Quantidade retirada da matéria prima.",
+            "format": "double",
+            "nullable": true
+          },
+          "returnedQuantity": {
+            "type": "number",
+            "description": "Quantidade retornada da matéria prima - PCPFM144 -> Matéria-prima - Quantidade retornada da matéria prima.",
+            "format": "double",
+            "nullable": true
+          },
+          "lowClosingDate": {
+            "type": "string",
+            "description": "Data de fechamento da matéria prima - PCPFM144 -> Matéria-prima - Data de fechamento da matéria prima.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "productClassification": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductClassificationModel"
+            },
+            "description": "Lista de classificação da matéria prima da Ordem de Produção",
+            "nullable": true
+          },
+          "productAdditionalField": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductAdditionalFieldModel"
+            },
+            "description": "Lista de campo adicional da matéria prima da Ordem de Produção",
+            "nullable": true
+          },
+          "lotLowMaterials": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderLotLowMaterialModel"
+            },
+            "description": "Lista de item de lote utilizado para baixar a matéria prima",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Matérias primas da Ordem de Produção"
+      },
+      "OrderObservationModel": {
+        "type": "object",
+        "properties": {
+          "sequence": {
+            "type": "integer",
+            "description": "Linha da Observação - Campo interno não apresentado no sistema.",
+            "format": "int32"
+          },
+          "observation": {
+            "type": "string",
+            "description": "Descrição da Observação - PCPFM144 -> Observação -> Lista de observação do PCPFL004.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Observações da Ordem de Produção"
+      },
+      "ProductAdditionalFieldModel": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "Campo adicional do produto - PRDFM009 - Opção Campo Adicional.",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string",
+            "description": "Descrição adicional do produto - PRDFM009 - Opção Campo Adicional.",
+            "nullable": true
+          },
+          "fieldType": {
+            "$ref": "#/components/schemas/AdditionalFieldType"
+          },
+          "value": {
+            "type": "string",
+            "description": "Valor do campo adicional - PRDFM009 - Opção Campo Adicional",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Campo adicional do cadastro de produto"
+      },
+      "ProductClassificationModel": {
+        "type": "object",
+        "properties": {
+          "typeCode": {
+            "type": "integer",
+            "description": "Campo tipo de classicação do produto - PRDFM009 - Opção Classificação",
+            "format": "int32"
+          },
+          "typeName": {
+            "type": "string",
+            "description": "Campo tipo de classicação do produto - PRDFM009 - Opção Classificação",
+            "nullable": true
+          },
+          "Code": {
+            "type": "string",
+            "description": "Classicação do produto - PRDFM009 - Opção Classificação",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "description": "Classicação do produto - PRDFM009 - Opção Classificação",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Classificações do produto."
+      },
+      "ProductFinishedQuantityTypeModel": {
+        "type": "object",
+        "properties": {
+          "normalFinishedQuantity": {
+            "type": "number",
+            "description": "Quantidade finalizada normal por produto - PCPFP037 -> Análise de Finalização de Ordem de Produção.\r\n<br>Tamanho máximo de 9 inteiros e 3 casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "sacrificedFinishedQuantity": {
+            "type": "number",
+            "description": "Quantidade sacrificada de finalização por produto - PCPFP037 -> Análise de Finalização de Ordem de Produção.\r\n<br>Tamanho máximo de 9 inteiros e 3 casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "secondFinishedQuantity": {
+            "type": "number",
+            "description": "Quantidade finalizada de segunda qualidade por produto - PCPFP037 -> Análise de Finalização de Ordem de Produção (quantidade acumulada no campo 'Defeito').\r\n<br>Tamanho máximo de 9 inteiros e 3 casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "thirdFinishedQuantity": {
+            "type": "number",
+            "description": "Quantidade finalizada de terceira qualidade por produto - PCPFP037 -> Análise de Finalização de Ordem de Produção (quantidade acumulada no campo 'Defeito').\r\n<br>Tamanho máximo de 9 inteiros e 3 casas decimais.",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Tipos de quantidades finalizadas por Produto da Ordem de Produção\r\n<br>Os campos que não possuírem valor serão omitidos."
+      },
+      "ProductionNoteModel": {
+        "type": "object",
+        "properties": {
+          "referenceCode": {
+            "type": "string",
+            "description": "Código do nível do grupo",
+            "nullable": true
+          },
+          "referenceName": {
+            "type": "string",
+            "description": "Descrição do nível do grupo",
+            "nullable": true
+          },
+          "operationCode": {
+            "type": "integer",
+            "description": "Código da operação",
+            "format": "int32"
+          },
+          "operationSequence": {
+            "type": "integer",
+            "description": "Sequencia operação do local",
+            "format": "int32"
+          },
+          "operationName": {
+            "type": "string",
+            "description": "Descrição da operação",
+            "nullable": true
+          },
+          "locationCode": {
+            "type": "integer",
+            "description": "Código da Local",
+            "format": "int32"
+          },
+          "locationName": {
+            "type": "string",
+            "description": "Descrição da Local",
+            "nullable": true
+          },
+          "employeeCode": {
+            "type": "integer",
+            "description": "Código funcionário",
+            "format": "int32"
+          },
+          "auxiliaryEmployeeCode": {
+            "type": "integer",
+            "description": "Código auxiliar funcionário",
+            "format": "int32"
+          },
+          "employeeName": {
+            "type": "string",
+            "description": "Nome funcionário",
+            "nullable": true
+          },
+          "barCode": {
+            "type": "string",
+            "description": "Código de barras operação",
+            "nullable": true
+          },
+          "initialDateNote": {
+            "type": "string",
+            "description": "Data início do lançamento",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endDateNote": {
+            "type": "string",
+            "description": "Data final do lançamento",
+            "format": "date-time",
+            "nullable": true
+          },
+          "observation": {
+            "type": "string",
+            "description": "Observação",
+            "nullable": true
+          },
+          "noteQuantity": {
+            "type": "number",
+            "description": "Quantidade apontada",
+            "format": "double",
+            "nullable": true
+          },
+          "pointedQuantity": {
+            "type": "number",
+            "description": "Quantidade do apontamento",
+            "format": "double",
+            "nullable": true
+          },
+          "pendingQuantity": {
+            "type": "number",
+            "description": "Quantidade pendente",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProductionOrderChangeModel": {
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "type": "string",
+            "description": "Data/hora inicial de alteração.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endDate": {
+            "type": "string",
+            "description": "Data/hora final de alteração.",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Filtro por alteração de dados. Este filtro é o primeiro a ser aplicado.\r\n<br>Caso seja informado, irá carregar uma lista de dados alterados, e este sofrerá ação dos demais filtros de forma restritiva, ou seja, como \"E\". Caso não seja informado, os demais filtros serão aplicados a todos os dados da base de dados, também como \"E\".<br>**Caso seja informado o intervalo de data de alteração, obrigatoriamente terá que informar a lista de empresas e pelo menos uma das opções \"in\".**"
+      },
+      "ProductionOrderFilterModel": {
+        "type": "object",
+        "properties": {
+          "change": {
+            "$ref": "#/components/schemas/ProductionOrderChangeModel"
+          },
+          "branchCodeList": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Filtro de lista de empresa - Campo empresa do PCPFM144.",
+            "nullable": true
+          },
+          "cycleCodeList": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Filtro lista de ciclo - Campo ciclo do PCPFM144.",
+            "nullable": true
+          },
+          "orderCodeList": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Filtro lista de número de ordem de produção - Campo O.P. do PCPFM144.",
+            "nullable": true
+          },
+          "statusList": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Filtro lista de situação de ordem de produção - Campo situação do PCPFM144.\r\n<br>05 - Bloqueada<br>10 - Aguardando liberação<br>20 - Em Andamento<br>30 - Finalizada<br>40 - Cancelada",
+            "nullable": true
+          },
+          "placeCodeList": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Filtro lista local de ordem de produção -> PCPFM144 -> Localização - Campo local do PCPFC021.",
+            "nullable": true
+          },
+          "materialClassificationList": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MaterialClassificationFilterModelList"
+            },
+            "description": "Filtro de tipo de classificação de matéria-prima -> PRDFM319 -> Manutenção de classificação de produto por grade.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Filtro de Ordem de Produção - PCPFM144."
+      },
+      "ProductionOrderResultModel": {
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Código da empresa - Campo empresa do PCPFM144.",
+            "format": "int32"
+          },
+          "cycleCode": {
+            "type": "integer",
+            "description": "Ciclo da ordem de produção - Campo ciclo do PCPFM144.",
+            "format": "int32"
+          },
+          "orderCode": {
+            "type": "integer",
+            "description": "Número da ordem de produção - Campo O.P. do PCPFM144.",
+            "format": "int32"
+          },
+          "orderBarCode": {
+            "type": "integer",
+            "description": "Código de barras da ordem de produção - Campo Nr. reduzido do PCPF144.",
+            "format": "int32",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantidade de real da ordem de produção.",
+            "format": "double",
+            "nullable": true
+          },
+          "finishedQuantity": {
+            "type": "number",
+            "description": "Quantidade finalizada da ordem de produção - Campo finalizada do PCPFM144.",
+            "format": "double",
+            "nullable": true
+          },
+          "pendingQuantity": {
+            "type": "number",
+            "description": "Quantidade pendente da ordem de produção - Campo pendente do PCPFM144.",
+            "format": "double"
+          },
+          "status": {
+            "type": "integer",
+            "description": "Situação da ordem de produção - Campo situação do PCPFM144.\r\n<br>5 - Bloqueada<br>10 - Aguardando liberação<br>20 - Em andamento<br>30 - Finalizada<br>40 - Cancelada",
+            "format": "int32"
+          },
+          "estimatedDeliveryDate": {
+            "type": "string",
+            "description": "Data de previsão de entrega da ordem de produção - Campo data previsão de entrega do PCPFM144.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "insertDate": {
+            "type": "string",
+            "description": "Data de criação da ordem de produção - Campo operador/data inclusão do PCPFM144.",
+            "format": "date-time"
+          },
+          "lastChangeDate": {
+            "type": "string",
+            "description": "Data de alteração da ordem de produção - Campo operador/atualização do PCPFM144.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endDate": {
+            "type": "string",
+            "description": "Data de encerramento da ordem de produção - Campo data encerramento do PCPFM144.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "startMovimentDate": {
+            "type": "string",
+            "description": "Data de movimento de inicio da ordem de produção - Campo data início do PCPFM144.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "customerCode": {
+            "type": "integer",
+            "description": "Código do cliente da ordem de produção - Código da pessoa do PCPFM144.",
+            "format": "int32",
+            "nullable": true
+          },
+          "customerCpfCnpj": {
+            "type": "string",
+            "description": "CPF/CNPJ do cliente da ordem de produção - CPF/CNPJ referente ao campo pessoa do PCPFM144.",
+            "nullable": true
+          },
+          "customerName": {
+            "type": "string",
+            "description": "Nome do cliente da ordem de produção - Campo pessoa do PCPFM144.",
+            "nullable": true
+          },
+          "machineCode": {
+            "type": "integer",
+            "description": "Código da máquina da ordem de produção - PCPFM144 -> Consuta dados -> Adicional - Campo máquina do PCPFM132.",
+            "format": "int32",
+            "nullable": true
+          },
+          "machineDescription": {
+            "type": "string",
+            "description": "Descrição da máquina da ordem de produção - PCPFM144 -> Consuta dados -> Adicional - Campo máquina do PCPFM132.",
+            "nullable": true
+          },
+          "machineGroup": {
+            "type": "string",
+            "description": "Grupo da máquina da ordem de produção - Campo descrição do CDFFM166.",
+            "nullable": true
+          },
+          "priority": {
+            "type": "integer",
+            "description": "Prioridade da ordem de produção - Campo prioridade do PCPFM144.",
+            "format": "int32"
+          },
+          "observations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderObservationModel"
+            },
+            "description": "Observações da Ordem de produção -> PCPFM144 -> Observações.",
+            "nullable": true
+          },
+          "locations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LocalizationOrderModel"
+            },
+            "description": "Localizações da Ordem de Produção -> PCPFM144 -> Localização.",
+            "nullable": true
+          },
+          "classifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderClassificationModel"
+            },
+            "description": "Classificações da Ordem de produção -> PCPFM144 -> Classificação.",
+            "nullable": true
+          },
+          "references": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderGroupModel"
+            },
+            "description": "Grupos de produto da Ordem de produção -> PCPFM144 -> Lista de grupo.",
+            "nullable": true
+          },
+          "programmings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProgrammingOrderModel"
+            },
+            "description": "Programação da Ordem de Produção -> PCPFM144 -> Programação.",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderItemModel"
+            },
+            "description": "Itens da Ordem de Produção -> PCPFM144 -> Grade de produto da O.P.",
+            "nullable": true
+          },
+          "materials": {
+            "$ref": "#/components/schemas/MaterialModel"
+          },
+          "productionNotes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductionNoteModel"
+            },
+            "description": "Apontamentos de produção da Ordem de Produção -> CDFFC030.",
+            "nullable": true
+          },
+          "relationships": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelationshipModel"
+            },
+            "description": "Relacionamento entre ordem de produção.",
+            "nullable": true
+          },
+          "relationshipItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelationshipItemModel"
+            },
+            "description": "Relacionamento entre ordem de produção componentes.",
+            "nullable": true
+          },
+          "orderFinishedQuantitiesTypes": {
+            "$ref": "#/components/schemas/OrderFinishedQuantityTypeModel"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProductionOrderSearchModel": {
+        "required": [
+          "filter"
+        ],
+        "type": "object",
+        "properties": {
+          "filter": {
+            "$ref": "#/components/schemas/ProductionOrderFilterModel"
+          },
+          "expand": {
+            "type": "string",
+            "description": "Lista de grupo de dados para expansão separados por \",\".\r\n<br>As seguintes expressões são suportadas: \"observations\", \"classifications\", \"references\", \"locations\", \"programmings\", \"items\", \"materials\", \"relationships\", \"relationshipItems\", \"productionNotes\", \"productFinishedQuantitiesTypes\" ,\"orderFinishedQuantitiesTypes\".<br>Ex.: \"expand\": \"observations,references,items\".<br>O retorno da coleção \"productFinishedQuantitiesTypes\" está diretamente relacionado ao retorno da coleção \"items\".",
+            "nullable": true
+          },
+          "order": {
+            "type": "string",
+            "description": "Lista de campos para ordenação separados por \",\". Para ordenação descendente utilizar o caracter \"-\".\r\n<br> As seguintes expressões são suportadas: \"branchCode\", \"cycleCode\", \"orderCode\" e \"maxChangeFilterDate\"<br> Ex.: \"order\": \"-orderCode,maxChangeFilterDate\"",
+            "nullable": true
+          },
+          "page": {
+            "type": "integer",
+            "description": "Número da página. Página inicial é 1.",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "description": "Quantidade de itens por página. Valor padrão é 500. Valor máximo é 500.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProductionOrderSearchResponseModel": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasNext": {
+            "type": "boolean"
+          },
+          "totalItems": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductionOrderResultModel"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProductsModel": {
+        "type": "object",
+        "properties": {
+          "productCode": {
+            "type": "integer",
+            "description": "Código do produto a ser realizado o movimento. Campo \"Código\" do frame \"Matéria-prima\" do componente \"PCPFP073\".\r\n<br>Tamanho máximo de 9 caracteres.",
+            "format": "int32"
+          },
+          "isClosed": {
+            "type": "boolean",
+            "description": "Indicação se é para realizar o fechamento do produto. Campo \"Fechamento\" do frame \"Matéria-prima\" do componente \"PCPFP073\".",
+            "nullable": true
+          },
+          "movementQuantity": {
+            "type": "number",
+            "description": "Quantidade a movimentar do produto. Campo \"Quantidade movimento\" do frame \"Matéria-prima\" do componente \"PCPFP073\".\r\n<br>Tamanho máximo de 8 inteiros e 6 casas decimais",
+            "format": "double",
+            "nullable": true
+          },
+          "batchItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BatchItemsModel"
+            },
+            "description": "Lista de itens de lote.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProgrammingOperationalSequenceModel": {
+        "type": "object",
+        "properties": {
+          "operationCode": {
+            "type": "integer",
+            "description": "Código da operação",
+            "format": "int32"
+          },
+          "operationName": {
+            "type": "string",
+            "description": "Descrição da operação",
+            "nullable": true
+          },
+          "time": {
+            "type": "number",
+            "description": "Tempo da operação",
+            "format": "double"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantidade da operação",
+            "format": "double"
+          },
+          "value": {
+            "type": "number",
+            "description": "Valor da operação",
+            "format": "double"
+          },
+          "observation": {
+            "type": "string",
+            "description": "Observação",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProgrammingOrderModel": {
+        "type": "object",
+        "properties": {
+          "locationCode": {
+            "type": "integer",
+            "description": "Código da Local - PCPFM144 -> Programação -> Local",
+            "format": "int32"
+          },
+          "locationName": {
+            "type": "string",
+            "description": "Descrição da Local - PCPFM144 -> Programação -> Local",
+            "nullable": true
+          },
+          "referenceCode": {
+            "type": "string",
+            "description": "Código do nível do grupo - PCPFM144 -> Programação -> Grupo",
+            "nullable": true
+          },
+          "referenceName": {
+            "type": "string",
+            "description": "Descrição do nível do grupo - PCPFM144 -> Programação -> Grupo",
+            "nullable": true
+          },
+          "isExternal": {
+            "type": "string",
+            "description": "Indica se o local é externo - PCPFM144 -> Programação -> Campo \"Ext.\"",
+            "nullable": true
+          },
+          "programmingOrder": {
+            "type": "integer",
+            "description": "Indica qual a ordem do local na programação - PCPFM144 -> Programação -> Primeiro campo da lista de local.",
+            "format": "int32"
+          },
+          "operationalSequences": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProgrammingOperationalSequenceModel"
+            },
+            "description": "Operação por local de produção - PCPFM144 -> Programação -> Listar operações -> frame \"Operações\"",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Programação da Ordem de Produção"
+      },
+      "RawMaterialMovementCommand": {
+        "required": [
+          "branchCode",
+          "cycleCode",
+          "movementType",
+          "orderCode",
+          "products"
+        ],
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Código da empresa da ordem de produção. Campo \"Empresa\" do componente \"PCPFP073\".\r\n<br>Tamanho máximo de 4 caracteres.",
+            "format": "int32"
+          },
+          "cycleCode": {
+            "type": "integer",
+            "description": "Código do ciclo da ordem de produção. Campo \"Ciclo\" do componente \"PCPFP073\".\r\n<br>Tamanho máximo de 6 caracteres.",
+            "format": "int32"
+          },
+          "orderCode": {
+            "type": "integer",
+            "description": "Código da ordem de produção. Campo \"O.P.\" do componente \"PCPFP073\".\r\n<br>Tamanho máximo de 9 caracteres.",
+            "format": "int32"
+          },
+          "movementType": {
+            "$ref": "#/components/schemas/MovementType"
+          },
+          "operationCode": {
+            "type": "integer",
+            "description": "Código da operação. Campo \"Operação\" do componente \"PCPFP073\".",
+            "format": "int32",
+            "nullable": true
+          },
+          "products": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductsModel"
+            },
+            "description": "Lista de produtos para movemento."
+          }
+        },
+        "additionalProperties": false
+      },
+      "RelationshipItemModel": {
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Empresa da ordem de produção. Campo \"Empresa\" no frame \"Item O.P. origem\" ou \"Item O.P. destino\" do componente PCPFL161.",
+            "format": "int32"
+          },
+          "cycleCode": {
+            "type": "integer",
+            "description": "Ciclo da ordem de produção. Campo \"Ciclo\" no frame \"Item O.P. origem\" ou \"Item O.P. destino\" do componente PCPFL161.",
+            "format": "int32"
+          },
+          "orderCode": {
+            "type": "integer",
+            "description": "Numero da ordem de produção. Campo \"O.P.\" no frame \"Item O.P. origem\" ou \"Item O.P. destino\" do componente PCPFL161.",
+            "format": "int32"
+          },
+          "productCodeOrigin": {
+            "type": "integer",
+            "description": "Código do produto origem. Campo \"Produto\" no frame \"Item O.P. origem\" ou \"Item O.P. destino\" do componente PCPFL161.",
+            "format": "int32"
+          },
+          "productCodeDestiny": {
+            "type": "integer",
+            "description": "Código do produto destino. Campo \"Produto\" no frame \"Item O.P. origem\" ou \"Item O.P. destino\" do componente PCPFL161.",
+            "format": "int32"
+          },
+          "relationshipType": {
+            "$ref": "#/components/schemas/RelationshipType"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Busca o relacionamento de ordem componente de O.P."
+      },
+      "RelationshipModel": {
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Empresa da ordem de produção. Campo \"Empresa\" do agrupador \"O.P origem\" ou \"O.P destino\" no frame \"Relacionamento O.P./O.P.\" do componente PCPFL083.",
+            "format": "int32"
+          },
+          "cycleCode": {
+            "type": "integer",
+            "description": "Ciclo da ordem de produção. Campo \"Ciclo\" do agrupador \"O.P origem\" ou \"O.P destino\" no frame \"Relacionamento O.P./O.P.\" do componente PCPFL083.",
+            "format": "int32"
+          },
+          "orderCode": {
+            "type": "integer",
+            "description": "Numero da ordem de produção. Campo \"Nr. O.P.\" do agrupador \"O.P origem\" ou \"O.P destino\" no frame \"Relacionamento O.P./O.P.\" do componente PCPFL083.",
+            "format": "int32"
+          },
+          "relationshipType": {
+            "$ref": "#/components/schemas/RelationshipType"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Busca o relacionamento de duplicação de O.P."
+      },
+      "RelationshipType": {
+        "enum": [
+          "Origin",
+          "Destiny"
+        ],
+        "type": "integer",
+        "description": "Indica se a O.P. é origem ou destino no relacionamento.\r\n<br>1 - Origem<br>2 - Destino",
+        "format": "int32"
+      },
+      "TomasRawMaterialMovementResponseModel": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Conteúdo retornado na execução do Tomas.",
+            "nullable": true
+          },
+          "unifaceResponseStatus": {
+            "type": "string",
+            "description": "Status da resposta da requisição do Tomas no Uniface.",
+            "nullable": true
+          },
+          "unifaceMessage": {
+            "type": "string",
+            "description": "Mensagem de retorno do Uniface.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "apiKey",
+        "description": "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        "name": "Authorization",
+        "in": "header"
+      }
+    }
+  },
+  "security": [
+    {
+      "Bearer": [ ]
+    }
+  ]
+}

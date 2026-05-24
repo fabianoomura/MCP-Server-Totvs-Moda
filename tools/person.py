@@ -14,9 +14,24 @@ logger = logging.getLogger("totvs-moda-mcp.person")
 BASE = "/api/totvsmoda/person/v2"
 
 
+def _pascal_params(args: dict[str, Any]) -> dict[str, Any]:
+    return {k[:1].upper() + k[1:]: v for k, v in args.items() if v is not None}
+
+
 def _search_body(args: dict[str, Any]) -> dict[str, Any]:
-    flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order", "fields") and v is not None}
+    if isinstance(args.get("filter"), dict):
+        flt = {k: v for k, v in args["filter"].items() if v is not None}
+    else:
+        flt = {
+            k: v
+            for k, v in args.items()
+            if k not in ("filter", "option", "expand", "page", "pageSize", "order", "fields") and v is not None
+        }
     body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+    if args.get("option") is not None:
+        body["option"] = args["option"]
+    if args.get("expand"):
+        body["expand"] = args["expand"]
     if args.get("order"):
         body["order"] = args["order"]
     return body
@@ -67,11 +82,20 @@ class PersonTools:
 
     async def get_email_types(self, args: dict[str, Any]) -> Any:
         """GET /email-types — Tipos de e-mail disponíveis."""
-        return await self.client.get(f"{BASE}/email-types")
+        return await self.client.get(f"{BASE}/email-types", params=_pascal_params(args) or None)
 
     async def get_phone_types(self, args: dict[str, Any]) -> Any:
         """GET /phone-types — Tipos de telefone disponíveis."""
-        return await self.client.get(f"{BASE}/phone-types")
+        return await self.client.get(f"{BASE}/phone-types", params=_pascal_params(args) or None)
+
+    async def get_contact_types(self, args: dict[str, Any]) -> Any:
+        """GET /contact-types - Tipos de contato disponiveis."""
+        return await self.client.get(f"{BASE}/contact-types", params=_pascal_params(args) or None)
+
+    async def search_reception_sale(self, args: dict[str, Any]) -> Any:
+        """GET /reception-sale/search - Recepcao de venda por data/tipo."""
+        result = await self.client.get(f"{BASE}/reception-sale/search", params=_pascal_params(args) or None)
+        return apply_fields(result, args)
 
     # ── WRITE ──────────────────────────────────────────────────────────────
 
@@ -94,3 +118,17 @@ class PersonTools:
         """POST /messages — ⚠️ Incluir mensagem para pessoa."""
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/messages", body)
+
+    async def relate_customer_representatives(self, args: dict[str, Any]) -> Any:
+        """POST /customer-representatives - Relaciona clientes a representante."""
+        if not (args.get("representativeCode") or args.get("representativeCpfCnpj")):
+            raise ValueError("Informe representativeCode OU representativeCpfCnpj")
+        if not (args.get("customerCodeList") or args.get("customerCpfCnpjList")):
+            raise ValueError("Informe customerCodeList OU customerCpfCnpjList")
+        body = {k: v for k, v in args.items() if v is not None}
+        return await self.client.post(f"{BASE}/customer-representatives", body)
+
+    async def change_message(self, args: dict[str, Any]) -> Any:
+        """PUT /messages/change - Altera mensagem de pessoa."""
+        body = {k: v for k, v in args.items() if v is not None}
+        return await self.client.put(f"{BASE}/messages/change", body)

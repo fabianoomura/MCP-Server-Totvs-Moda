@@ -86,6 +86,24 @@ Comportamento:
 - Busca pedidos da data.
 - Retorna total de pedidos, valor total, resumo por status e ranking de pedidos.
 
+### `totvs_stock_available`
+
+Use para perguntas como "quais itens tenho a pronta entrega".
+
+Parametros importantes:
+
+- `productKind="finished"`: produto acabado ativo, melhor padrao para pronta entrega comercial.
+- `productKind="raw_material"`: materia-prima.
+- `productKind="bulk"`: material de consumo.
+- `productKind="all"`: todos os SKUs com saldo, incluindo insumos e embalagens.
+
+Mapeamento TOTVS:
+
+- `finished` aplica `branchInfo.isFinishedProduct=true`, `isRawMaterial=false`, `isBulkMaterial=false`.
+- `raw_material` aplica `branchInfo.isRawMaterial=true`.
+- `bulk` aplica `branchInfo.isBulkMaterial=true`.
+- Para `productKind` diferente de `all`, `onlyActive` assume `true` por padrao.
+
 ### `totvs_new_customers_today`
 
 Use para perguntas como "algum cliente novo hoje".

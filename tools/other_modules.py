@@ -77,12 +77,32 @@ class ProductionOrderTools:
     async def search_production_orders(self, args: dict[str, Any]) -> Any:
         """POST /orders/search — Consulta ordens de produção."""
         args = inject_branch_defaults(args)
-        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order", "fields", "branchCode") and v is not None}
+        filter_fields = (
+            "change",
+            "branchCodeList",
+            "cycleCodeList",
+            "orderCodeList",
+            "statusList",
+            "placeCodeList",
+            "materialClassificationList",
+        )
+        flt = {k: v for k, v in args.items() if k in filter_fields and v is not None}
         # API espera branchCodeList (array)
         if "branchCodeList" not in flt:
             if args.get("branchCode"):
                 flt["branchCodeList"] = [args["branchCode"]]
+
+        # Backward-compatible aliases used by earlier MCP versions.
+        if args.get("startDate") is not None or args.get("endDate") is not None:
+            flt.setdefault("change", {})
+            if args.get("startDate") is not None:
+                flt["change"]["startDate"] = args["startDate"]
+            if args.get("endDate") is not None:
+                flt["change"]["endDate"] = args["endDate"]
+
         body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        if args.get("expand"):
+            body["expand"] = args["expand"]
         if args.get("order"):
             body["order"] = args["order"]
         result = await self.client.post(f"{self.BASE}/orders/search", body)

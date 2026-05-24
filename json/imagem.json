@@ -1,0 +1,912 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Api Image",
+    "description": "TOTVS.Moda API Swagger Surface",
+    "contact": {
+      "name": "TOTVS.Moda Atendimento",
+      "url": "https://totvssuporte.zendesk.com",
+      "email": "atendimentova@totvs.com.br"
+    },
+    "license": {
+      "name": "TOTVS",
+      "url": "https://www.totvs.com/"
+    },
+    "version": "2.8.04"
+  },
+  "paths": {
+    "/api/totvsmoda/image/v2/persons": {
+      "post": {
+        "tags": [
+          "PersonImage"
+        ],
+        "summary": "Inserir uma imagem de pessoa",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InsertPersonImageCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InsertPersonImageCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/InsertPersonImageCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonImageResultModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "PersonImage"
+        ],
+        "summary": "Obter listagem de imagens para uma pessoa.",
+        "parameters": [
+          {
+            "name": "PersonCode",
+            "in": "query",
+            "description": "Codigo da pessoa. \r\nSe informado, não é necessario informar \"personCpfCnpj\"\r\nCampo \"Código\" do componente PESFM010.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "CpfCnpj",
+            "in": "query",
+            "description": "Se informado, não é necessario informar \"personCode\"\r\nCampo \"Número CPF\" do componente PESFM010 caso pessoa física.\r\nCampo \"Número CNPJ\" do componente PESFM010 caso pessoa jurídica.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Page",
+            "in": "query",
+            "description": "Número da página. Página inicial é 1.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Quantidade de itens por página. Valor padrão é 1000. Valor máximo é 1000.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ValidationResult.IsValid",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "ValidationResult.Errors",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ValidationFailure"
+              }
+            }
+          },
+          {
+            "name": "ValidationResult.RuleSetsExecuted",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonImageListModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/image/v2/person-images": {
+      "get": {
+        "tags": [
+          "PersonImage"
+        ],
+        "summary": "Obter imagem em base64.",
+        "parameters": [
+          {
+            "name": "ImageCode",
+            "in": "query",
+            "description": "Código da imagem que será obtido o conteúdo. Campo \"Código\" do componente PESFM038.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ValidationResult.IsValid",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "ValidationResult.Errors",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ValidationFailure"
+              }
+            }
+          },
+          {
+            "name": "ValidationResult.RuleSetsExecuted",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonImageContentResultModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/image/v2/product/search": {
+      "post": {
+        "tags": [
+          "ProductImage"
+        ],
+        "summary": "Consultar imagem de produto",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImageProductInDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImageProductInDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImageProductInDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageProductOutDTO"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/image/v2/product": {
+      "post": {
+        "tags": [
+          "ProductImage"
+        ],
+        "summary": "Importar imagem de produto",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductImageInDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductImageInDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductImageInDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductImageOutDTO"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/image/V2/imports": {
+      "post": {
+        "tags": [
+          "ProductImage"
+        ],
+        "summary": "Importar imagem de produto, sem a realização do relacionamento com produto.",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InsertProductImageCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InsertProductImageCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/InsertProductImageCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductImageResultModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotification"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DomainNotification": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          },
+          "source": {
+            "type": "string",
+            "nullable": true
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DomainNotificationMessage": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Código da mensagem.",
+            "nullable": true,
+            "readOnly": true
+          },
+          "message": {
+            "type": "string",
+            "description": "Conteúdo da mensagem.",
+            "nullable": true,
+            "readOnly": true
+          },
+          "detailedMessage": {
+            "type": "string",
+            "description": "Detalhamento adicional da mensagem.",
+            "nullable": true,
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Mensagem de notificação."
+      },
+      "ImageOptionModel": {
+        "type": "object",
+        "properties": {
+          "quantityImageResult": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ImageProductFilterModel": {
+        "type": "object",
+        "properties": {
+          "productCodeList": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          },
+          "typeImageCodeList": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ImageProductInDTO": {
+        "required": [
+          "filter"
+        ],
+        "type": "object",
+        "properties": {
+          "filter": {
+            "$ref": "#/components/schemas/ImageProductFilterModel"
+          },
+          "option": {
+            "$ref": "#/components/schemas/ImageOptionModel"
+          },
+          "page": {
+            "type": "integer",
+            "description": "Número da página. Página inicial é 1.",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "description": "Quantidade de itens por página. Valor padrão é 100. Valor máximo é 100.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ImageProductModel": {
+        "type": "object",
+        "properties": {
+          "productCode": {
+            "type": "integer",
+            "description": "Código do Produto",
+            "format": "int32"
+          },
+          "productName": {
+            "type": "string",
+            "description": "Nome do produto",
+            "nullable": true
+          },
+          "referencialGroupCode": {
+            "type": "integer",
+            "description": "Codigo do nivel do grupo",
+            "format": "int32"
+          },
+          "referencialCode": {
+            "type": "string",
+            "description": "Codigo do nivel do grupo",
+            "nullable": true
+          },
+          "referencialName": {
+            "type": "string",
+            "description": "Descrição do nivel do grupo",
+            "nullable": true
+          },
+          "colorCode": {
+            "type": "string",
+            "description": "Codigo da cor do produto",
+            "nullable": true
+          },
+          "colorName": {
+            "type": "string",
+            "description": "Nome da cor do produto",
+            "nullable": true
+          },
+          "sizeName": {
+            "type": "string",
+            "description": "Nome da cor do produto",
+            "nullable": true
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImageReferenceModel"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Dados de Imagem"
+      },
+      "ImageProductOutDTO": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "description": "Total de registros obtidos na consulta.",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "description": "Total de páginas da consulta.",
+            "format": "int32"
+          },
+          "hasNext": {
+            "type": "boolean",
+            "description": "Possui mais páginas."
+          },
+          "totalItems": {
+            "type": "integer",
+            "description": "Total de registros da lista de itens.",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImageProductModel"
+            },
+            "description": "Lista de itens.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ImageReferenceModel": {
+        "type": "object",
+        "properties": {
+          "imageCode": {
+            "type": "integer",
+            "description": "Código da imagem do produto",
+            "format": "int32"
+          },
+          "imageName": {
+            "type": "string",
+            "description": "Nome da Imagem",
+            "nullable": true
+          },
+          "imageDescription": {
+            "type": "string",
+            "description": "Descrição da Imagem",
+            "nullable": true
+          },
+          "typeImageCode": {
+            "type": "string",
+            "description": "Codigo do tipo de imagem do produto",
+            "nullable": true
+          },
+          "typeImageName": {
+            "type": "string",
+            "description": "Descrição do tipo de imagem",
+            "nullable": true
+          },
+          "imageFile": {
+            "type": "string",
+            "description": "Arquivo da imagem",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "InsertPersonImageCommand": {
+        "required": [
+          "base64",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nome da Imagem que será inserida.\r\nEste nome é uma chave no banco de dados, portanto deve ser único para cada imagem.\r\nCampo \"Arquivo\" do componente PESFM038."
+          },
+          "description": {
+            "type": "string",
+            "description": "Descrição da Imagem que será inserida. \r\nCampo \"Descrição\" do componente PESFM038.",
+            "nullable": true
+          },
+          "base64": {
+            "type": "string",
+            "description": "Conteudo da imagem em base 64. A imagem deve estar no maximo na resolução 1080x720. \r\nQue é vizualizada no componente PESFM038."
+          },
+          "personCode": {
+            "type": "integer",
+            "description": "Codigo da pessoa. \r\nCaso informado irá realizar o vinculo da imagem com a pessoa.\r\nCaso não informado não irá realizar o vinculo da imagem com a pessoa.\r\nSe informado, não é necessario informar \"personCpfCnpj\"\r\nCampo \"Código\" do componente PESFM010.",
+            "format": "int32"
+          },
+          "personCpfCnpj": {
+            "type": "string",
+            "description": "Cpf ou Cnpj, para realizar o vinculo da imagem\r\nCaso informado irá realizar o vinculo da imagem com a pessoa.\r\nCaso não informado não irá realizar o vinculo da imagem com a pessoa.\r\nSe informado, não é necessario informar \"personCode\"\r\nCampo \"Número CPF\" do componente PESFM010 caso pessoa física.\r\nCampo \"Número CNPJ\" do componente PESFM010 caso pessoa jurídica.",
+            "nullable": true
+          },
+          "defaultImage": {
+            "type": "boolean",
+            "description": "Boolean caso seja a imagem padrão do cliente.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Inserir imagem de pessoa."
+      },
+      "InsertProductImageCommand": {
+        "required": [
+          "base64",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nome da imagem - Campo \"Nome arquivo\" do componente PRDFM026.\r\n<br>Tamanho máximo de 100 caracteres."
+          },
+          "description": {
+            "type": "string",
+            "description": "Descrição da imagem - Campo \"Imagem\" do componente PRDFM026.",
+            "nullable": true
+          },
+          "base64": {
+            "type": "string",
+            "description": "Imagem convertida em base64.\r\n<br>Tamanho máximo de acordo com o parâmetro corporativo TAMANHO_IMAGEM_SCANNER."
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonImageContentResultModel": {
+        "type": "object",
+        "properties": {
+          "imageCode": {
+            "type": "integer",
+            "description": "Código da imagem\". Campo \"Código\" do componente PESFM038.",
+            "format": "int32"
+          },
+          "imageName": {
+            "type": "string",
+            "description": "Nome da Imagem. Campo \"Arquivo\" do componente PESFM038.",
+            "nullable": true
+          },
+          "imageDescription": {
+            "type": "string",
+            "description": "Descrição da imagem. Campo \"Descrição\" do componente PESFM038.",
+            "nullable": true
+          },
+          "base64": {
+            "type": "string",
+            "description": "Conteudo em base64.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonImageListModel": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "description": "Total de registros obtidos na consulta.",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "description": "Total de páginas da consulta.",
+            "format": "int32"
+          },
+          "hasNext": {
+            "type": "boolean",
+            "description": "Possui mais páginas."
+          },
+          "totalItems": {
+            "type": "integer",
+            "description": "Total de registros da lista de itens.",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PersonImageModel"
+            },
+            "description": "Lista de itens.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonImageModel": {
+        "type": "object",
+        "properties": {
+          "imageCode": {
+            "type": "integer",
+            "description": "Código da imagem. Campo \"Código\" do componente PESFM038.",
+            "format": "int32"
+          },
+          "imageName": {
+            "type": "string",
+            "description": "Nome da Imagem. Campo \"Arquivo\" do componente PESFM038.",
+            "nullable": true
+          },
+          "imageDescription": {
+            "type": "string",
+            "description": "Descrição da imagem. Campo \"Descrição\" do componente PESFM038.",
+            "nullable": true
+          },
+          "defaultImage": {
+            "type": "boolean",
+            "description": "Boolean se a imagem está registrada como padrão.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Obter lista de imagens vinculadas a uma pessoa."
+      },
+      "PersonImageResultModel": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "Código da imagem. Campo \"Código\" do componente PESFM038.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProductImageInDTO": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nome da imagem - Campo \"Nome arquivo\" do componente PRDFM026",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "description": "Descrição da imagem - Campo \"Imagem\" do componente PRDFM026",
+            "nullable": true
+          },
+          "base64": {
+            "type": "string",
+            "description": "Imagem em base64",
+            "nullable": true
+          },
+          "productCode": {
+            "type": "integer",
+            "description": "Código do produto para relacionar a imagem - PRDFM309 - PRDFM312",
+            "format": "int32"
+          },
+          "imageTypeCode": {
+            "type": "integer",
+            "description": "Tipo de Imagem - Campo \"Tipo imagem\" dos componentes PRDFM309 - PRDFM312",
+            "format": "int32",
+            "nullable": true
+          },
+          "replicateTo": {
+            "$ref": "#/components/schemas/ReplicationType"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProductImageOutDTO": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProductImageResultModel": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReplicationType": {
+        "enum": [
+          "Product",
+          "Group",
+          "Color",
+          "Size"
+        ],
+        "type": "integer",
+        "description": "Replicação da imagem importada para os produtos por:\r\n<br>0 - Product(Somente para o produto do campo productCode)<br>1 - Group(Para todos os produtos do grupo do campo productCode)<br>2 - Color(Replicar para todos os produtos da cor do produto do campo productCode)<br>3 - Size(Replicar para todos os produtos do tamanho do produto do campo productCode)<br>Obs: O valor padrão é \"Product\"",
+        "format": "int32"
+      },
+      "Severity": {
+        "enum": [
+          "Error",
+          "Warning",
+          "Info"
+        ],
+        "type": "integer",
+        "format": "int32"
+      },
+      "ValidationFailure": {
+        "type": "object",
+        "properties": {
+          "propertyName": {
+            "type": "string",
+            "nullable": true
+          },
+          "errorMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "attemptedValue": {
+            "nullable": true
+          },
+          "customState": {
+            "nullable": true
+          },
+          "severity": {
+            "$ref": "#/components/schemas/Severity"
+          },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "formattedMessagePlaceholderValues": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "apiKey",
+        "description": "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        "name": "Authorization",
+        "in": "header"
+      }
+    }
+  },
+  "security": [
+    {
+      "Bearer": [ ]
+    }
+  ]
+}

@@ -1,5 +1,29 @@
 # Changelog
 
+## [3.6.0] - 2026-05-24
+
+### Added
+- Endpoint harness generated from local Swagger files with coverage matrix in `docs/API_ENDPOINT_MATRIX.md`.
+- Agent endpoint harness guide in `docs/AGENT_ENDPOINT_HARNESS.md`.
+- n8n/agent architecture proposal in `docs/N8N_AUTOMATION_ARCHITECTURE.md`.
+- Product auxiliary read endpoints:
+  - `totvs_get_product_additional_field_types`
+  - `totvs_get_product_classification_types`
+  - `totvs_get_product_composition_group_product`
+  - `totvs_get_product_composition_product`
+  - `totvs_get_product_instruction_items`
+  - `totvs_get_product_price_table_scales`
+  - `totvs_get_product_grouper_configurations`
+- Product Engineering, Material Request, Product Prototype, Logistics and Person coverage expanded.
+
+### Changed
+- Endpoint coverage increased to `169/251`.
+- Product coverage increased to `38/42`.
+- Upsert behavior documented/tested for TOTVS create/update split flows.
+
+### Tests
+- Test suite expanded to 176 tests.
+
 ## [3.5.0] - 2026-05-22
 
 ### Added

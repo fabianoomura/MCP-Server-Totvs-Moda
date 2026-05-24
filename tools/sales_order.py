@@ -52,6 +52,9 @@ class SalesOrderTools:
             "hasShippingCompany",
             "hasPdvTransaction",
             "hasFinancialProcessed",
+            "classifications",
+            "experienceTypeList",
+            "change",
         ]
 
         order_filter = {}
@@ -87,10 +90,16 @@ class SalesOrderTools:
         Retorna notas fiscais vinculadas ao pedido.
         """
         args = inject_branch_defaults(args)
-        params = {
-            "branchCode": args["branchCode"],
-            "orderCode": args["orderCode"],
-        }
+        params = self._pascal_params(
+            args,
+            (
+                "branchCode",
+                "orderCode",
+                "orderId",
+                "maxChangeFilterDate",
+                "invoiceStatusType",
+            ),
+        )
         return await self.client.get(f"{BASE}/invoices", params=params)
 
     async def get_pending_items(self, args: dict[str, Any]) -> Any:
@@ -99,10 +108,10 @@ class SalesOrderTools:
         Retorna itens pendentes (não faturados) do pedido.
         """
         args = inject_branch_defaults(args)
-        params = {
-            "branchCode": args["branchCode"],
-            "orderCode": args["orderCode"],
-        }
+        params = self._pascal_params(
+            args,
+            ("branchCode", "orderCode", "orderId", "maxChangeFilterDate"),
+        )
         return await self.client.get(f"{BASE}/pending-items", params=params)
 
     async def get_discount_types(self, args: dict[str, Any]) -> Any:
@@ -110,9 +119,11 @@ class SalesOrderTools:
         GET /discount-type?branchCode=X
         Consulta tipos de desconto disponíveis.
         """
-        args = inject_branch_defaults(args)
-        params = {"branchCode": args["branchCode"]}
-        return await self.client.get(f"{BASE}/discount-type", params=params)
+        params = self._pascal_params(
+            args,
+            ("startChangeDate", "endChangeDate", "order", "page", "pageSize"),
+        )
+        return await self.client.get(f"{BASE}/discount-type", params=params or None)
 
     async def get_billing_suggestions(self, args: dict[str, Any]) -> Any:
         """
@@ -120,9 +131,24 @@ class SalesOrderTools:
         Consulta sugestões de faturamento.
         """
         args = inject_branch_defaults(args)
-        params: dict[str, Any] = {"branchCode": args["branchCode"]}
-        if "orderCode" in args:
-            params["orderCode"] = args["orderCode"]
+        params = self._pascal_params(
+            args,
+            (
+                "branchCode",
+                "suggestionCode",
+                "startSuggestionDate",
+                "endSuggestionDate",
+                "suggestionStatusList",
+                "orderBranchCode",
+                "orderCode",
+                "startChangeDate",
+                "endChangeDate",
+                "order",
+                "page",
+                "pageSize",
+                "expand",
+            ),
+        )
         return await self.client.get(f"{BASE}/billing-suggestions", params=params)
 
     async def get_classifications(self, args: dict[str, Any]) -> Any:
@@ -130,9 +156,20 @@ class SalesOrderTools:
         GET /classifications?branchCode=X
         Consulta classificações disponíveis.
         """
+        params = self._pascal_params(
+            args,
+            ("startChangeDate", "endChangeDate", "typeCodeList", "page", "pageSize"),
+        )
+        return await self.client.get(f"{BASE}/classifications", params=params or None)
+
+    async def get_changed_batch_items(self, args: dict[str, Any]) -> Any:
+        """GET /changed-batch-items — Itens de lote associados a pedidos atualizados."""
         args = inject_branch_defaults(args)
-        params = {"branchCode": args["branchCode"]}
-        return await self.client.get(f"{BASE}/classifications", params=params)
+        params = self._pascal_params(
+            args,
+            ("branchCode", "orderCode", "batchCode", "startDate", "endDate"),
+        )
+        return await self.client.get(f"{BASE}/changed-batch-items", params=params)
 
     # ------------------------------------------------------------------ #
     # WRITE operations                                                     #
@@ -223,14 +260,15 @@ class SalesOrderTools:
 
     async def search_batch_items(self, args: dict[str, Any]) -> Any:
         """GET /batch-items — Lista lotes de itens (query params PascalCase)."""
-        params: dict[str, Any] = {}
-        for field, param in (
-            ("status", "Status"), ("startChangeDate", "StartChangeDate"),
-            ("endChangeDate", "EndChangeDate"), ("branchCode", "BranchCode"),
-        ):
-            if args.get(field) is not None:
-                params[param] = args[field]
+        params = self._pascal_params(
+            args,
+            ("status", "startChangeDate", "endChangeDate", "order", "page", "pageSize"),
+        )
         return await self.client.get(f"{BASE}/batch-items", params=params or None)
+
+    def _pascal_params(self, args: dict[str, Any], fields: tuple[str, ...]) -> dict[str, Any]:
+        """Map lower camelCase tool args to TOTVS PascalCase query params."""
+        return {field[:1].upper() + field[1:]: args[field] for field in fields if args.get(field) is not None}
 
     async def create_order_relationship_counts(self, args: dict[str, Any]) -> Any:
         """POST /relationship-counts — ⚠️ Cria contagens de relacionamento de pedido."""

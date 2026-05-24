@@ -1,0 +1,1079 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Api Data Package",
+    "description": "TOTVS.Moda API Swagger Surface",
+    "contact": {
+      "name": "TOTVS.Moda Atendimento",
+      "url": "https://totvssuporte.zendesk.com",
+      "email": "atendimentova@totvs.com.br"
+    },
+    "license": {
+      "name": "TOTVS",
+      "url": "https://www.totvs.com/"
+    },
+    "version": "2.7.02"
+  },
+  "paths": {
+    "/api/totvsmoda/data-package/v2/input-packages": {
+      "post": {
+        "tags": [
+          "DataPackage"
+        ],
+        "summary": "Incluir um pacote de dados..",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PackageCreateInDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PackageCreateInDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PackageCreateInDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackageCreateOutDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "DataPackage"
+        ],
+        "summary": "Obter lista de pacotes de importação de dados.",
+        "parameters": [
+          {
+            "name": "Target",
+            "in": "query",
+            "description": "Identificador do destinatário. Campo \"Destino\" do INTFC007 -> INTFC008",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Status",
+            "in": "query",
+            "description": "Situação. Campo \"Situação\" do INTFC007 -> INTFC008.\r\n<br>1 - Active(Em andamento)<br>2 - Rejected(Rejeitado)<br>3 - Finished(Encerrado)<br>4 - RestrictionFinished(Encerrado com restrições)<br>6 - Canceled(Cancelado)",
+            "schema": {
+              "$ref": "#/components/schemas/PackageStatusType"
+            }
+          },
+          {
+            "name": "ModelCode",
+            "in": "query",
+            "description": "Código do modelo de pacote. Campo \"Codigo pacote\" do INTFC007 -> INTFC008.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ModelCodeList",
+            "in": "query",
+            "description": "Lista de código do modelo de pacote. Campo \"Codigo pacote\" do INTFC007 -> INTFC008.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          },
+          {
+            "name": "Source",
+            "in": "query",
+            "description": "Indentifiador da origem. Campo \"Origem\" do INTFC007 -> INTFC008.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "InitialInsertDate",
+            "in": "query",
+            "description": "Data inicial de inclusão. Campo \"Dt. inclusão\" do INTFC007 -> INTFC008.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "FinalInsertDate",
+            "in": "query",
+            "description": "Data final de inclusão. Campo \"Dt. inclusão\" do INTFC007 -> INTFC008.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "InitialMovementDate",
+            "in": "query",
+            "description": "Data inicial de movimento. Campo \"Dt. movimento\" do INTFC007 -> INTFC008.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "FinalMovementDate",
+            "in": "query",
+            "description": "Data final de movimento. Campo \"Dt. movimento\" do INTFC007 -> INTFC008.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "Page",
+            "in": "query",
+            "description": "Número da página. Página inicial é 1.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Quantidade de itens por página. Valor padrão é 1000. Valor máximo é 1000.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Order",
+            "in": "query",
+            "description": "Lista de campos para ordenação separados por \",\". Para ordenação descendente utilizar o caracter \"-\".\r\n<br>As seguintes expressões são suportadas: \"packageId\", \"packageNumber\", \"modelCode\", \"priority\".<br>Ex.: \"order\": \"-modelCode,priority\".",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ValidationResult.IsValid",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "ValidationResult.Errors",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ValidationFailure"
+              }
+            }
+          },
+          {
+            "name": "ValidationResult.RuleSetsExecuted",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InputPackageListOutDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/data-package/v2/packages/{packageId}": {
+      "get": {
+        "tags": [
+          "DataPackage"
+        ],
+        "summary": "Obter as informações de um pacote de dados.",
+        "parameters": [
+          {
+            "name": "packageId",
+            "in": "path",
+            "description": "Identificador único do pacote.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackageOutDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/data-package/v2/content-packages/{packageId}": {
+      "get": {
+        "tags": [
+          "DataPackage"
+        ],
+        "summary": "Obter o conteúdo de um pacote de dados.",
+        "parameters": [
+          {
+            "name": "packageId",
+            "in": "path",
+            "description": "Identificador único do pacote.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackageContentOutDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/data-package/v2/output-packages": {
+      "get": {
+        "tags": [
+          "DataPackage"
+        ],
+        "summary": "Obter lista de pacotes de exportação de dados.",
+        "parameters": [
+          {
+            "name": "Target",
+            "in": "query",
+            "description": "Identificador do destinatário. Campo \"Destino\" do INTFC007 -> INTFC008. Obrigatório.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ModelCode",
+            "in": "query",
+            "description": "Código do modelo de pacote. Campo \"Codigo pacote\" do INTFC007 -> INTFC008.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ModelCodeList",
+            "in": "query",
+            "description": "Lista de código do modelo de pacote. Campo \"Codigo pacote\" do INTFC007 -> INTFC008.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          },
+          {
+            "name": "Source",
+            "in": "query",
+            "description": "Indentifiador da origem. Campo \"Origem\" do INTFC007 -> INTFC008.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "InitialInsertDate",
+            "in": "query",
+            "description": "Data inicial de inclusão. Campo \"Dt. inclusão\" do INTFC007 -> INTFC008.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "FinalInsertDate",
+            "in": "query",
+            "description": "Data final de inclusão. Campo \"Dt. inclusão\" do INTFC007 -> INTFC008.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "InitialMovementDate",
+            "in": "query",
+            "description": "Data inicial de movimento. Campo \"Dt. movimento\" do INTFC007 -> INTFC008.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "FinalMovementDate",
+            "in": "query",
+            "description": "Data final de movimento. Campo \"Dt. movimento\" do INTFC007 -> INTFC008.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "Page",
+            "in": "query",
+            "description": "Número da página. Página inicial é 1.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Quantidade de itens por página. Valor padrão é 1000. Valor máximo é 1000.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Order",
+            "in": "query",
+            "description": "Lista de campos para ordenação separados por \",\". Para ordenação descendente utilizar o caracter \"-\".\r\n<br>As seguintes expressões são suportadas: \"packageId\", \"packageNumber\", \"modelCode\", \"priority\".<br>Ex.: \"order\": \"-modelCode,priority\".",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ValidationResult.IsValid",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "ValidationResult.Errors",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ValidationFailure"
+              }
+            }
+          },
+          {
+            "name": "ValidationResult.RuleSetsExecuted",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutputPackageListOutDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/data-package/v2/output-packages/receive": {
+      "post": {
+        "tags": [
+          "DataPackage"
+        ],
+        "summary": "Alterar situação de um pacote de dados para \"Recebido\".",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PackageInDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PackageInDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PackageInDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessProcessingModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/data-package/v2/packages/reactivate": {
+      "post": {
+        "tags": [
+          "DataPackage"
+        ],
+        "summary": "Alterar situação de um pacote de dados rejeitado para \"Em andamento\".",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PackageInDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PackageInDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PackageInDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessProcessingModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DomainNotificationMessage": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          },
+          "detailedMessage": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "InputPackageListOutDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasNext": {
+            "type": "boolean"
+          },
+          "totalItems": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PackageEssentialModel"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Dados do pacote."
+      },
+      "OutputPackageListOutDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasNext": {
+            "type": "boolean"
+          },
+          "totalItems": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PackageBasicModel"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Dados do pacote."
+      },
+      "PackageBasicModel": {
+        "type": "object",
+        "properties": {
+          "packageId": {
+            "type": "string",
+            "description": "Identificador do pacote. Campo \"Código pacote\"  do componente INTFC007 -> INTFC008.",
+            "nullable": true
+          },
+          "packageNumber": {
+            "type": "integer",
+            "description": "Número identificador do pacote. Campo \"Nr. pacote\"  do componente INTFC007 -> INTFC008.",
+            "format": "int32"
+          },
+          "modelCode": {
+            "type": "integer",
+            "description": "Código do modelo de pacote. Campo \"Modelo pacote\"  do componente INTFC007 -> INTFC008.",
+            "format": "int32",
+            "nullable": true
+          },
+          "priority": {
+            "type": "integer",
+            "description": "Número da prioridade. Quando menor, mais prioritário. Campo \"Prioridade\"  do componente INTFC007 -> INTFC008.",
+            "format": "int32"
+          },
+          "source": {
+            "type": "string",
+            "description": "Indentifiador da origem. Campo \"Origem\"  do componente INTFC007 -> INTFC008.",
+            "nullable": true
+          },
+          "number": {
+            "type": "integer",
+            "description": "Número identificador. Campo \"Nr. pacote\"  do componente INTFC007 -> INTFC008.",
+            "format": "int32"
+          },
+          "insertDate": {
+            "type": "string",
+            "description": "Data/hora de inclusão. Campo \"Dt. inclusão\"  do componente INTFC007 -> INTFC008.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "movementDate": {
+            "type": "string",
+            "description": "Data de movimento. Campo \"Dt. movimento\"  do componente INTFC007 -> INTFC008.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "description": "Descrição adicional. Campo \"Descrição\"  do componente INTFC007 -> INTFC008.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Dados do pacote."
+      },
+      "PackageContentOutDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Conteúdo codificado em Base64.  Campo \"Conteudo\"  do componente INTFC007 -> INTFC008.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PackageCreateInDto": {
+        "required": [
+          "content",
+          "modelCode",
+          "movementDate",
+          "source",
+          "target"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Identificador único do pacote. Caso não enviado será gerado automaticamente. Campo \"Código pacote\" do INTFC007 -> INTFC008.\r\n<br>Caso já exita um pacote com o código enviado não será realizada a gravação.",
+            "nullable": true
+          },
+          "modelCode": {
+            "type": "integer",
+            "description": "Código do modelo de pacote. Campo \"Modelo pacote\" do INTFC007 -> INTFC008.",
+            "format": "int32"
+          },
+          "source": {
+            "type": "string",
+            "description": "Indentifiador da origem. Campo \"Origem\" do INTFC007 -> INTFC008."
+          },
+          "target": {
+            "type": "string",
+            "description": "Identificador do destinatário. Campo \"Destino\" do INTFC007 -> INTFC008."
+          },
+          "movementDate": {
+            "type": "string",
+            "description": "Data de movimento. Campo \"Dt. movimento\" do INTFC007 -> INTFC008.",
+            "format": "date-time"
+          },
+          "name": {
+            "type": "string",
+            "description": "Descrição adicional. Campo \"Descrição\" do INTFC007 -> INTFC008.",
+            "nullable": true
+          },
+          "priority": {
+            "type": "integer",
+            "description": "Número da prioridade. Quando menor, mais prioritário. Campo \"Prioridade\" do INTFC007 -> INTFC008.",
+            "format": "int32"
+          },
+          "content": {
+            "type": "string",
+            "description": "Conteúdo. Campo \"Conteúdo\" do INTFC007 -> INTFC008.\r\n<br>Deve estar codificado em Base64"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Dados para inclusão de um pacote."
+      },
+      "PackageCreateOutDto": {
+        "type": "object",
+        "properties": {
+          "packageId": {
+            "type": "string",
+            "description": "Identificador do pacote. Campo \"Código pacote\"  do componente INTFC007 -> INTFC008.",
+            "nullable": true
+          },
+          "packageNumber": {
+            "type": "integer",
+            "description": "Número identificador do pacote. Campo \"Nr. pacote\"  do componente INTFC007 -> INTFC008.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Dados do pacote."
+      },
+      "PackageEssentialModel": {
+        "type": "object",
+        "properties": {
+          "packageId": {
+            "type": "string",
+            "description": "Identificador do pacote. Campo \"Código pacote\"  do componente INTFC007 -> INTFC008.",
+            "nullable": true
+          },
+          "packageNumber": {
+            "type": "integer",
+            "description": "Número identificador do pacote. Campo \"Nr. pacote\"  do componente INTFC007 -> INTFC008.",
+            "format": "int32"
+          },
+          "modelCode": {
+            "type": "integer",
+            "description": "Código do modelo de pacote. Campo \"Modelo pacote\"  do componente INTFC007 -> INTFC008.",
+            "format": "int32",
+            "nullable": true
+          },
+          "priority": {
+            "type": "integer",
+            "description": "Número da prioridade. Quando menor, mais prioritário. Campo \"Prioridade\"  do componente INTFC007 -> INTFC008.",
+            "format": "int32"
+          },
+          "source": {
+            "type": "string",
+            "description": "Indentifiador da origem. Campo \"Origem\"  do componente INTFC007 -> INTFC008.",
+            "nullable": true
+          },
+          "number": {
+            "type": "integer",
+            "description": "Número identificador. Campo \"Nr. pacote\"  do componente INTFC007 -> INTFC008.",
+            "format": "int32"
+          },
+          "insertDate": {
+            "type": "string",
+            "description": "Data/hora de inclusão. Campo \"Dt. inclusão\"  do componente INTFC007 -> INTFC008.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "movementDate": {
+            "type": "string",
+            "description": "Data de movimento. Campo \"Dt. movimento\"  do componente INTFC007 -> INTFC008.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "description": "Descrição adicional. Campo \"Descrição\"  do componente INTFC007 -> INTFC008.",
+            "nullable": true
+          },
+          "type": {
+            "$ref": "#/components/schemas/PackageType"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PackageStatusType"
+          },
+          "target": {
+            "type": "string",
+            "description": "Identificador do destinatário. Campo \"Destino\"  do componente INTFC007 -> INTFC008.",
+            "nullable": true
+          },
+          "sendDate": {
+            "type": "string",
+            "description": "Data/hora de recepção. Campo \"Dt. envio\"  do componente INTFC007 -> INTFC008.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "processDate": {
+            "type": "string",
+            "description": "Data/hora de processamento. Campo \"Dt. processamento\"  do componente INTFC007 -> INTFC008.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "description": "Mensagem de resultado de processamento.  Campo \"Mensagem\"  do componente INTFC007 -> INTFC008.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Dados do pacote."
+      },
+      "PackageInDto": {
+        "required": [
+          "packageId"
+        ],
+        "type": "object",
+        "properties": {
+          "packageId": {
+            "type": "string",
+            "description": "Identificador do pacote. Campo \"Código pacote\" do INTFC007 -> INTFC008."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Dados do pacote."
+      },
+      "PackageOutDto": {
+        "type": "object",
+        "properties": {
+          "packageId": {
+            "type": "string",
+            "description": "Identificador do pacote. Campo \"Código pacote\"  do componente INTFC007 -> INTFC008.",
+            "nullable": true
+          },
+          "packageNumber": {
+            "type": "integer",
+            "description": "Número identificador do pacote. Campo \"Nr. pacote\"  do componente INTFC007 -> INTFC008.",
+            "format": "int32"
+          },
+          "modelCode": {
+            "type": "integer",
+            "description": "Código do modelo de pacote. Campo \"Modelo pacote\"  do componente INTFC007 -> INTFC008.",
+            "format": "int32",
+            "nullable": true
+          },
+          "priority": {
+            "type": "integer",
+            "description": "Número da prioridade. Quando menor, mais prioritário. Campo \"Prioridade\"  do componente INTFC007 -> INTFC008.",
+            "format": "int32"
+          },
+          "source": {
+            "type": "string",
+            "description": "Indentifiador da origem. Campo \"Origem\"  do componente INTFC007 -> INTFC008.",
+            "nullable": true
+          },
+          "number": {
+            "type": "integer",
+            "description": "Número identificador. Campo \"Nr. pacote\"  do componente INTFC007 -> INTFC008.",
+            "format": "int32"
+          },
+          "insertDate": {
+            "type": "string",
+            "description": "Data/hora de inclusão. Campo \"Dt. inclusão\"  do componente INTFC007 -> INTFC008.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "movementDate": {
+            "type": "string",
+            "description": "Data de movimento. Campo \"Dt. movimento\"  do componente INTFC007 -> INTFC008.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "description": "Descrição adicional. Campo \"Descrição\"  do componente INTFC007 -> INTFC008.",
+            "nullable": true
+          },
+          "type": {
+            "$ref": "#/components/schemas/PackageType"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PackageStatusType"
+          },
+          "target": {
+            "type": "string",
+            "description": "Identificador do destinatário. Campo \"Destino\"  do componente INTFC007 -> INTFC008.",
+            "nullable": true
+          },
+          "sendDate": {
+            "type": "string",
+            "description": "Data/hora de recepção. Campo \"Dt. envio\"  do componente INTFC007 -> INTFC008.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "processDate": {
+            "type": "string",
+            "description": "Data/hora de processamento. Campo \"Dt. processamento\"  do componente INTFC007 -> INTFC008.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "description": "Mensagem de resultado de processamento.  Campo \"Mensagem\"  do componente INTFC007 -> INTFC008.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Dados do pacote."
+      },
+      "PackageStatusType": {
+        "enum": [
+          "Active",
+          "Rejected",
+          "Finished",
+          "RestrictionFinished",
+          "Canceled"
+        ],
+        "type": "integer",
+        "description": "Situação. Campo \"Situação\" do INTFC007 -> INTFC008.\r\n<br>1 - Active(Em andamento)<br>2 - Rejected(Rejeitado)<br>3 - Finished(Encerrado)<br>4 - RestrictionFinished(Encerrado com restrições)<br>6 - Canceled(Cancelado)",
+        "format": "int32"
+      },
+      "PackageType": {
+        "enum": [
+          "Output",
+          "Input"
+        ],
+        "type": "integer",
+        "description": "Tipo. Campo \"Tipo pacote\" do componente INTFC007 -> INTFC008.\r\n<br>I - Input(Importação de dados)<br>E - Output(Exportação de dados)",
+        "format": "int32"
+      },
+      "Severity": {
+        "enum": [
+          "Error",
+          "Warning",
+          "Info"
+        ],
+        "type": "integer",
+        "format": "int32"
+      },
+      "SuccessProcessingModel": {
+        "type": "object",
+        "properties": {
+          "processingDate": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationFailure": {
+        "type": "object",
+        "properties": {
+          "propertyName": {
+            "type": "string",
+            "nullable": true
+          },
+          "errorMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "attemptedValue": {
+            "nullable": true
+          },
+          "customState": {
+            "nullable": true
+          },
+          "severity": {
+            "$ref": "#/components/schemas/Severity"
+          },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "formattedMessagePlaceholderValues": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "apiKey",
+        "description": "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        "name": "Authorization",
+        "in": "header"
+      }
+    }
+  },
+  "security": [
+    {
+      "Bearer": [ ]
+    }
+  ]
+}

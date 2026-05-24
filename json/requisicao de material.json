@@ -1,0 +1,1488 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Api Product Material Request",
+    "description": "TOTVS.Moda API Swagger Surface",
+    "contact": {
+      "name": "TOTVS.Moda Atendimento",
+      "url": "https://totvssuporte.zendesk.com",
+      "email": "atendimentova@totvs.com.br"
+    },
+    "license": {
+      "name": "TOTVS",
+      "url": "https://www.totvs.com/"
+    },
+    "version": "2.8.07"
+  },
+  "paths": {
+    "/api/totvsmoda/material-request/v2/requests": {
+      "post": {
+        "tags": [
+          "MaterialRequest"
+        ],
+        "summary": "Inclus�o de solicita��o de material",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InsertMaterialRequestCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InsertMaterialRequestCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/InsertMaterialRequestCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialRequestResponseModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/material-request/v2/items": {
+      "post": {
+        "tags": [
+          "MaterialRequest"
+        ],
+        "summary": "Inclus�o de itens em uma solicita��o de material j� existente",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InsertItemsMaterialRequestCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InsertItemsMaterialRequestCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/InsertItemsMaterialRequestCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessProcessingModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/material-request/v2/headers/modify": {
+      "post": {
+        "tags": [
+          "MaterialRequest"
+        ],
+        "summary": "Alterar capa solicita��o de material",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlterMaterialRequestHeaderCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlterMaterialRequestHeaderCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlterMaterialRequestHeaderCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessProcessingModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/material-request/v2/items/modify": {
+      "post": {
+        "tags": [
+          "MaterialRequest"
+        ],
+        "summary": "Altera��o de itens em uma solicita��o de material j� existente",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlterItemsMaterialRequestCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlterItemsMaterialRequestCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlterItemsMaterialRequestCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessProcessingModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/material-request/v2/items/remove": {
+      "post": {
+        "tags": [
+          "MaterialRequest"
+        ],
+        "summary": "Remo��o de itens em uma solicita��o de material j� existente",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemoveItemsMaterialRequestCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemoveItemsMaterialRequestCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemoveItemsMaterialRequestCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessProcessingModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/material-request/v2/items/cancel": {
+      "post": {
+        "tags": [
+          "MaterialRequest"
+        ],
+        "summary": "Cancelamento de itens em uma solicita��o de material j� existente",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelItemsMaterialRequestCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelItemsMaterialRequestCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelItemsMaterialRequestCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessProcessingModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/material-request/v2/items/movement": {
+      "post": {
+        "tags": [
+          "MaterialRequest"
+        ],
+        "summary": "Realizar baixa de itens de uma solicita��o de material j� existente",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MovementMaterialRequestCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MovementMaterialRequestCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MovementMaterialRequestCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TomasMaterialRequestResponseModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/material-request/v2/search": {
+      "post": {
+        "tags": [
+          "MaterialRequest"
+        ],
+        "summary": "Obter dados de requisi��es de material conforme filtro informado",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchMaterialRequestCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchMaterialRequestCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchMaterialRequestCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialRequestSearchResultModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/material-request/v2/approve": {
+      "post": {
+        "tags": [
+          "MaterialRequest"
+        ],
+        "summary": "Aprovar uma solicita��o de material",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveMaterialRequestCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveMaterialRequestCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveMaterialRequestCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApproveMaterialRequestResultModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AlterItemsMaterialRequestCommand": {
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Empresa. Campo \"Empresa\" do componente CMCFM006.\r\n<br>Tamanho máximo: 4 números.",
+            "format": "int32"
+          },
+          "requestDate": {
+            "type": "string",
+            "description": "Data da solicitação. Campo \"Data\" do componente CMCFM006.",
+            "format": "date"
+          },
+          "requestCode": {
+            "type": "integer",
+            "description": "Número da solicitação. Campo \"Nr. solicitação\" do componente CMCFM006.\r\n<br>Tamanho máximo: 9 números.",
+            "format": "int32"
+          },
+          "integrationCode": {
+            "type": "string",
+            "description": "Chave completa da solicitação. Campos \"Empresa, Data e Nr. solicitação\" do componente CMCFM006.",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MaterialRequestItemsModel"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AlterMaterialRequestHeaderCommand": {
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "requestDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "requestCode": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "integrationCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "purposeCode": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "costCenter": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ApproveMaterialRequestCommand": {
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Empresa da solicitação.",
+            "format": "int32"
+          },
+          "requestDate": {
+            "type": "string",
+            "description": "Data da solicitação.",
+            "format": "date"
+          },
+          "requestCode": {
+            "type": "integer",
+            "description": "Número da solicitação.",
+            "format": "int32"
+          },
+          "approverUser": {
+            "type": "integer",
+            "description": "Usuário aprovador.",
+            "format": "int32"
+          },
+          "approved": {
+            "type": "boolean",
+            "description": "Aprovado."
+          },
+          "reportDescription": {
+            "type": "string",
+            "description": "Descrição do parecer.",
+            "nullable": true
+          },
+          "reasonCode": {
+            "type": "integer",
+            "description": "Código do motivo (opcional).",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ApproveMaterialRequestResultModel": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "BatchItemsRequestModel": {
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Empresa do lote. Campo \"Empresa\" do componente CMCFP005 frame \"Item de lote\".\r\n<br>Não informar junto com barCode.<br>Tamanho máximo de 4 inteiros.",
+            "format": "int32",
+            "nullable": true
+          },
+          "batchCode": {
+            "type": "integer",
+            "description": "Número do lote. Campo \"Lote\" do componente CMCFP005 frame \"Item de lote\".\r\n<br>Não informar junto com barCode.<br>Tamanho máximo de 9 inteiros.",
+            "format": "int32",
+            "nullable": true
+          },
+          "itemCode": {
+            "type": "integer",
+            "description": "Número do item de lote. Campo \"Item\" do componente CMCFP005 frame \"Item de lote\".\r\n<br>Não informar junto com barCode.<br>Tamanho máximo de 4 inteiros.",
+            "format": "int32",
+            "nullable": true
+          },
+          "barCode": {
+            "type": "string",
+            "description": "Código de barras do item de lote. Campo \"Item cliente\" do componente CMCFP005 frame \"Item de lote\".\r\n<br>Não deve ser informado junto com branchCode, batchCode, itemCode<br>Tamanho máximo de 40 caracteres.",
+            "nullable": true
+          },
+          "movementQuantity": {
+            "type": "number",
+            "description": "Quantidade a movimentar do item de lote.\r\n<br>Tamanho máximo de 9 inteiros e 3 casas decimais.",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CancelItemsMaterialRequestCommand": {
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Empresa. Campo \"Empresa\" do componente CMCFM006.\r\n<br>Tamanho máximo: 4 números.",
+            "format": "int32"
+          },
+          "requestDate": {
+            "type": "string",
+            "description": "Data da solicitação. Campo \"Data\" do componente CMCFM006.",
+            "format": "date"
+          },
+          "requestCode": {
+            "type": "integer",
+            "description": "Número da solicitação. Campo \"Nr. solicitação\" do componente CMCFM006.\r\n<br>Tamanho máximo: 9 números.",
+            "format": "int32"
+          },
+          "integrationCode": {
+            "type": "string",
+            "description": "Chave completa da solicitação. Campos \"Empresa, Data e Nr. solicitação\" do componente CMCFM006.",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CancelMaterialRequestItemsModel"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CancelMaterialRequestDescriptionModel": {
+        "required": [
+          "description"
+        ],
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "Parecer do cancelamento. Campo \"Descrição\" do componente CMCFM006 botão cancelamento, ao salvar o cancelamento o componente CMCFM008 será exibido.\r\n<br>Tamanho máximo: 80 caracteres."
+          }
+        },
+        "additionalProperties": false
+      },
+      "CancelMaterialRequestItemsModel": {
+        "required": [
+          "sequence"
+        ],
+        "type": "object",
+        "properties": {
+          "sequence": {
+            "type": "integer",
+            "description": "Número sequencial do item. Campo \"Nr. Item\" do componente CMCFM006 botão Item CMCFM009.\r\n<br>Tamanho máximo: 9 números.",
+            "format": "int32"
+          },
+          "cancelQuantity": {
+            "type": "number",
+            "description": "Quantidade a ser cancelada. Campo \"Quantidade cancelar\" do componente CMCFM006 botão cancelamento CMCFM020.\r\n<br>Tamanho máximo: 12 números inteiros e 3 decimais.",
+            "format": "double"
+          },
+          "reason": {
+            "type": "integer",
+            "description": " Motivo de cancelamento. Campo \"Motivo parecer\" do componente CMCFM006 botão cancelamento, ao salvar o cancelamento o componente CMCFM008 será exibido.\r\n<br>Tamanho máximo: 4 números.",
+            "format": "int32",
+            "nullable": true
+          },
+          "descriptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CancelMaterialRequestDescriptionModel"
+            },
+            "description": "Parecer do cancelamento.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ClassificationFilterModel": {
+        "type": "object",
+        "properties": {
+          "classificationTypeCode": {
+            "type": "integer",
+            "description": "Código do tipo de classificação. Primeiro campo \"Tipo classificação\" do bloco \"Classificação\" do componente CMCFM006.\r\n<br>Tamanho máximo: 4 números.",
+            "format": "int32"
+          },
+          "classificationCode": {
+            "type": "string",
+            "description": "Lista de códigos de classificação. Segundo campo \"Classificação\" do bloco \"Classificação\" do componente CMCFM006.\r\n<br>Tamanho máximo permitido: 10 caracteres.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Classificação."
+      },
+      "ClassificationModel": {
+        "type": "object",
+        "properties": {
+          "classificationTypeCode": {
+            "type": "integer",
+            "description": "Código do tipo de classificação. Primeiro campo \"Tipo classificação\" do bloco \"Classificação\" do componente CMCFM006.\r\n<br>Tamanho máximo: 4 números.",
+            "format": "int32"
+          },
+          "classificationTypeDescription": {
+            "type": "string",
+            "description": "Descrição do tipo de classificação. Primeiro campo \"Tipo classificação\" do bloco \"Classificação\" do componente CMCFM006.\r\n<br>Tamanho máximo: 40 caracteres.",
+            "nullable": true
+          },
+          "classificationCode": {
+            "type": "string",
+            "description": "Códigos de classificação. Segundo campo \"Classificação\" do bloco \"Classificação\" do componente CMCFM006.\r\n<br>Tamanho máximo permitido: 10 caracteres.",
+            "nullable": true
+          },
+          "classificationDescription": {
+            "type": "string",
+            "description": "Descrição de classificação. Primeiro campo \"Tipo classificação\" do bloco \"Classificação\" do componente CMCFM006.\r\n<br>Tamanho máximo: 40 caracteres.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DomainNotificationMessage": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Código da mensagem.",
+            "nullable": true,
+            "readOnly": true
+          },
+          "message": {
+            "type": "string",
+            "description": "Conteúdo da mensagem.",
+            "nullable": true,
+            "readOnly": true
+          },
+          "detailedMessage": {
+            "type": "string",
+            "description": "Detalhamento adicional da mensagem.",
+            "nullable": true,
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Mensagem de notificação."
+      },
+      "InsertItemsMaterialRequestCommand": {
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Empresa. Campo \"Empresa\" do componente CMCFM006.\r\n<br>Tamanho máximo: 4 números.",
+            "format": "int32"
+          },
+          "requestDate": {
+            "type": "string",
+            "description": "Data da solicitação. Campo \"Data\" do componente CMCFM006.",
+            "format": "date"
+          },
+          "requestCode": {
+            "type": "integer",
+            "description": "Número da solicitação. Campo \"Nr. solicitação\" do componente CMCFM006.\r\n<br>Tamanho máximo: 9 números.",
+            "format": "int32"
+          },
+          "integrationCode": {
+            "type": "string",
+            "description": "Chave completa da solicitação. Campos \"Empresa, Data e Nr. solicitação\" do componente CMCFM006.",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MaterialRequestItemsModel"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "InsertMaterialRequestCommand": {
+        "required": [
+          "branchCode",
+          "purposeCode",
+          "requester"
+        ],
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Empresa. Campo \"Empresa\" do componente CMCFM006.\r\n<br>Tamanho máximo: 4 números.",
+            "format": "int32"
+          },
+          "requestDate": {
+            "type": "string",
+            "description": "Data de emissão da solicitação. Campo \"Dt. emissão\" do componente CMCFM006.",
+            "format": "date"
+          },
+          "purposeCode": {
+            "type": "integer",
+            "description": "Finalidade da solicitação. Campo \"Finalidade\" do componente CMCFM006.\r\n<br>Tamanho máximo: 2 números.",
+            "format": "int32"
+          },
+          "requester": {
+            "type": "integer",
+            "description": "Solicitante. Campo \"Solicitante\" do componente CMCFM006.\r\n<br>Tamanho máximo: 6 números.",
+            "format": "int32"
+          },
+          "costCenter": {
+            "type": "integer",
+            "description": "Centro de custo da solicitação. Campo \"Centro custo\" do componente CMCFM006.\r\n<br>Tamanho máximo: 9 números.",
+            "format": "int32",
+            "nullable": true
+          },
+          "bridgeCode": {
+            "type": "string",
+            "description": "Código de integração externo. Campo \"Código de integração\" do componente CMCFM007.\r\nTamanho máximo: 100 caracteres.",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MaterialRequestItemsModel"
+            },
+            "nullable": true
+          },
+          "observations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MaterialRequestObservationsModel"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MaterialRequestChangeFilterModel": {
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "type": "string",
+            "description": "Data/hora inicial de alteração.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endDate": {
+            "type": "string",
+            "description": "Data/hora final de alteração.",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": " Filtro por alteração de dados. Este filtro é o primeiro a ser aplicado.    \r\n Caso seja informado, irá carregar uma lista de requisições alterados, e este sofrerá ação dos demais filtros de forma restritiva, ou seja, como \"E\".\r\n Caso não seja informado, os demais filtros serão aplicados a todas as requisições da base de dados, também como \"E\".\r\n     \r\n Ao utilizar o filtro change, será verificado se houve alteração nos dados nos seguintes componentes:\r\n- CMPFM006\r\n- CMPFM006 bloco \"Classificação\"\r\n- CMPFM006 bloco \"Tipo desconto\"\r\n- CMPFM006->Item\r\n- CMPFM006->Observação"
+      },
+      "MaterialRequestCompleteModel": {
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Empresa da solicitação de material.\r\n<br>Tamanho máximo: 4 números.",
+            "format": "int32"
+          },
+          "requestDate": {
+            "type": "string",
+            "description": "Data de criação da solicitação de material.",
+            "format": "date-time"
+          },
+          "requestCode": {
+            "type": "integer",
+            "description": "Código sequencial da solicitação de material.\r\n<br>Tamanho máximo: 9 números.",
+            "format": "int32"
+          },
+          "operationCode": {
+            "type": "integer",
+            "description": "Operação da solicitação. Campo \"Operação\" do componente CMCFM006.\r\n<br>Tamanho máximo: 9 números.",
+            "format": "int32",
+            "nullable": true
+          },
+          "requester": {
+            "type": "integer",
+            "description": "Solicitante. Campo \"Solicitante\" do componente CMCFM006.\r\n<br>Tamanho máximo: 9 números.",
+            "format": "int32"
+          },
+          "personCode": {
+            "type": "integer",
+            "description": "Pessoa. Campo \"Pessoa responsável\" do componente CMCFM006.\r\n<br>Tamanho máximo: 9 números.",
+            "format": "int32",
+            "nullable": true
+          },
+          "costCenter": {
+            "type": "integer",
+            "description": "Centro de custo da solicitação. Campo \"Centro custo\" do componente CMCFM006.\r\n<br>Tamanho máximo: 9 números.",
+            "format": "int32"
+          },
+          "buyerCode": {
+            "type": "integer",
+            "description": "Comprador. Campo \"Comprador\" do componente CMCFM006.\r\n<br>Tamanho máximo: 9 números.",
+            "format": "int32",
+            "nullable": true
+          },
+          "invoicePerson": {
+            "type": "integer",
+            "description": "Pessoa NF. Campo \"Pessoa N.F.\" do componente CMCFM006.\r\n<br>Tamanho máximo: 9 números.",
+            "format": "int32",
+            "nullable": true
+          },
+          "statusType": {
+            "type": "integer",
+            "description": "Situação da solicitação. Campo \"Tp. situação\" do componente CMCFM006.",
+            "format": "int32",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MaterialRequestItemsResponseModel"
+            },
+            "description": "Lista de materiais.",
+            "nullable": true
+          },
+          "classifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClassificationModel"
+            },
+            "description": "Lista de classificações.",
+            "nullable": true
+          },
+          "observations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MaterialRequestObservationsModel"
+            },
+            "description": "Lista de observações.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MaterialRequestFilterModel": {
+        "required": [
+          "branchCodeList"
+        ],
+        "type": "object",
+        "properties": {
+          "change": {
+            "$ref": "#/components/schemas/MaterialRequestChangeFilterModel"
+          },
+          "startRequestDate": {
+            "type": "string",
+            "description": "Data inicial da requisição. Campo \"Dt. emissão\" do componente CMCFM006.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endRequestDate": {
+            "type": "string",
+            "description": "Data final da requisição. Campo \"Dt. emissão\" do componente CMCFM006.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "branchCodeList": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Lista de códigos de empresa. Campo \"Empresa\" do componente CMCFM006.\r\n<br>Tamanho máximo permitido: 900 itens."
+          },
+          "requestCodeList": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Lista de números de pedido. Campo \"Nr. soicitação\" do componente CMCFM006.\r\n<br>Tamanho máximo permitido: 900 itens.",
+            "nullable": true
+          },
+          "personList": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Pessoa. Campo \"Pessoa responsável\" do componente CMCFM006.\r\n<br>Tamanho máximo: 900 itens.",
+            "nullable": true
+          },
+          "costCenterList": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Centro de custo da solicitação. Campo \"Centro custo\" do componente CMCFM006.\r\n<br>Tamanho máximo: 900 itens.",
+            "nullable": true
+          },
+          "productList": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Itens da solicitação. Campo \"Material na lista de item\" do componente CMCFM006.\r\n<br>Tamanho máximo: 900 itens.",
+            "nullable": true
+          },
+          "buyerList": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Comprador. Campo \"Comprador\" do componente CMCFM006.\r\n<br>Tamanho máximo: 900 itens.",
+            "nullable": true
+          },
+          "purposeCodeList": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Finalidade da solicitação. Campo \"Finalidade\" do componente CMCFM006.\r\n<br>Tamanho máximo: 900 itens.",
+            "nullable": true
+          },
+          "statusTypeList": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Situação da solicitação. Campo \"Tp. situação\" do componente CMCFM006.\r\n<br>0 - Pendente<br>1 - Liberada<br>2 - Não liberada<br>3 - Aprovada<br>4 - Atendida<br>5 - Não atendida<br>6 - Cancelada<br>Tamanho máximo: 900 itens.",
+            "nullable": true
+          },
+          "operationCodeList": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Operação da solicitação. Campo \"Operação\" do componente CMCFM006.\r\n<br>Tamanho máximo: 900 itens.",
+            "nullable": true
+          },
+          "classifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClassificationFilterModel"
+            },
+            "description": "Lista de classificações.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Filtro geral de requisição/solicitação.\r\nCada campo do filtro será considerado como \"E\" na condição de consulta."
+      },
+      "MaterialRequestItemsModel": {
+        "required": [
+          "sequence"
+        ],
+        "type": "object",
+        "properties": {
+          "sequence": {
+            "type": "integer",
+            "description": "Número sequencial do item. Campo \"Nr. Item\" do componente CMCFM006 botão Item CMCFM009.\r\n<br>Tamanho máximo: 9 números.",
+            "format": "int32"
+          },
+          "productCode": {
+            "type": "integer",
+            "description": "Código do produto da solicitação. Primeiro bloco do campo \"Material\" do componente CMCFM006.\r\n<br>Tamanho máximo: 9 números.",
+            "format": "int32"
+          },
+          "requestQuantity": {
+            "type": "number",
+            "description": "Quantidade solicitada. Campo \"Solicitada\" do componente CMCFM006.\r\n<br>Tamanho máximo: 12 números inteiros e 3 decimais.",
+            "format": "double"
+          },
+          "costCenter": {
+            "type": "integer",
+            "description": "Centro de custo do item. Campo \"Centro custo\" informado na inclusão de item no componente CMCFM006 \"Item\" CMCFM009.\r\n<br>Tamanho máximo: 9 números inteiros. ",
+            "format": "int32",
+            "nullable": true
+          },
+          "expense": {
+            "type": "integer",
+            "description": "Código da despesa do item. Campo \"Despesa\" informado na inclusão de item no componente CMCFM006 botão \"Item\" CMCFM009.\r\n<br>Tamanho máximo: 9 números inteiros. ",
+            "format": "int32",
+            "nullable": true
+          },
+          "cost": {
+            "type": "number",
+            "description": "Valor de custo do item. Campo \"Valor custo\" informado na inclusão de item no componente CMCFM006 botão \"Item\" CMCFM009.\r\n<br>Tamanho máximo: 18 números inteiros e 6 decimais.",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MaterialRequestItemsResponseModel": {
+        "type": "object",
+        "properties": {
+          "sequence": {
+            "type": "integer",
+            "description": "Número sequencial do item. Campo \"Nr. Item\" do componente CMCFM006 botão Item CMCFM009.\r\n<br>Tamanho máximo: 9 números.",
+            "format": "int32"
+          },
+          "productCode": {
+            "type": "integer",
+            "description": "Código do produto da solicitação. Primeiro bloco do campo \"Material\" do componente CMCFM006.\r\n<br>Tamanho máximo: 9 números.",
+            "format": "int32"
+          },
+          "productDescription": {
+            "type": "string",
+            "description": "Descrição do produto da solicitação. Primeiro bloco do campo \"Material\" do componente CMCFM006.\r\n<br>Tamanho máximo: 60 caracteres.",
+            "nullable": true
+          },
+          "measuredUnit": {
+            "type": "string",
+            "description": "Espécie do produto da solicitação. Primeiro bloco do campo \"Material\" do componente CMCFM006.\r\n<br>Tamanho máximo: 3 caracteres.",
+            "nullable": true
+          },
+          "requestQuantity": {
+            "type": "number",
+            "description": "Quantidade solicitada. Campo \"Solicitada\" do componente CMCFM006.\r\n<br>Tamanho máximo: 9 números inteiros e 3 decimais.",
+            "format": "double"
+          },
+          "extraQuantity": {
+            "type": "number",
+            "description": "Quantidade extra. Campo \"Extra\" do componente CMCFM006.\r\n<br>Tamanho máximo: 9 números inteiros e 3 decimais.",
+            "format": "double"
+          },
+          "returnedQuantity": {
+            "type": "number",
+            "description": "Quantidade devolvida. Campo \"Devolvida\" do componente CMCFM006.\r\n<br>Tamanho máximo: 9 números inteiros e 3 decimais.",
+            "format": "double"
+          },
+          "reservedQuantity": {
+            "type": "number",
+            "description": "Quantidade reservada. Campo \"Reserva\" do componente CMCFM006.\r\n<br>Tamanho máximo: 9 números inteiros e 3 decimais.",
+            "format": "double"
+          },
+          "attendedQuantity": {
+            "type": "number",
+            "description": "Quantidade atendida. Campo \"Atendida\" do componente CMCFM006.\r\n<br>Tamanho máximo: 9 números inteiros e 3 decimais.",
+            "format": "double"
+          },
+          "cancelledQuantity": {
+            "type": "number",
+            "description": "Quantidade Cancelada. \r\n<br>Tamanho máximo: 9 números inteiros e 3 decimais.",
+            "format": "double"
+          },
+          "pendingQuantity": {
+            "type": "number",
+            "description": "Quantidade pendente. Campo \"Pendente\" do componente CMCFM009.\r\n<br>Tamanho máximo: 9 números inteiros e 3 decimais.",
+            "format": "double",
+            "readOnly": true
+          },
+          "cost": {
+            "type": "number",
+            "description": "Valor de custo do item. Campo \"Valor custo\" informado na inclusão de item no componente CMCFM006 botão \"Item\" CMCFM009.\r\n<br>Tamanho máximo: 12 números inteiros e 6 decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "requestCost": {
+            "type": "number",
+            "description": "Custo solicitada. Campo \"Solicitada\" do componente CMCFM009.\r\n<br>Tamanho máximo: 12 números inteiros e 3 decimais.",
+            "format": "double",
+            "nullable": true,
+            "readOnly": true
+          },
+          "pendingCost": {
+            "type": "number",
+            "description": "Custo pendente. Campo \"Pendente\" do componente CMCFM009.\r\n<br>Tamanho máximo: 12 números inteiros e 3 decimais.",
+            "format": "double"
+          },
+          "costCenter": {
+            "type": "integer",
+            "description": "Centro de custo do item. Campo \"Centro custo\" informado na inclusão de item no componente CMCFM006 \"Item\" CMCFM009.\r\n<br>Tamanho máximo: 9 números inteiros. ",
+            "format": "int32",
+            "nullable": true
+          },
+          "expense": {
+            "type": "integer",
+            "description": "Código da despesa do item. Campo \"Despesa\" informado na inclusão de item no componente CMCFM006 botão \"Item\" CMCFM009.\r\n<br>Tamanho máximo: 9 números inteiros. ",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MaterialRequestObservationsModel": {
+        "type": "object",
+        "properties": {
+          "observation": {
+            "type": "string",
+            "description": "Observação da solicitação. Campo \"Observação\" do componente CMCFM006 botão Observação CMCFM021.\r\n<br>Tamanho máximo: 80 caracteres.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MaterialRequestResponseModel": {
+        "type": "object",
+        "properties": {
+          "materialRequestCode": {
+            "type": "string",
+            "description": "Chave da solicitação de material.",
+            "nullable": true
+          },
+          "branchCode": {
+            "type": "integer",
+            "description": "Empresa da solicitação de material.\r\n<br>Tamanho máximo: 4 números.",
+            "format": "int32"
+          },
+          "requestDate": {
+            "type": "string",
+            "description": "Data de criação da solicitação de material.",
+            "format": "date-time"
+          },
+          "requestCode": {
+            "type": "integer",
+            "description": "Código sequencial da solicitação de material.\r\n<br>Tamanho máximo: 9 números.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MaterialRequestSearchResultModel": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "description": "Total de registros obtidos na consulta.",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "description": "Total de páginas da consulta.",
+            "format": "int32"
+          },
+          "hasNext": {
+            "type": "boolean",
+            "description": "Possui mais páginas."
+          },
+          "totalItems": {
+            "type": "integer",
+            "description": "Total de registros da lista de itens.",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MaterialRequestCompleteModel"
+            },
+            "description": "Lista de itens.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MovementMaterialRequestCommand": {
+        "required": [
+          "items",
+          "operationCode"
+        ],
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Empresa. Campo \"Emp.\" do componente CMCFP005.\r\n<br>Não informar junto com integrationCode, mas um deles deverá ser informado.<br>Tamanho máximo: 4 números.",
+            "format": "int32"
+          },
+          "requestDate": {
+            "type": "string",
+            "description": "Data da solicitação. Campo \"Data\" do componente CMCFP005.\r\n<br>Não informar junto com integrationCode, mas um deles deverá ser informado.",
+            "format": "date"
+          },
+          "requestCode": {
+            "type": "integer",
+            "description": "Número da solicitação. Campo \"Nr. sol.\" do componente CMCFP005.\r\n<br>Não informar junto com integrationCode, mas um deles deverá ser informado.<br>Tamanho máximo: 9 números.",
+            "format": "int32"
+          },
+          "integrationCode": {
+            "type": "string",
+            "description": "Chave completa da solicitação. Campos \"Empresa, Data e Nr. solicitação\" do componente CMCFM006.\r\n<br>Não informar junto com branchCode, requestCode e requestDate, mas um deles deverá ser informado.",
+            "nullable": true
+          },
+          "operationCode": {
+            "type": "integer",
+            "description": "Código da operação. Campo \"Operação\" do componente CMCFP005.\r\n<br>Tamanho máximo 4 números",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MovementMaterialRequestItemsModel"
+            },
+            "description": "Lista de itens para realizar a baixa."
+          },
+          "descriptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MovementMaterialRequestDescriptionModel"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MovementMaterialRequestDescriptionModel": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "Descrição do parecer. Campo \"Descrição\" do comonente CMCFM008.\r\n<br>Tamanho máximo de 80 caracteres.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MovementMaterialRequestItemsModel": {
+        "required": [
+          "movementQuantity",
+          "sequence"
+        ],
+        "type": "object",
+        "properties": {
+          "sequence": {
+            "type": "integer",
+            "description": "Número sequencial do item. Primeiro dado do campo \"Nr. Item\" do componente CMCFP005.\r\n<br>Tamanho máximo: 9 números.",
+            "format": "int32"
+          },
+          "movementQuantity": {
+            "type": "number",
+            "description": "Quantidade a atender. Campo \"Qt. atender\" do componente CMCFP005.\r\n<br>Tamanho máximo: 9 números inteiros e 3 decimais.",
+            "format": "double"
+          },
+          "batchItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BatchItemsRequestModel"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "RemoveItemsMaterialRequestCommand": {
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Empresa. Campo \"Empresa\" do componente CMCFM006.\r\n<br>Tamanho máximo: 4 números.",
+            "format": "int32"
+          },
+          "requestDate": {
+            "type": "string",
+            "description": "Data da solicitação. Campo \"Data\" do componente CMCFM006.",
+            "format": "date"
+          },
+          "requestCode": {
+            "type": "integer",
+            "description": "Número da solicitação. Campo \"Nr. solicitação\" do componente CMCFM006.\r\n<br>Tamanho máximo: 9 números.",
+            "format": "int32"
+          },
+          "integrationCode": {
+            "type": "string",
+            "description": "Chave completa da solicitação. Campos \"Empresa, Data e Nr. solicitação\" do componente CMCFM006.",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RemoveItensModel"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "RemoveItensModel": {
+        "required": [
+          "sequence"
+        ],
+        "type": "object",
+        "properties": {
+          "sequence": {
+            "type": "integer",
+            "description": "Número sequencial do item. Campo \"Nr. Item\" do componente CMCFM006 botão Item CMCFM009.\r\n<br>Tamanho máximo: 9 números.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SearchMaterialRequestCommand": {
+        "required": [
+          "filter"
+        ],
+        "type": "object",
+        "properties": {
+          "filter": {
+            "$ref": "#/components/schemas/MaterialRequestFilterModel"
+          },
+          "expand": {
+            "type": "string",
+            "description": "Lista de grupo de dados para expansão separados por \",\".\r\n<br>As seguintes expressões são suportadas: \"items\", \"classifications\", \"observations\".<br>Ex.: \"expand\": \"items,observations,classifications\".",
+            "nullable": true
+          },
+          "order": {
+            "type": "string",
+            "description": "Lista de campos para ordenação separados por \",\". Para ordenação descendente utilizar o caracter \"-\".\r\n<br>As seguintes expressões são suportadas: \"branchCode\", \"requestDate\", \"requestCode\", \"maxChangeFilterDate\".<br>Ex.: \"order\": \"-branchCode,requestDate,requestCode,maxChangeFilterDate\".",
+            "nullable": true
+          },
+          "page": {
+            "type": "integer",
+            "description": "Número da página. Página inicial é 1.",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "description": "Quantidade de itens por página. Valor padrão é 100. Valor máximo é 500.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Filtros e opções para consulta."
+      },
+      "SuccessProcessingModel": {
+        "type": "object",
+        "properties": {
+          "processingDate": {
+            "type": "string",
+            "description": "Data/hora de término do processamento.",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Dados de processamento bem sucedido."
+      },
+      "TomasMaterialRequestResponseModel": {
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Código da empresa. Campo \"Emp.\" do componente TRAFL016\".\r\n<br>Tamanho máximo: 4 caracteres.",
+            "format": "int32"
+          },
+          "transactionCode": {
+            "type": "integer",
+            "description": "Número da transação. Campo \"Transação\" do componente TRAFL016\".\r\n<br>Tamanho máximo: 9 caracteres.",
+            "format": "int32"
+          },
+          "transactionDate": {
+            "type": "string",
+            "description": "Data da transação. Campo \"Data\" do componente TRAFL016\".",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "apiKey",
+        "description": "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        "name": "Authorization",
+        "in": "header"
+      }
+    }
+  },
+  "security": [
+    {
+      "Bearer": [ ]
+    }
+  ]
+}

@@ -249,6 +249,70 @@ async def test_upsert_raises_on_non_not_found_error(client):
 
 @pytest.mark.asyncio
 @respx.mock
+async def test_create_or_update_uses_create_when_record_is_new(client):
+    _mock_token()
+    create_route = respx.post(f"{TOTVS_BASE}/api/totvsmoda/classifications/create").mock(
+        return_value=Response(201, json={"created": True})
+    )
+    update_route = respx.post(f"{TOTVS_BASE}/api/totvsmoda/classifications/update")
+
+    result = await client.create_or_update(
+        create_path="/api/totvsmoda/classifications/create",
+        update_path="/api/totvsmoda/classifications/update",
+        body={"productCode": 123},
+    )
+
+    assert result["operation"] == "created"
+    assert result["result"] == {"created": True}
+    assert create_route.called
+    assert not update_route.called
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_create_or_update_falls_back_to_update_on_already_exist(client):
+    _mock_token()
+    create_route = respx.post(f"{TOTVS_BASE}/api/totvsmoda/classifications/create").mock(
+        return_value=Response(400, json={"messages": [{"code": "AlreadyExist", "message": "already exists"}]})
+    )
+    update_route = respx.post(f"{TOTVS_BASE}/api/totvsmoda/classifications/update").mock(
+        return_value=Response(200, json={"updated": True})
+    )
+
+    result = await client.create_or_update(
+        create_path="/api/totvsmoda/classifications/create",
+        update_path="/api/totvsmoda/classifications/update",
+        body={"productCode": 123},
+    )
+
+    assert result["operation"] == "updated"
+    assert result["result"] == {"updated": True}
+    assert create_route.called
+    assert update_route.called
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_create_or_update_raises_on_non_already_exist_error(client):
+    _mock_token()
+    respx.post(f"{TOTVS_BASE}/api/totvsmoda/classifications/create").mock(
+        return_value=Response(400, json={"messages": [{"code": "ValidationError", "message": "bad data"}]})
+    )
+    update_route = respx.post(f"{TOTVS_BASE}/api/totvsmoda/classifications/update")
+
+    with pytest.raises(TotvsApiError) as exc:
+        await client.create_or_update(
+            create_path="/api/totvsmoda/classifications/create",
+            update_path="/api/totvsmoda/classifications/update",
+            body={},
+        )
+
+    assert exc.value.has_code("ValidationError")
+    assert not update_route.called
+
+
+@pytest.mark.asyncio
+@respx.mock
 async def test_put_method_works(client):
     """PUT /data used by update_product_data — bug fix from Phase 1."""
     _mock_token()

@@ -10,7 +10,7 @@ v2.3.0 additions (3 new endpoints):
 """
 import logging
 from typing import Any
-from totvs_client import TotvsClient
+from totvs_client import TotvsApiError, TotvsClient
 from tools._fields import apply_fields
 from tools._defaults import inject_branch_defaults
 import response_cache as cache
@@ -18,6 +18,10 @@ from tools._value_types import normalize_value_type
 
 logger = logging.getLogger("totvs-moda-mcp.product")
 BASE = "/api/totvsmoda/product/v2"
+
+
+def _pascal_params(args: dict[str, Any]) -> dict[str, Any]:
+    return {k[:1].upper() + k[1:]: v for k, v in args.items() if v is not None and k != "fields"}
 
 
 class ProductTools:
@@ -36,16 +40,17 @@ class ProductTools:
             "hasPrice", "branchPriceCodeList", "priceCodeList", "hasCost",
             "branchCostCodeList", "costCodeList", "hasPriceTableItem",
             "branchPriceTableCodeList", "priceTableCodeList", "hasStock",
-            "branchStockCode", "stockCode", "hasWebInfo", "change"
+            "branchStockCode", "stockCode", "hasWebInfo", "change",
+            "suppliers", "manufacturers",
         }
 
         # Build filter object
         flt: dict[str, Any] = {k: v for k, v in args.items() if k in filter_fields and v is not None}
 
         # Build option object - BranchInfoCode is required
-        option: dict[str, Any] = {}
-        if args.get("branchCodeList"):
-            option["BranchInfoCode"] = args["branchCodeList"][0] if isinstance(args["branchCodeList"], list) else args["branchCodeList"]
+        option: dict[str, Any] = dict(args.get("option") or {})
+        if args.get("branchCodeList") and not option:
+            option["branchInfoCode"] = args["branchCodeList"][0] if isinstance(args["branchCodeList"], list) else args["branchCodeList"]
 
         # If priceCodeList provided in args, set hasPrice and copy to filter
         if args.get("priceCodeList"):
@@ -63,6 +68,8 @@ class ProductTools:
             body["option"] = option
         if flt:
             body["filter"] = flt
+        if args.get("expand"):
+            body["expand"] = args["expand"]
         if args.get("order"):
             body["order"] = args["order"]
 
@@ -91,17 +98,30 @@ class ProductTools:
         args = inject_branch_defaults(args)
         filter_keys = {"productCodeList", "referenceCodeList", "productName", "groupCodeList",
                        "startProductCode", "endProductCode", "classifications", "branchInfo",
-                       "hasStock", "change"}
+                       "hasStock", "change", "suppliers", "manufacturers",
+                       "hasPrice", "branchPriceCodeList", "priceCodeList",
+                       "hasCost", "branchCostCodeList", "costCodeList",
+                       "hasPriceTableItem", "branchPriceTableCodeList",
+                       "priceTableCodeList", "hasWebInfo"}
         flt = {k: v for k, v in args.items() if k in filter_keys and v is not None}
-        balance_option: dict[str, Any] = {
-            "branchCode": args.get("branchCode", 1),
-            "stockCodeList": args.get("stockCodeList", [1]),
-        }
-        if args.get("isSalesOrder") is not None:
-            balance_option["isSalesOrder"] = args["isSalesOrder"]
+        if args.get("option"):
+            option = args["option"]
+        else:
+            balance_option: dict[str, Any] = {
+                "branchCode": args.get("branchCode", 1),
+                "stockCodeList": args.get("stockCodeList", [1]),
+            }
+            for field in (
+                "isSalesOrder", "salesOrderStatusList", "isTransaction",
+                "isProductionPlanning", "isPurchaseOrder", "isProductionOrder",
+                "cycleProductionPlanningCodeList",
+            ):
+                if args.get(field) is not None:
+                    balance_option[field] = args[field]
+            option = {"balances": [balance_option]}
         body: dict[str, Any] = {
             "filter": flt,
-            "option": {"balances": [balance_option]},
+            "option": option,
             "page": args.get("page", 1),
             "pageSize": args.get("pageSize", 1000),
         }
@@ -143,7 +163,12 @@ class ProductTools:
         args = inject_branch_defaults(args)
         filter_fields = {
             "productCodeList", "referenceCodeList", "productName", "groupCodeList",
-            "startProductCode", "endProductCode", "classifications",
+            "startProductCode", "endProductCode", "classifications", "change",
+            "branchInfo", "suppliers", "manufacturers", "hasPrice",
+            "branchPriceCodeList", "priceCodeList", "hasCost",
+            "branchCostCodeList", "costCodeList", "hasPriceTableItem",
+            "branchPriceTableCodeList", "priceTableCodeList", "hasStock",
+            "branchStockCode", "stockCode", "hasWebInfo",
         }
         branch_codes = args.get("branchCodeList") or ([args["branchCode"]] if args.get("branchCode") else None)
         if not branch_codes:
@@ -151,9 +176,10 @@ class ProductTools:
         price_table_code = args.get("priceTableCode")
         if not price_table_code:
             raise ValueError("priceTableCode é obrigatório.")
+        option = args.get("option") or {"branchCodeList": branch_codes, "priceTableCode": int(price_table_code)}
         body: dict[str, Any] = {
             "filter": {k: v for k, v in args.items() if k in filter_fields and v is not None},
-            "option": {"branchCodeList": branch_codes, "priceTableCode": int(price_table_code)},
+            "option": option,
         }
         if args.get("page"):
             body["page"] = args["page"]
@@ -244,6 +270,48 @@ class ProductTools:
         """GET /measurement-unit."""
         return await self.client.get(f"{BASE}/measurement-unit")
 
+    async def get_additional_field_types(self, args: dict[str, Any]) -> Any:
+        """GET /additional-fields-types."""
+        result = await self.client.get(f"{BASE}/additional-fields-types", params=_pascal_params(args) or None)
+        return apply_fields(result, args)
+
+    async def get_classification_types(self, args: dict[str, Any]) -> Any:
+        """GET /classificationType."""
+        result = await self.client.get(f"{BASE}/classificationType", params=_pascal_params(args) or None)
+        return apply_fields(result, args)
+
+    async def get_product_grouper_configurations(self, args: dict[str, Any]) -> Any:
+        """GET /product-grouper-configuration."""
+        result = await self.client.get(f"{BASE}/product-grouper-configuration", params=_pascal_params(args) or None)
+        return apply_fields(result, args)
+
+    async def get_instruction_items(self, args: dict[str, Any]) -> Any:
+        """GET /instruction-items."""
+        result = await self.client.get(f"{BASE}/instruction-items", params=_pascal_params(args) or None)
+        return apply_fields(result, args)
+
+    async def get_price_table_scales(self, args: dict[str, Any]) -> Any:
+        """GET /price-table-scales."""
+        result = await self.client.get(f"{BASE}/price-table-scales", params=_pascal_params(args) or None)
+        return apply_fields(result, args)
+
+    async def get_composition_group_product(self, args: dict[str, Any]) -> Any:
+        """GET /composition-group-product."""
+        self._require_composition_filter(args)
+        result = await self.client.get(f"{BASE}/composition-group-product", params=_pascal_params(args) or None)
+        return apply_fields(result, args)
+
+    async def get_composition_product(self, args: dict[str, Any]) -> Any:
+        """GET /composition-product."""
+        self._require_composition_filter(args)
+        result = await self.client.get(f"{BASE}/composition-product", params=_pascal_params(args) or None)
+        return apply_fields(result, args)
+
+    @staticmethod
+    def _require_composition_filter(args: dict[str, Any]) -> None:
+        if not any(args.get(k) for k in ("productCodeList", "groupCodeList", "referenceCodeList")):
+            raise ValueError("Informe productCodeList, groupCodeList ou referenceCodeList.")
+
     async def get_kardex_movement(self, args: dict[str, Any]) -> Any:
         """GET /kardex-movement."""
         args = inject_branch_defaults(args)
@@ -253,10 +321,16 @@ class ProductTools:
     async def search_compositions(self, args: dict[str, Any]) -> Any:
         """POST /compositions."""
         args = inject_branch_defaults(args)
-        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order", "fields") and v is not None}
-        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        body = {
+            k: v for k, v in args.items()
+            if k not in ("branchCode", "branchCodeList", "fields") and v is not None
+        }
+        body.setdefault("page", 1)
+        body.setdefault("pageSize", 100)
         if args.get("order"):
             body["order"] = args["order"]
+        if args.get("expand"):
+            body["expand"] = args["expand"]
         result = await self.client.post(f"{BASE}/compositions", body)
         return apply_fields(result, args)
 
@@ -487,32 +561,40 @@ class ProductTools:
                 f"{BASE}/classification-relationship/create",
                 {"products": build_products(all_codes)},
             )
-        except Exception as create_err:
+        except TotvsApiError as create_err:
+            if not create_err.has_code("AlreadyExist"):
+                raise
+
             err_str = str(create_err)
             import re
             already_codes = set(
                 int(m) for m in re.findall(r"ProductCode (\d+) TypeCode \d+ already exist", err_str)
             )
+            if not already_codes:
+                result = await self.client.post(
+                    f"{BASE}/classification-relationship/update",
+                    {"products": build_products(all_codes)},
+                )
+                return {
+                    "operation": "updated",
+                    "result": result,
+                    "summary": {"total": len(all_codes), "created": 0, "updated": len(all_codes)},
+                }
+
             new_codes = [c for c in all_codes if int(c) not in already_codes]
 
             results: dict[str, Any] = {}
             if new_codes:
-                try:
-                    results["created"] = await self.client.post(
-                        f"{BASE}/classification-relationship/create",
-                        {"products": build_products(new_codes)},
-                    )
-                except Exception as e:
-                    results["created_error"] = str(e)
+                results["created"] = await self.client.post(
+                    f"{BASE}/classification-relationship/create",
+                    {"products": build_products(new_codes)},
+                )
 
             if already_codes:
-                try:
-                    results["updated"] = await self.client.post(
-                        f"{BASE}/classification-relationship/update",
-                        {"products": build_products(list(already_codes))},
-                    )
-                except Exception as e:
-                    results["updated_error"] = str(e)
+                results["updated"] = await self.client.post(
+                    f"{BASE}/classification-relationship/update",
+                    {"products": build_products(list(already_codes))},
+                )
 
             results["summary"] = {
                 "total": len(all_codes),

@@ -27,7 +27,9 @@ class AccountsReceivableTools:
             flt["customerCodeList"] = args["customerCodeList"]
         if args.get("customerCpfCnpjList"):
             flt["customerCpfCnpjList"] = args["customerCpfCnpjList"]
-        if args.get("startChangeDate") or args.get("endChangeDate"):
+        if args.get("change") is not None:
+            flt["change"] = args["change"]
+        elif args.get("startChangeDate") or args.get("endChangeDate"):
             flt["change"] = {k: v for k, v in {
                 "startDate": args.get("startChangeDate"),
                 "endDate": args.get("endChangeDate"),
@@ -71,11 +73,13 @@ class AccountsReceivableTools:
             "dischargeTypeList", "chargeTypeList",
             "hasOpenInvoices", "receivableCodeList", "ourNumberList",
             "commissionedCode", "commissionedCpfCnpj",
+            "closingCodeCommission", "closingCompanyCommission", "closingDateCommission",
+            "closingCommissionedCode", "closingCommissionedCpfCnpj", "change",
         ):
             if args.get(field) is not None:
                 flt[field] = args[field]
 
-        if args.get("startChangeDate") or args.get("endChangeDate"):
+        if "change" not in flt and (args.get("startChangeDate") or args.get("endChangeDate")):
             flt["change"] = {k: v for k, v in {
                 "startDate": args.get("startChangeDate"),
                 "endDate": args.get("endChangeDate"),
@@ -143,7 +147,6 @@ class AccountsReceivableTools:
 
     async def create_invoice(self, args: dict[str, Any]) -> Any:
         """POST /invoices — ⚠️ Incluir fatura em aberto."""
-        args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/invoices", body)
 
@@ -157,6 +160,7 @@ class AccountsReceivableTools:
         """POST /invoices-payment — ⚠️ Baixa de faturas."""
         args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
+        body.pop("branchCodeList", None)
         return await self.client.post(f"{BASE}/invoices-payment", body)
 
     async def create_gift_check(self, args: dict[str, Any]) -> Any:

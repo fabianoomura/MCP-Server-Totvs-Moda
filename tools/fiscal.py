@@ -63,7 +63,12 @@ class FiscalTools:
 
     async def get_invoice_item_detail(self, args: dict[str, Any]) -> Any:
         """GET /invoices/item-detail-search — Detalhe de itens da NF-e."""
-        params = {k: v for k, v in args.items() if v is not None}
+        params = self._pascal_params(
+            args,
+            ("branchCode", "invoiceDate", "invoiceSequence", "accessKey", "expand"),
+        )
+        # Preserve official PascalCase args for backward compatibility.
+        params.update({k: v for k, v in args.items() if k[:1].isupper() and v is not None})
         return await self.client.get(f"{BASE}/invoices/item-detail-search", params=params or None)
 
     async def get_danfe(self, args: dict[str, Any]) -> Any:
@@ -89,11 +94,25 @@ class FiscalTools:
             if args.get(field) is not None:
                 flt[field] = args[field]
 
+        # More natural aliases while preserving Swagger's historical casing.
+        aliases = {
+            "productCodeList": "ProductCodeList",
+            "batchBarCodeList": "BatchBarCodeList",
+            "accessKeyList": "acessKeyList",
+        }
+        for alias, official in aliases.items():
+            if args.get(alias) is not None and official not in flt:
+                flt[official] = args[alias]
+
         body: dict[str, Any] = {
             "filter": flt,
             "page": args.get("page", 1),
             "pageSize": args.get("pageSize", 100),
         }
+        if args.get("option"):
+            body["option"] = args["option"]
+        if args.get("expand"):
+            body["expand"] = args["expand"]
         if args.get("order"):
             body["order"] = args["order"]
 
@@ -164,3 +183,7 @@ class FiscalTools:
         args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/invoices/manifestations", body)
+
+    def _pascal_params(self, args: dict[str, Any], fields: tuple[str, ...]) -> dict[str, Any]:
+        """Map lower camelCase tool args to TOTVS PascalCase query params."""
+        return {field[:1].upper() + field[1:]: args[field] for field in fields if args.get(field) is not None}

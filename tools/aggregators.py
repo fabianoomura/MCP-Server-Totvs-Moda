@@ -611,6 +611,8 @@ class AggregatorTools:
             branchCode (optional, default 1)
             referenceCodeList (optional): filtrar por referências
             productCodeList (optional): filtrar por códigos
+            productKind (optional): all | finished | raw_material | bulk
+            onlyActive (optional, default true for productKind != all)
             minStock (optional, default 1): saldo mínimo para incluir
 
         Returns:
@@ -620,9 +622,14 @@ class AggregatorTools:
         args = inject_branch_defaults(args)
         branch = args.get("branchCode", 1)
         min_stock = args.get("minStock", 1)
+        product_kind = args.get("productKind", "all")
+        only_active = args.get("onlyActive")
+        if only_active is None:
+            only_active = product_kind != "all"
 
         cache_key = {"fn": "stock_available", "branch": branch, "min": min_stock,
-                     "products": args.get("productCodeList"), "refs": args.get("referenceCodeList")}
+                     "products": args.get("productCodeList"), "refs": args.get("referenceCodeList"),
+                     "productKind": product_kind, "onlyActive": only_active}
         cached = cache.get("stock", cache_key, cache.STOCK)
         if cached is not None:
             return cached
@@ -632,47 +639,57 @@ class AggregatorTools:
             flt["productCodeList"] = args["productCodeList"]
         if args.get("referenceCodeList"):
             flt["referenceCodeList"] = args["referenceCodeList"]
+        branch_info: dict[str, Any] = {"branchCode": branch}
+        if only_active is not None:
+            branch_info["isActive"] = bool(only_active)
+        if product_kind == "finished":
+            branch_info.update({"isFinishedProduct": True, "isRawMaterial": False, "isBulkMaterial": False})
+        elif product_kind == "raw_material":
+            branch_info.update({"isRawMaterial": True})
+        elif product_kind == "bulk":
+            branch_info.update({"isBulkMaterial": True})
+        elif product_kind != "all":
+            return {"error": "productKind must be one of: all, finished, raw_material, bulk"}
+        if len(branch_info) > 1:
+            flt["branchInfo"] = branch_info
 
         all_products = []
-        page = 1
-        while True:
-            body = {
-                "filter": flt,
-                "option": {"balances": [{"branchCode": branch, "stockCodeList": get_default_stock_codes()}]},
-                "page": page,
-                "pageSize": 1000,
-            }
-            resp = await self.client.post(f"{BASE_PRODUCT}/balances/search", body)
-            items = resp.get("items", []) if isinstance(resp, dict) else []
+        body = {
+            "filter": flt,
+            "option": {"balances": [{"branchCode": branch, "stockCodeList": get_default_stock_codes()}]},
+        }
+        items, pages = await self._fetch_all_pages(
+            f"{BASE_PRODUCT}/balances/search",
+            body,
+            page_size=int(args.get("pageSize", 1000)),
+            concurrency=int(args.get("concurrency", 10)),
+            max_pages=int(args.get("maxPages", 100)),
+        )
 
-            for item in items:
-                balances = item.get("balances", [])
-                stock = float(balances[0].get("stock", 0)) if balances else 0
-                sales_order = balances[0].get("salesOrder") if balances else None
-                if stock >= min_stock:
-                    all_products.append({
-                        "productCode": item.get("productCode"),
-                        "productName": item.get("productName", ""),
-                        "colorName": item.get("colorName", ""),
-                        "sizeName": item.get("sizeName", ""),
-                        "stock": stock,
-                        "salesOrder": float(sales_order) if sales_order else 0,
-                    })
-
-            has_next = resp.get("hasNext", False) if isinstance(resp, dict) else False
-            if not has_next:
-                break
-            page += 1
-            if page > 50:  # safety limit
-                break
+        for item in items:
+            balances = item.get("balances", [])
+            stock = float(balances[0].get("stock", 0)) if balances else 0
+            sales_order = balances[0].get("salesOrder") if balances else None
+            if stock >= min_stock:
+                all_products.append({
+                    "productCode": item.get("productCode"),
+                    "productName": item.get("productName", ""),
+                    "colorName": item.get("colorName", ""),
+                    "sizeName": item.get("sizeName", ""),
+                    "stock": stock,
+                    "salesOrder": float(sales_order) if sales_order else 0,
+                })
 
         all_products.sort(key=lambda x: x["productName"])
         total_units = sum(p["stock"] for p in all_products)
 
         result = {
             "branchCode": branch,
+            "productKind": product_kind,
+            "onlyActive": only_active,
             "totalSkus": len(all_products),
             "totalUnits": total_units,
+            "pageStats": {"pages": pages, "pageSize": int(args.get("pageSize", 1000)), "concurrency": int(args.get("concurrency", 10))},
             "products": all_products,
         }
         cache.put("stock", cache_key, result)

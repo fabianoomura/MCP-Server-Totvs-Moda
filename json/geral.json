@@ -1,0 +1,4312 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Api General",
+    "description": "TOTVS.Moda API Swagger Surface",
+    "contact": {
+      "name": "TOTVS.Moda Atendimento",
+      "url": "https://totvssuporte.zendesk.com",
+      "email": "atendimentova@totvs.com.br"
+    },
+    "license": {
+      "name": "TOTVS",
+      "url": "https://www.totvs.com/"
+    },
+    "version": "2.8.13"
+  },
+  "paths": {
+    "/api/totvsmoda/general/v2/devolutions/create": {
+      "post": {
+        "tags": [
+          "Devolution"
+        ],
+        "summary": "Gravar os dados da devolução.",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDevolutionRequestCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDevolutionRequestCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDevolutionRequestCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DevolutionResponseModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/general/v2/devolutions/search": {
+      "get": {
+        "tags": [
+          "Devolution"
+        ],
+        "summary": "Consultar dados de devolução por estágio.",
+        "parameters": [
+          {
+            "name": "BranchCode",
+            "in": "query",
+            "description": "Código da empresa. Campo \"Empresa\" do componente TRAFM136.\r\n<br>Tamanho máximo: 4 números.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "DevolutionCode",
+            "in": "query",
+            "description": "Cídigo da devolução. Campo \"Devolução\" do componente TRAFM136.\r\n<br>Tamanho máximo: 9 números.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Expand",
+            "in": "query",
+            "description": "Lista de grupo de dados para expansão separados por \",\".\r\n<br>As seguintes expressões são suportadas: \"classifications, items\".<br>Ex.: \"expand\": \"classifications, items\".",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DevolutionSearchResponseModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/general/v2/payment-conditions": {
+      "get": {
+        "tags": [
+          "General"
+        ],
+        "summary": "Obter dados de condição de pagamento.",
+        "parameters": [
+          {
+            "name": "StartChangeDate",
+            "in": "query",
+            "description": "Data/hora inicial de alteração.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "EndChangeDate",
+            "in": "query",
+            "description": "Data/hora final de alteração.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "PaymentConditionCodeList",
+            "in": "query",
+            "description": "Lista de código de condição de pagamento do componente GERFM001.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          },
+          {
+            "name": "Page",
+            "in": "query",
+            "description": "Número da página. Página inicial é 1.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Quantidade de itens por página. Valor padrão é 100. Valor máximo é 1000.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentConditionDataOutDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/general/v2/operations": {
+      "get": {
+        "tags": [
+          "General"
+        ],
+        "summary": "Obter dados de operação.",
+        "parameters": [
+          {
+            "name": "OperationCodeList",
+            "in": "query",
+            "description": "Código da operação. Campo \"Código da operação\" do componente GERFM276.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          },
+          {
+            "name": "OperationTypeList",
+            "in": "query",
+            "description": "Tipo operação. Campo \"Tipo operação\" do componente GERFM276 -> GERFL067\r\n<br>E - Entrada<br>S - Saída",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "StartChangeDate",
+            "in": "query",
+            "description": "Data/hora inicial de alteração realizada no componente GERFM276.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "EndChangeDate",
+            "in": "query",
+            "description": "Data/hora final de alteração realizada no componente GERFM276.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "IsInactive",
+            "in": "query",
+            "description": "Operação Inativa/Ativa. Campo \"Situação\" do componente GERFM276\r\n<br>True - Inativa<br>False - Ativa",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "Order",
+            "in": "query",
+            "description": "Lista de campos para ordenação separados por \",\". Para ordenação descendente utilizar o caracter \"-\".\r\nAs seguintes expressões são suportadas: \"operationCode\", \"maxChangeFilterDate\"\r\nEx.: \"order\": \"-operationCode, maxChangeFilterDate\"",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Page",
+            "in": "query",
+            "description": "Número da página. Página inicial é 1.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Quantidade de itens por página. Valor padrão é 1000. Valor máximo é 1000.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Expand",
+            "in": "query",
+            "description": "Lista de grupo de dados para expansão separados por \",\".\r\n<br>As seguintes expressões são suportadas: \"calculations\",\"values\", \"balances\", \"classifications\".<br>Ex.: \"expand\": \"calculations\".",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ValidationResult.IsValid",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "ValidationResult.Errors",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ValidationFailure"
+              }
+            }
+          },
+          {
+            "name": "ValidationResult.RuleSetsExecuted",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResponseModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/general/v2/financial-compensations": {
+      "post": {
+        "tags": [
+          "Omni"
+        ],
+        "summary": "Incluir compensação financeira RCF.",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OmniFinancialCompensationRequestCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OmniFinancialCompensationRequestCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/OmniFinancialCompensationRequestCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessProcessingModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/general/v2/payment-plans": {
+      "get": {
+        "tags": [
+          "PaymentPlan"
+        ],
+        "summary": "Obter dados dos planos de pagamentos ativos.",
+        "parameters": [
+          {
+            "name": "BranchCode",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentPlanResponseModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/general/v2/payment-plan-simulate": {
+      "post": {
+        "tags": [
+          "PaymentPlan"
+        ],
+        "summary": "Simular cálculo de plano de pagamento.",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentPlanSimulateQuery"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentPlanSimulateQuery"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentPlanSimulateQuery"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentPlanSimulateModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/general/v2/product-counts": {
+      "post": {
+        "tags": [
+          "ProductCount"
+        ],
+        "summary": "Criação de contagem com produtos",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductCountCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductCountCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductCountCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountResponseModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/general/v2/product-counts/additional-count": {
+      "post": {
+        "tags": [
+          "ProductCount"
+        ],
+        "summary": "Alterar dados de uma contagem",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProductCountCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProductCountCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProductCountCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessProcessingModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/general/v2/transactions": {
+      "get": {
+        "tags": [
+          "Transaction"
+        ],
+        "summary": "Obter dados de uma transação.",
+        "parameters": [
+          {
+            "name": "BranchCode",
+            "in": "query",
+            "description": "Código da empresa. Campo \"Empresa\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "TransactionCode",
+            "in": "query",
+            "description": "Número da transação. Campo \"Número\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "TransactionDate",
+            "in": "query",
+            "description": "Data da transação. Campo \"Data\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "Expand",
+            "in": "query",
+            "description": "Lista de grupo de dados para expansão separados por \",\".\r\n<br>As seguintes expressões são suportadas: \"itemPromotionalEngines, originDestination\".<br>Ex.: \"expand\": \"itemPromotionalEngines, originDestination\".",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionDataOutDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Transaction"
+        ],
+        "summary": "Incluir transação.",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InsertCompleteTransactionCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InsertCompleteTransactionCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/InsertCompleteTransactionCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponseModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/general/v2/transaction-classification-relationship/create": {
+      "post": {
+        "tags": [
+          "Transaction"
+        ],
+        "summary": "Incluir relação de classificação em transação existente.",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InsertTransactionClassificationRelationshipCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InsertTransactionClassificationRelationshipCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/InsertTransactionClassificationRelationshipCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionClassificationRelationshipResponseModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/general/v2/classifications": {
+      "get": {
+        "tags": [
+          "Transaction"
+        ],
+        "summary": "Consultar classificações.",
+        "parameters": [
+          {
+            "name": "StartChangeDate",
+            "in": "query",
+            "description": "Data/hora inicial de alteração realizada no componente TRAFM101.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "EndChangeDate",
+            "in": "query",
+            "description": "Data/hora final de alteração realizada no componente TRAFM101.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "TypeCodeList",
+            "in": "query",
+            "description": "Lista de código de tipo de classificação. Campo \"Tipo classificação\" do componente TRAFM101.\r\nTamanho máximo permitido: 120 itens.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          },
+          {
+            "name": "Page",
+            "in": "query",
+            "description": "Número da página. Página inicial é 1.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Quantidade de itens por página. Valor padrão é 1000. Valor máximo é 1000.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassificationsResponseModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/general/v2/relationship-counts": {
+      "post": {
+        "tags": [
+          "Transaction"
+        ],
+        "summary": "Dados para gravação de relacionamento entre contagem e transação.",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RelationshipCountCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RelationshipCountCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RelationshipCountCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessProcessingModel"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/general/v2/transactions/search": {
+      "get": {
+        "tags": [
+          "Transaction"
+        ],
+        "summary": "Consultar Lista de transações.",
+        "parameters": [
+          {
+            "name": "BranchCodeList",
+            "in": "query",
+            "description": "Código da empresa. Campo \"Empresa\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          },
+          {
+            "name": "TransactionCodeList",
+            "in": "query",
+            "description": "Número da transação. Campo \"Número\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          },
+          {
+            "name": "TransactionDate",
+            "in": "query",
+            "description": "Data da transação. Campo \"Data\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "CustomerCodeList",
+            "in": "query",
+            "description": "Código da pessoa da transação. Campo \"Código\" do componente TRAFL016.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          },
+          {
+            "name": "CustomerCPFCNPJList",
+            "in": "query",
+            "description": "Código do documento de indentificação (CPF ou CNPJ) da pessoa vinculada a transação.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "StartChangeDate",
+            "in": "query",
+            "description": "Data/hora inicial de alteração.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "EndChangeDate",
+            "in": "query",
+            "description": "Data/hora final de alteração.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "Order",
+            "in": "query",
+            "description": "Lista de campos para ordenação separados por \",\". Para ordenação descendente utilizar o caracter \"-\".\r\n<br>As seguintes expressões são suportadas: \"branchCode, transactionCode, transactionDate, maxChangeFilterDate\"<br>Ex.: \"order\": \"-branchCode\"",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Page",
+            "in": "query",
+            "description": "Número da página. Página inicial é 1.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Quantidade de itens por página. Valor padrão é 100. Valor máximo é 500.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Expand",
+            "in": "query",
+            "description": "Lista de grupo de dados para expansão separados por \",\".\r\n<br>As seguintes expressões são suportadas: \"itemPromotionalEngines, originDestination, additionalInformation\".<br>Ex.: \"expand\": \"itemPromotionalEngines, originDestination\".",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ValidationResult.IsValid",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "ValidationResult.Errors",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ValidationFailure"
+              }
+            }
+          },
+          {
+            "name": "ValidationResult.RuleSetsExecuted",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionSearchResultModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AccountingCostType": {
+        "enum": [
+          "ProductNetValueSubtractTaxAddAdditional",
+          "ProductNetValue",
+          "NotCalculate"
+        ],
+        "type": "integer",
+        "description": "Tipo de cálculo do custo contábil. Campo \"Tipo de cálculo do custo contábil\" do componente GERFM276.\r\n<br>1 - Valor líquido produto - Imp. + Adic.<br>2 - Valor líquido produto<br>99 - Não calcula",
+        "format": "int32"
+      },
+      "CalculationsDataModel": {
+        "type": "object",
+        "properties": {
+          "accountingCostType": {
+            "$ref": "#/components/schemas/AccountingCostType"
+          },
+          "orderBalanceType": {
+            "$ref": "#/components/schemas/OrderBalanceType"
+          },
+          "negativeBalanceType": {
+            "$ref": "#/components/schemas/NegativeBalanceType"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Cálculos da nota fiscal. Quadro \"Cálculos\" do componente GERFM276."
+      },
+      "ClassificationDateModel": {
+        "type": "object",
+        "properties": {
+          "typeCode": {
+            "type": "integer",
+            "description": "Código do tipo de classificação. Primeiro campo \"Tipo classificação\" do componente TRAFM101.",
+            "format": "int32"
+          },
+          "typeName": {
+            "type": "string",
+            "description": "Nome do tipo de classificação. Segundo campo \"Tipo classificação\" do componente TRAFM101.",
+            "nullable": true
+          },
+          "code": {
+            "type": "string",
+            "description": "Código da classificação.  Campo \"Classificação\" do componente TRAFM101.",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome da classificação. Campo \"Descrição\" do componente TRAFM101.",
+            "nullable": true
+          },
+          "maxChangeFilterDate": {
+            "type": "string",
+            "description": "Maior data de alteração dentro do filtro de intervalo de data. Campo populado apenas quando os campos \"startChangeDate\" e \"endChangeDate\" são informados.",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ClassificationModel": {
+        "required": [
+          "code",
+          "typeCode"
+        ],
+        "type": "object",
+        "properties": {
+          "typeCode": {
+            "type": "integer",
+            "description": "Código do tipo de classificação. Primeiro campo \"Tipo classificação\" do bloco \"Classificação da transação\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string",
+            "description": "Código da classificação. Primeiro campo \"Classificação\" do bloco \"Classificação da transação\" do componente TRAFL016 -> \"F12 na Transação\"."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Classificação da transação."
+      },
+      "ClassificationsResponseModel": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "description": "Total de registros obtidos na consulta.",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "description": "Total de páginas da consulta.",
+            "format": "int32"
+          },
+          "hasNext": {
+            "type": "boolean",
+            "description": "Possui mais páginas."
+          },
+          "totalItems": {
+            "type": "integer",
+            "description": "Total de registros da lista de itens.",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClassificationDateModel"
+            },
+            "description": "Lista de itens.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CountAdditionalFieldModel": {
+        "required": [
+          "code",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "Código do campo adicional da contagem. Campo \"Campo\" do componenten GERFM047.",
+            "format": "int32"
+          },
+          "value": {
+            "description": "Valor do campo adicional da contagem. Campo \"Dados\" do componente GERFM047.\r\n<br>Esse campo aceita os tipos string, double e date<br>Para campos do tipo data utilizar o formato DD/MM/YYYY<br>**Exemplo de utilização do campo:**<br>String -> \"value\": \"STRING\"<br>Integer -> \"value\": 123456<br>Date -> \"value\": \"31/12/9999\""
+          }
+        },
+        "additionalProperties": false
+      },
+      "CountBatchItemsModel": {
+        "type": "object",
+        "properties": {
+          "barCode": {
+            "type": "string",
+            "description": "Código gerado automaticamente ou manualmente para controle de item de lote. Campo \"Lote cliente\" do componente PRDFM059.\r\n<br>Não pode ser informado simultaneamente com countBatchItems.Code, countBatchItems.sequence.<br>Tamanho máximo: 40 caracteres.",
+            "nullable": true
+          },
+          "branchCode": {
+            "type": "integer",
+            "description": "Código da empresa do lote. Campo \"Empresa\" do componente PRDFM059.\r\n<br>Tamanho máximo: 4 números.",
+            "format": "int32",
+            "nullable": true
+          },
+          "code": {
+            "type": "integer",
+            "description": "Código do lote. Campo \"Número lote\" do componente PRDFM059.\r\n<br>Não pode ser informado simultaneamente com countBatchItems.BarCode.<br>Tamanho máximo: 9 números.",
+            "format": "int32",
+            "nullable": true
+          },
+          "sequence": {
+            "type": "integer",
+            "description": "Número sequencia do item de lote. Campo \"Nr.\" do componente PRDFM059.\r\n<br>Não pode ser informado simultaneamente com countBatchItems.BarCode.<br>Tamanho máximo: 4 números.",
+            "format": "int32",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantidade solicitada para baixa do lote. Campo \"Quantidade\" do componente GERFM101.\r\n<br>Tamanho máximo: 9 números inteiros com 3 casas decimais.",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CountModel": {
+        "required": [
+          "branchCode",
+          "countNumber"
+        ],
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Empresa da contagem. Campo \"Empresa\" do componente GERFM101.\r\n<br>Tamanho máximo de 4 números.",
+            "format": "int32"
+          },
+          "countNumber": {
+            "type": "integer",
+            "description": "Numero da contagem. Campo \"Número\" do componente GERFM101.\r\n<br>Tamanho máximo de 9 números.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CountProductionOrderModel": {
+        "required": [
+          "cycleCode",
+          "orderBranchCode",
+          "orderCode",
+          "relationshipType"
+        ],
+        "type": "object",
+        "properties": {
+          "orderBranchCode": {
+            "type": "integer",
+            "description": "Código da empresa. Campo \"Empresa\" do componente PCPFM144.",
+            "format": "int32"
+          },
+          "cycleCode": {
+            "type": "integer",
+            "description": "Código do Ciclo. Campo \"Ciclo\" do componente PCPFM144.",
+            "format": "int32"
+          },
+          "orderCode": {
+            "type": "integer",
+            "description": "Código da Ordem de Produção. Campo \"O.P\" do componente PCPFM144.",
+            "format": "int32"
+          },
+          "relationshipType": {
+            "$ref": "#/components/schemas/RelationshipType"
+          },
+          "originPlaceCode": {
+            "type": "integer",
+            "description": "Código do Local. Botão \"Programação\" do componente PCPFM144 -> Campo \"Local\" do frame \"Programação\" do componente CDFFM165.\r\n<br>Obrigatório quando RelationshipType for 3 (Movimentação de ordem de produção).<br>Não pode ser informado quando RelationshipType for diferente de 3 (Movimentação de ordem de produção).",
+            "format": "int32",
+            "nullable": true
+          },
+          "originProgrammingSequenceCode": {
+            "type": "integer",
+            "description": "Código da Sequência da Programação. Botão \"Programação\" do componente PCPFM144 -> Campo \"Seq.\" do frame \"Programação\" do componente CDFFM165.\r\n<br>Obrigatório quando RelationshipType for 3 (Movimentação de ordem de produção).<br>Não pode ser informado quando RelationshipType for diferente de 3 (Movimentação de ordem de produção).",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CountResponseModel": {
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Empresa da contagem. Campo \"Empresa\" do componente GERFM101.",
+            "format": "int32"
+          },
+          "countNumber": {
+            "type": "integer",
+            "description": "Numero da contagem. Campo \"Número\" do componente GERFM101.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CountSellerModel": {
+        "type": "object",
+        "properties": {
+          "sellerCode": {
+            "type": "integer",
+            "description": "Código do vendedor.",
+            "format": "int32",
+            "nullable": true
+          },
+          "sellerName": {
+            "type": "string",
+            "description": "Nome do vendedor.",
+            "nullable": true
+          },
+          "transactionBranchCode": {
+            "type": "integer",
+            "description": "Empresa da transação.",
+            "format": "int32",
+            "nullable": true
+          },
+          "transactionCode": {
+            "type": "integer",
+            "description": "Número da transação.",
+            "format": "int32",
+            "nullable": true
+          },
+          "transactionDate": {
+            "type": "string",
+            "description": "Data da transação.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "peripheral": {
+            "type": "string",
+            "description": "Periférico.",
+            "nullable": true
+          },
+          "component": {
+            "type": "string",
+            "description": "Componente.",
+            "nullable": true
+          },
+          "separatorCode": {
+            "type": "integer",
+            "description": "Código do separador.",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CountType": {
+        "enum": [
+          "Normal",
+          "SecondQuality",
+          "ThirdQuality",
+          "LeftOver",
+          "RequestStock"
+        ],
+        "type": "integer",
+        "description": "Tipo de contagem. Campo \"Tipo\" do componente GERFM047.\r\n<br>0 - Normal<br>1 - Segunda qualidade<br>2 - Terceira qualidade<br>3 - Sobra<br>4 - Solicita estoque",
+        "format": "int32"
+      },
+      "CreateDevolutionClassificationsRequestCommand": {
+        "required": [
+          "classificationCode",
+          "classificationTypeCode"
+        ],
+        "type": "object",
+        "properties": {
+          "classificationTypeCode": {
+            "type": "integer",
+            "description": "Codigo do tipo de classificação. Primeiro campo \"Tipo classificação\" do bloco \"Classificação\" do componente TRAFM136.\r\n<br>Tamanho máximo: 4 números.",
+            "format": "int32"
+          },
+          "classificationCode": {
+            "type": "string",
+            "description": "Codigo da classificação. Primeiro campo \"Classificação\" do bloco \"Classificação\" do componente TRAFM136.\r\n<br>Tamanho máximo: 10 caracteres."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Classificação."
+      },
+      "CreateDevolutionItemRequestCommand": {
+        "required": [
+          "productCode",
+          "productSku",
+          "quantityReturned",
+          "unitPriceGross",
+          "unitPriceNet"
+        ],
+        "type": "object",
+        "properties": {
+          "productCode": {
+            "type": "integer",
+            "description": "Código interno do produto. Campo \"Produto\" do componente TRAFM136 -> \"Item\".\r\n<br>Não pode ser informado simultaneamente com productSku, mas um dos dois deve ser informado obrigatoriamente.<br>Tamanho máximo: 9 números.",
+            "format": "int32"
+          },
+          "productSku": {
+            "type": "string",
+            "description": "Código barra relacionado ao Campo \"Produto\" do componente TRAFM136 -> \"Item\".\r\n<br>Não pode ser informado simultaneamente com productCode, mas um dos dois deve ser informado obrigatoriamente..<br>Tamanho máximo: 40 caracteres."
+          },
+          "devolutionQuantity": {
+            "type": "number",
+            "description": "Quantidade de devolução. Campo \"Qt devolução\" do componente TRAFM136 -> \"Item\".\r\n<br>Tamanho máximo: 9 números inteiros com 3 casas decimais.",
+            "format": "double"
+          },
+          "grossValue": {
+            "type": "number",
+            "description": "Valor unitário bruto.\r\n<br>Tamanho máximo: 9 números inteiros com 3 casas decimais.",
+            "format": "double"
+          },
+          "netValue": {
+            "type": "number",
+            "description": "Valor unitário líquido. Campo \"VL unitário\" do componente TRAFM136 -> \"Item\".\r\n<br>Tamanho máximo: 9 números inteiros com 3 casas decimais.",
+            "format": "double"
+          },
+          "invoiceBranchCode": {
+            "type": "integer",
+            "description": "Código da empresa. Campo \"Empresa\" do componente FISFL030 -> \"F12 na Nota fiscal\".\r\n<br>Deve ser informado junto com invoiceSequence e invoiceDate.<br>Não deve ser informado junto com accessKey.<br>Tamanho máximo: 4 números",
+            "format": "int32",
+            "nullable": true
+          },
+          "invoiceSequence": {
+            "type": "integer",
+            "description": "Código sequencial da nota fiscal. Campo \"Fatura\" do componente FISFL030 -> \"F12 na Nota fiscal\".\r\n<br>Deve ser informado junto com invoiceBranchCode e invoiceDate.<br>Não deve ser informado junto com accessKey.<br>Tamanho máximo: 9 números",
+            "format": "int32",
+            "nullable": true
+          },
+          "invoiceDate": {
+            "type": "string",
+            "description": "Data de movimento da nota fiscal. Campo \"Data fatura\" do componente FISFL030 -> \"F12 na Nota fiscal\".\r\n<br>Deve ser informado junto com invoiceBranchCode e invoiceSequence.<br>Não deve ser informado junto com accessKey.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "accessKey": {
+            "type": "string",
+            "description": "Chave de acesso. Campo \"Chave de acesso\" do componente FISFL030 -> \"F12 na Nota fiscal\" -> \"NF-e\".\r\n<br>Não deve ser informado junto com invoiceBranchcode, invoiceSequence e invoiceDate.<br>Tamanho máximo: 44 caracteres.",
+            "nullable": true
+          },
+          "issueInvoiceDate": {
+            "type": "string",
+            "description": "Data de emissão da nota fiscal. Campo \"Data emissão\" do componente FISFL030 -> \"F12 na Nota Fiscal\".",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Produto."
+      },
+      "CreateDevolutionRequestCommand": {
+        "required": [
+          "branchCode",
+          "customerCode",
+          "customerCpfCnpj",
+          "fiscalDocumentType",
+          "items",
+          "operationCode",
+          "returnDate"
+        ],
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Código da empresa. Campo \"Empresa\" do componente TRAFM136. \r\n<br>Tamanho máximo: 4 números.",
+            "format": "int32"
+          },
+          "operationCode": {
+            "type": "integer",
+            "description": "Código da operação. Campo \"Operação\" do componente GERFM276.\r\n<br>Tamanho máximo: 4 números.",
+            "format": "int32"
+          },
+          "personCode": {
+            "type": "integer",
+            "description": "Código da Pessoa. Campo \"Pessoa\" do componente TRAFM136.\r\n<br>Não pode ser informado simultaneamente com personCpfCnpj, mas um dos dois deve ser informado obrigatoriamente.<br>Tamanho máximo: 9 números.",
+            "format": "int32",
+            "nullable": true
+          },
+          "personCpfCnpj": {
+            "type": "string",
+            "description": "CPF ou CNPJ da Pessoa relacionada com o Campo \"Pessoa\" do componente TRAFM136.\r\n<br>Não pode ser informado simultaneamente com personCode, mas um dos dois deve ser informado obrigatoriamente.<br>Tamanho máximo: 14 caracteres.",
+            "nullable": true
+          },
+          "descriptionDevolution": {
+            "type": "string",
+            "description": "Descrição da devolução. Campo \"Devolução\" do componente TRAFM136.\r\n<br>Tamanho máximo: 60 caracteres.",
+            "nullable": true
+          },
+          "descriptionDocOrigin": {
+            "type": "string",
+            "description": "Documento origem. Campo \"Documento origem\" do componente TRAFM136.\r\n<br>Tamanho máximo: 30 caracteres.",
+            "nullable": true
+          },
+          "contactDate": {
+            "type": "string",
+            "description": "Data de contato. Campo \"Data contato\" do componente TRAFM136.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "estimatedDeliveryDate": {
+            "type": "string",
+            "description": "Data de previsão de entrega. Campo \"Dt. prev. entrega\" do componente TRAFM136.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "invoiceNumber": {
+            "type": "integer",
+            "description": "Número da nota fiscal. Campo \"Numero N.F.\" do componente TRAFM136.\r\n<br>Tamanho máximo: 9 caracteres.",
+            "format": "int32",
+            "nullable": true
+          },
+          "issueInvoiceDate": {
+            "type": "string",
+            "description": "Data de emissão da N.F. Campo \"Data emissão N.F.\" do componente TRAFM136.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "invoiceSerie": {
+            "type": "string",
+            "description": "Série da nota fiscal. Campo \"Serie N.F.\" do componente TRAFM136.\r\n<br>Tamanho máximo: 3 caracteres.",
+            "nullable": true
+          },
+          "returnDate": {
+            "type": "string",
+            "description": "Data de devolução. Campo \"Data devolução\" do componente TRAFM136.",
+            "format": "date-time"
+          },
+          "accessKey": {
+            "type": "string",
+            "description": "Chave de acesso nota fiscal. Campo \"Chave de acesso\" componente TRAFM136.\r\n<br>Tamanho máximo: 44 caracteres.",
+            "nullable": true
+          },
+          "fiscalDocumentType": {
+            "type": "integer",
+            "description": "Modelo do documento fiscal. Campo \"Modelo doc. fiscal\" do componente TRAFM136.\r\n<br>1 - Nota Fiscal Modelo 1 ou 1A<br>2 - Nota Fiscal de Venda a Consumidor<br>4 - Nota Fiscal de Produtor<br>6 - Nota Fiscal/Conta de Energia Elétrica<br>7 - Nota Fiscal de Serviço de Transporte<br>8 - Conhecimento de Transporte Rodoviário de Cargas<br>9 - Conhecimento de Transporte Aquaviário de Cargas<br>10 - Conhecimento Aéreo<br>11 - Conhecimento de Transporte Ferroviário de Cargas<br>13 - Bilhete de Passagem Rodoviário<br>14 - Bilhete de Passagem Aquaviário<br>15 - Bilhete de Passagem e Nota de Bagagem<br>16 - Bilhete de Passagem Ferroviário<br>17 - Despacho de Transporte<br>18 - Resumo de Movimento Diário<br>20 - Ordem de Coleta de Cargas<br>21 - Nota Fiscal de Serviço de Comunicação<br>22 - Nota Fiscal de Serviço de Telecomunicação<br>23 - GNRE<br>24 - Autorização de Carregamento e Transporte<br>25 - Manifesto de Carga<br>26 - Conhecimento de Transporte Multimodal de Cargas<br>27 - Nota Fiscal de Transporte Ferroviário de Carga<br>28 - Nota Fiscal/Conta de Fornecimento de Gás Canalizado<br>29 - Nota Fiscal/Conta de Fornecimento Dágua Canalizada<br>35 - Documento Interno<br>55 - Nota Fiscal Eletrônica (NF-e)<br>57 - Conhecimento de Transporte Eletrônico (CT-e)<br>58 - Manifesto Eletrônico de Documentos Fiscais (MDF-e)<br>59 - Cupom Fiscal Eletrônico (CF-e)<br>65 - Nota Fiscal Eletrônica de Venda ao Consumidor Final (NFC-e)<br>66 - Nota Fiscal de Energia Elétrica Eletrônica (NF3-e)<br>67 - Conhecimento de Transporte Eletrônico para Outros Serviços(CT-e OS)<br>70 - Nota Fiscal Avulsa<br>71 - Cupom Fiscal<br>72 - Cupom Fiscal Bilhete de Passagem<br>73 - Conhecimento de Transporte de Cargas Avulso<br>80 - Nota Fiscal Prestação de Serviço (ISSQN)<br>81 - Nota Fiscal de Serviço Eletrônica (NFS-e)<br>82 - Fatura<br>85 - Complemento de ICMS<br>86 - Complemento de IPI<br>87 - Nota Fiscal CIAP",
+            "format": "int32"
+          },
+          "authorizationNumber": {
+            "type": "string",
+            "description": "Número da autorização. Campo \"Autorização\" do componente TRAFM136.\r\n<br>Tamanho máximo: 20 caracteres.",
+            "nullable": true
+          },
+          "classifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateDevolutionClassificationsRequestCommand"
+            },
+            "description": "Lista de classificações.",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateDevolutionItemRequestCommand"
+            },
+            "description": "Lista de itens."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Dados da devolucao."
+      },
+      "CreateProductCountCommand": {
+        "required": [
+          "branchCode",
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Empresa da contagem. Campo \"Empresa\" do componente GERFM101.",
+            "format": "int32"
+          },
+          "description": {
+            "type": "string",
+            "description": "Descrição da contagem. Campo a frente do campo \"Número\" do componente GERFM101.",
+            "nullable": true
+          },
+          "quantityVolume": {
+            "type": "integer",
+            "description": "Quantidade de volume. Campo \"Qt. volume\" do componente GERFM047.",
+            "format": "int32",
+            "nullable": true
+          },
+          "grossWeight": {
+            "type": "number",
+            "description": "Peso bruto. Campo \"Peso bruto\" do componente GERFM047.",
+            "format": "double",
+            "nullable": true
+          },
+          "netWeight": {
+            "type": "number",
+            "description": "Peso líquido. Campo \"Peso líquido\" do componente GERFM047.",
+            "format": "double",
+            "nullable": true
+          },
+          "measuredUnit": {
+            "type": "string",
+            "description": "Espécie. Campo \"Espécie\" do componente GERFM047.",
+            "nullable": true
+          },
+          "packagingTypeCode": {
+            "type": "integer",
+            "description": "Tipo de embalagem. Campo \"Tipo embalagem\" do componente GERFM047.",
+            "format": "int32",
+            "nullable": true
+          },
+          "cubage": {
+            "type": "number",
+            "description": "Cubagem. Campo \"Qt. cubagem\" do componente GERFM047.",
+            "format": "double",
+            "nullable": true
+          },
+          "personCode": {
+            "type": "integer",
+            "description": "Código da pessoa. Campo \"Pessoa\" do componente GERFM047.",
+            "format": "int32",
+            "nullable": true
+          },
+          "countType": {
+            "$ref": "#/components/schemas/CountType"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusCountType"
+          },
+          "separatorCode": {
+            "type": "integer",
+            "description": "Código do separador. Campo \"Separador\" do componente GERFM047.",
+            "format": "int32",
+            "nullable": true
+          },
+          "isManualVolume": {
+            "type": "boolean",
+            "description": "Indicador de volume manual. Campo \"Valume manual\" do componente GERFM047.",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductCountModel"
+            },
+            "description": "Lista de itens."
+          },
+          "additionalFields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CountAdditionalFieldModel"
+            },
+            "description": "Lista de campo adicional.",
+            "nullable": true
+          },
+          "seller": {
+            "$ref": "#/components/schemas/CountSellerModel"
+          },
+          "productionOrder": {
+            "$ref": "#/components/schemas/CountProductionOrderModel"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DevolutionClassificationModel": {
+        "type": "object",
+        "properties": {
+          "classificationTypeCode": {
+            "type": "integer",
+            "description": "Codigo do tipo de classificação. Primeiro campo \"Tipo classificação\" do bloco \"Classificação\" do componente TRAFM136.\r\n<br>Tamanho máximo: 4 números.",
+            "format": "int32"
+          },
+          "classificationTypeDescription": {
+            "type": "string",
+            "description": "Descrição do tipo de classificação. Primeiro campo \"Tipo classificação\" do bloco \"Classificação\" do componente TRAFM136.\r\n<br>Tamanho máximo: 40 caracteres.",
+            "nullable": true
+          },
+          "classificationCode": {
+            "type": "string",
+            "description": "Codigo da classificação. Primeiro campo \"Classificação\" do bloco \"Classificação\" do componente TRAFM136.\r\n<br>Tamanho máximo: 10 caracteres.",
+            "nullable": true
+          },
+          "classificationDescription": {
+            "type": "string",
+            "description": "Descrição da classificação. Primeiro campo \"Classificação\" do bloco \"Classificação\" do componente TRAFM136.\r\n<br>Tamanho máximo: 10 caracteres.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DevolutionItemModel": {
+        "type": "object",
+        "properties": {
+          "productCode": {
+            "type": "integer",
+            "description": "Código interno do produto. Campo \"Produto\" do componente TRAFM136 -> \"Item\".\r\n<br>Tamanho máximo: 9 números.",
+            "format": "int32"
+          },
+          "productDescription": {
+            "type": "string",
+            "description": "Descrição do produto. Campo \"Produto\" do componente TRAFM136 -> \"Item\".\r\n<br>Tamanho máximo: 60 caracteres.",
+            "nullable": true
+          },
+          "devolutionQuantity": {
+            "type": "number",
+            "description": "Quantidade de devolução. Campo \"Qt devolução\" do componente TRAFM136 -> \"Item\".\r\n<br>Tamanho máximo: 9 números inteiros com 3 casas decimais.",
+            "format": "double"
+          },
+          "grossValue": {
+            "type": "number",
+            "description": "Valor unitário bruto.\r\n<br>Tamanho máximo: 9 números inteiros com 3 casas decimais.",
+            "format": "double"
+          },
+          "netValue": {
+            "type": "number",
+            "description": "Valor unitário líquido. Campo \"VL unitário\" do componente TRAFM136 -> \"Item\".\r\n<br>Tamanho máximo: 9 números inteiros com 3 casas decimais.",
+            "format": "double"
+          },
+          "invoiceBranchCode": {
+            "type": "integer",
+            "description": "Código da empresa. Campo \"Empresa\" do componente FISFL030 -> \"F12 na Nota fiscal\".\r\n<br>Tamanho máximo: 4 números",
+            "format": "int32",
+            "nullable": true
+          },
+          "invoiceSequence": {
+            "type": "integer",
+            "description": "Código sequencial da nota fiscal. Campo \"Fatura\" do componente FISFL030 -> \"F12 na Nota fiscal\".\r\n<br>Tamanho máximo: 9 números",
+            "format": "int32",
+            "nullable": true
+          },
+          "invoiceDate": {
+            "type": "string",
+            "description": "Data de movimento da nota fiscal. Campo \"Data fatura\" do componente FISFL030 -> \"F12 na Nota fiscal\".",
+            "format": "date-time",
+            "nullable": true
+          },
+          "accessKey": {
+            "type": "string",
+            "description": "Chave de acesso. Campo \"Chave de acesso\" do componente FISFL030 -> \"F12 na Nota fiscal\" -> \"NF-e\".\r\n<br>Tamanho máximo: 44 caracteres.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DevolutionResponseModel": {
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Código da empresa. Campo \"Empresa\" do componente TRAFM136.\r\n<br>Tamanho máximo: 4 números.",
+            "format": "int32"
+          },
+          "devolutionCode": {
+            "type": "integer",
+            "description": "Código da devolução. Campo \"Devolução\" do componente TRAFM136.\r\n<br>Tamanho máximo: 9 números.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DevolutionSearchResponseModel": {
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Código da empresa. Campo \"Empresa\" do componente TRAFM136. \r\n<br>Tamanho máximo: 4 números.",
+            "format": "int32"
+          },
+          "devolutionCode": {
+            "type": "integer",
+            "description": "Código da devolução. Campo \"Devolução\" do componente TRAFM136.\r\n<br>Tamanho máximo: 9 números.",
+            "format": "int32"
+          },
+          "returnDescription": {
+            "type": "string",
+            "description": "Descrição da devolução. Campo \"Devolução\" do componente TRAFM136.\r\n<br>Tamanho máximo: 60 caracteres.",
+            "nullable": true
+          },
+          "stageNumber": {
+            "type": "string",
+            "description": "Código do estágio. Campo \"Número\" do componente TRAFM054.\r\n<br>Tamanho máximo: 40 caracteres.",
+            "nullable": true
+          },
+          "stageDescription": {
+            "type": "string",
+            "description": "Descrição do estágio. Campo \"Descrição\" do componente TRAFM054.\r\n<br>Tamanho máximo: 40 caracteres.",
+            "nullable": true
+          },
+          "personCode": {
+            "type": "integer",
+            "description": "Código da Pessoa. Campo \"Pessoa\" do componente TRAFM136.\r\n<br>Tamanho máximo: 9 números.",
+            "format": "int32"
+          },
+          "returnDate": {
+            "type": "string",
+            "description": "Data de devolução. Campo \"Data devolução\" do componente TRAFM136.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "originalDocumentDescription": {
+            "type": "string",
+            "description": "Documento origem. Campo \"Documento origem\" do componente TRAFM136.\r\n<br>Tamanho máximo: 30 caracteres.",
+            "nullable": true
+          },
+          "contactDate": {
+            "type": "string",
+            "description": "Data de contato. Campo \"Data contato\" do componente TRAFM136.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "estimatedDeliveryDate": {
+            "type": "string",
+            "description": "Data de previsão de entrega. Campo \"Dt. prev. entrega\" do componente TRAFM136.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "invoiceNumber": {
+            "type": "integer",
+            "description": "Número da nota fiscal. Campo \"Numero N.F.\" do componente TRAFM136.\r\n<br>Tamanho máximo: 9 caracteres.",
+            "format": "int32",
+            "nullable": true
+          },
+          "issueInvoiceDate": {
+            "type": "string",
+            "description": "Data de emissão da N.F. Campo \"Data emissão N.F.\" do componente TRAFM136.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "invoiceSerie": {
+            "type": "string",
+            "description": "Série da nota fiscal. Campo \"Serie N.F.\" do componente TRAFM136.\r\n<br>Tamanho máximo: 3 caracteres.",
+            "nullable": true
+          },
+          "operationCode": {
+            "type": "integer",
+            "description": "Código da operação. Campo \"Operação\" do componente TRAFM136.\r\n<br>Tamanho máximo: 4 números.",
+            "format": "int32"
+          },
+          "accessKey": {
+            "type": "string",
+            "description": "Chave de acesso da nota fiscal. Campo \"Chave acesso\" do componente TRAFM136.\r\n<br>Tamanho máximo: 44 caracteres.",
+            "nullable": true
+          },
+          "fiscalDocumentType": {
+            "type": "integer",
+            "description": "Modelo do documento fiscal. Campo \"Modelo doc. fiscal\" do componente TRAFM136.\r\n<br>1 - Nota Fiscal Modelo 1 ou 1A<br>2 - Nota Fiscal de Venda a Consumidor<br>4 - Nota Fiscal de Produtor<br>6 - Nota Fiscal/Conta de Energia Elétrica<br>7 - Nota Fiscal de Serviço de Transporte<br>8 - Conhecimento de Transporte Rodoviário de Cargas<br>9 - Conhecimento de Transporte Aquaviário de Cargas<br>10 - Conhecimento Aéreo<br>11 - Conhecimento de Transporte Ferroviário de Cargas<br>13 - Bilhete de Passagem Rodoviário<br>14 - Bilhete de Passagem Aquaviário<br>15 - Bilhete de Passagem e Nota de Bagagem<br>16 - Bilhete de Passagem Ferroviário<br>17 - Despacho de Transporte<br>18 - Resumo de Movimento Diário<br>20 - Ordem de Coleta de Cargas<br>21 - Nota Fiscal de Serviço de Comunicação<br>22 - Nota Fiscal de Serviço de Telecomunicação<br>23 - GNRE<br>24 - Autorização de Carregamento e Transporte<br>25 - Manifesto de Carga<br>26 - Conhecimento de Transporte Multimodal de Cargas<br>27 - Nota Fiscal de Transporte Ferroviário de Carga<br>28 - Nota Fiscal/Conta de Fornecimento de Gás Canalizado<br>29 - Nota Fiscal/Conta de Fornecimento Dágua Canalizada<br>35 - Documento Interno<br>55 - Nota Fiscal Eletrônica (NF-e)<br>57 - Conhecimento de Transporte Eletrônico (CT-e)<br>58 - Manifesto Eletrônico de Documentos Fiscais (MDF-e)<br>59 - Cupom Fiscal Eletrônico (CF-e)<br>65 - Nota Fiscal Eletrônica de Venda ao Consumidor Final (NFC-e)<br>66 - Nota Fiscal de Energia Elétrica Eletrônica (NF3-e)<br>67 - Conhecimento de Transporte Eletrônico para Outros Serviços(CT-e OS)<br>70 - Nota Fiscal Avulsa<br>71 - Cupom Fiscal<br>72 - Cupom Fiscal Bilhete de Passagem<br>73 - Conhecimento de Transporte de Cargas Avulso<br>80 - Nota Fiscal Prestação de Serviço (ISSQN)<br>81 - Nota Fiscal de Serviço Eletrônica (NFS-e)<br>82 - Fatura<br>85 - Complemento de ICMS<br>86 - Complemento de IPI<br>87 - Nota Fiscal CIAP",
+            "format": "int32",
+            "nullable": true
+          },
+          "authorizationNumber": {
+            "type": "string",
+            "description": "Número da autorização. Campo \"Autorização\" do componente TRAFM136.\r\n<br>Tamanho máximo: 20 caracteres.",
+            "nullable": true
+          },
+          "classifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DevolutionClassificationModel"
+            },
+            "description": "Lista de classificações.",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DevolutionItemModel"
+            },
+            "description": "Lista de itens.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DocumentType": {
+        "enum": [
+          "Invoice",
+          "Check",
+          "Cash",
+          "CreditCard",
+          "DebitCard",
+          "DebitNote",
+          "TEF",
+          "TEFCheck",
+          "Change",
+          "Advance",
+          "FinancialDiscount",
+          "DOFNI",
+          "EmployeeVoucher",
+          "PromissoryNote",
+          "GuaranteedCheck",
+          "TEDDOC",
+          "PreAuthorizationTEF",
+          "GiftCheck",
+          "TEFTECBAN",
+          "CREDEV",
+          "OwnCard",
+          "TEFHypercard",
+          "DiscountBonus",
+          "Voucher",
+          "PIX",
+          "PicPay",
+          "Ame",
+          "MercadoPago",
+          "OtherDocument"
+        ],
+        "type": "integer",
+        "description": "Tipo de documento das faturas. Campo \"Tipo documento\" do componente FCRFM001\".\r\n<br>1 - Fatura<br>2 - Cheque<br>3 - Dinheiro<br>4 - Cartão de crédito<br>5 - Cartão de débito<br>6 - Nota de débito<br>7 - TEF<br>8 - Cheque TEF<br>9 - Troco<br>10 - Adiantamento - Saída de caixa<br>11 - Desconto financeiro<br>12 - DOFNI - Documento de Origem Financeira Não Identificado<br>13 - Vale<br>14 - Nota promissória<br>15 - Cheque garantido<br>16 - TED/DOC<br>17 - Pré-Autorização TEF<br>18 - Cheque presente<br>19 - TEF/TECBAN - BANRISUL<br>20 - CREDEV<br>21 - Cartão próprio<br>22 - TEF/HYPERCARD<br>23 - Bônus desconto<br>25 - Voucher<br>26 - PIX<br>27 - PicPay<br>28 - Ame<br>29 - MercadoPago<br>50 - Outro documento",
+        "format": "int32"
+      },
+      "DomainNotificationMessage": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Código da mensagem.",
+            "nullable": true,
+            "readOnly": true
+          },
+          "message": {
+            "type": "string",
+            "description": "Conteúdo da mensagem.",
+            "nullable": true,
+            "readOnly": true
+          },
+          "detailedMessage": {
+            "type": "string",
+            "description": "Detalhamento adicional da mensagem.",
+            "nullable": true,
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Mensagem de notificação."
+      },
+      "InsertCompleteTransactionCommand": {
+        "required": [
+          "totalAmountTransaction"
+        ],
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Código da empresa. Campo \"Empresa\" do quadro \"Transação\" do componente TRAFL016 -> TRAFL017.",
+            "format": "int32"
+          },
+          "customerCode": {
+            "type": "integer",
+            "description": "Código do cliente. Campo \"Cliente\" do quadro \"Transação\" do componente TRAFL016 -> TRAFL017.\r\nNão pode ser informado simultaneamente com customerCpfCnpj, mas um dos dois deve ser informado obrigatoriamente.",
+            "format": "int32",
+            "nullable": true
+          },
+          "customerCpfCnpj": {
+            "type": "string",
+            "description": "Documento do cliente. Campo \"Cliente\" do quadro \"Transação\" do componente TRAFL016 -> TRAFL017.\r\nNão pode ser informado simultaneamente com customerCode, mas um dos dois deve ser informado obrigatoriamente.",
+            "nullable": true
+          },
+          "invoiceCpf": {
+            "type": "string",
+            "description": "CPF a ser utilizado para documento fiscal. Se não informado será utilizado o documento do cliente.",
+            "nullable": true
+          },
+          "transactionDate": {
+            "type": "string",
+            "description": "Data da transação. Campo \"Data\" do quadro \"Transação\" do componente TRAFL016 -> TRAFL017.\r\nCaso a data não seja informada, será atribuida a data do servidor.",
+            "format": "date",
+            "nullable": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/TransactionStatusType"
+          },
+          "paymentConditionCode": {
+            "type": "integer",
+            "description": "Código da condição de pagamento. Campo \"Cond. pgto.\" do quadro \"Transação\" do componente TRAFL016 -> TRAFL017.",
+            "format": "int32"
+          },
+          "operationCode": {
+            "type": "integer",
+            "description": "Código da operação. Campo \"Operação\" do quadro \"Transação\" do componente TRAFL016 -> TRAFL017.",
+            "format": "int32"
+          },
+          "sellerCode": {
+            "type": "integer",
+            "description": "Código do vendedor. Campo \"Compr./Vend.\" do quadro \"Transação\" do componente TRAFL016 -> TRAFL017.\r\nNão pode ser informado simultaneamente com sellerCpfCnpj, mas um dos dois deve ser informado obrigatoriamente.",
+            "format": "int32",
+            "nullable": true
+          },
+          "sellerCpfCnpj": {
+            "type": "string",
+            "description": "Documento do vendedor. Campo \"Compr./Vend.\" do quadro \"Transação\" do componente TRAFL016 -> TRAFL017.\r\nNão pode ser informado simultaneamente com sellerCode, mas um dos dois deve ser informado obrigatoriamente.",
+            "nullable": true
+          },
+          "representactiveCode": {
+            "type": "integer",
+            "description": "Código do representante. Campo \"Representante\" do quadro \"Transação\" do componente TRAFL016 -> TRAFL017.\r\nNão pode ser informado simultaneamente com RepresentactiveCpfCnpj.",
+            "format": "int32",
+            "nullable": true
+          },
+          "representactiveCpfCnpj": {
+            "type": "string",
+            "description": "Documento do representante. Campo \"Representante\" do quadro \"Transação\" do componente TRAFL016 -> TRAFL017.\r\nNão pode ser informado simultaneamente com RepresentactiveCode.",
+            "nullable": true
+          },
+          "isPreSale": {
+            "type": "boolean",
+            "description": "Pré-venda. Campo indicador de pré-venda, caso enviado será gerado um número de pré-venda para a transação."
+          },
+          "checkout": {
+            "type": "string",
+            "description": "Utilizado no Virtual PDV.",
+            "nullable": true
+          },
+          "componentCode": {
+            "type": "string",
+            "description": "Componente origem transação. Campo \"Componente\" do componente TRAFL016 -> TRAFL017 -> Consulta adiciona -> Dados adicionais -> TRAFC024.\r\n<br>Tamanho máximo de 20 caracteres.",
+            "nullable": true
+          },
+          "paymentPlanCode": {
+            "type": "integer",
+            "description": "Codigo do Plano de pagamento selecionado, campo -> CD_PLANOPAG da tabela -> GER_PLANOPAG\r\n<br>Tamanho máximo de 20 caracteres.",
+            "format": "int32",
+            "nullable": true
+          },
+          "orderNumber": {
+            "type": "integer",
+            "description": "Número da comanda, campo -> NR_COMANDA da tabela -> TRA_TRANSACADIC\r\n<br>Tamanho máximo de 20 caracteres.",
+            "format": "int32",
+            "nullable": true
+          },
+          "mobileVersion": {
+            "type": "string",
+            "description": "Versao do terminal mobile do PDV, campo -> CD_VERSAOMOBILE da tabela -> TRA_TRANSACADIC\r\n<br>Tamanho máximo de 20 caracteres.",
+            "nullable": true
+          },
+          "peripheralPdvCode": {
+            "type": "string",
+            "description": "Código do periferico PDV, campo -> CD_PERIFERICOPDV da tabela -> TRA_TRANSACADIC\r\n<br>Tamanho máximo de 20 caracteres.",
+            "nullable": true
+          },
+          "versionPdv": {
+            "type": "string",
+            "description": "Versao da aplicação do PDV, campo -> CD_VERSAOPDV da tabela -> TRA_TRANSACADIC\r\n<br>Tamanho máximo de 20 caracteres.",
+            "nullable": true
+          },
+          "isFinalCNSR": {
+            "type": "boolean",
+            "description": " Campo \"Consumidor Final\" do componente PESFM010.\r\n**Importante:** \r\n  + Para utiliza-lo deve estar configurado um dos parâmetros \"CLIENTE_PDV\" ou \"CD_CLIENTE_PDV_EMP\".\r\n  + Não será necessário informar os campos \"CustomerCode\" ou \"CustomerCpfCnpj\", pois a inclusão do cliente será com base na informação do parâmetro."
+          },
+          "totalAmountTransaction": {
+            "type": "number",
+            "description": "Valor total líquido da transação. \r\n<br>Este valor é utilizado para conferência da soma dos itens e dos descontos aplicados.<br>Tamanho máximo: 12 números inteiros com 2 casas decimais.",
+            "format": "double"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionItemModel"
+            },
+            "nullable": true
+          },
+          "observations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionObservationModel"
+            },
+            "nullable": true
+          },
+          "invoiceObservations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionInvoiceObservationModel"
+            },
+            "nullable": true
+          },
+          "paymentPlanItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionPaymentPlanSimulationItemModel"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "InsertTransactionClassificationRelationshipCommand": {
+        "required": [
+          "branchCode",
+          "classifications",
+          "transactionCode",
+          "transactionDate"
+        ],
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Código da empresa. Campo \"Empresa\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "format": "int32"
+          },
+          "transactionCode": {
+            "type": "integer",
+            "description": "Número da transação. Campo \"Número\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "format": "int32"
+          },
+          "transactionDate": {
+            "type": "string",
+            "description": "Data da transação. Campo \"Data\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "format": "date-time"
+          },
+          "classifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClassificationModel"
+            },
+            "description": "Lista de classificação"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Classificação da transação."
+      },
+      "InstallmentType": {
+        "enum": [
+          "Administrator",
+          "Owner"
+        ],
+        "type": "integer",
+        "description": "Tipo de Parcelarcelamento.\r\n<br>1 - Administrador <br>2 - Próprio ",
+        "format": "int32"
+      },
+      "InvoiceDataModel": {
+        "type": "object",
+        "properties": {
+          "operationsType": {
+            "type": "string",
+            "description": "Tipo operação. Campo \"Tipo operação\" do componente GERFM276 -> GERFL067\r\n<br>E - Entrada<br>S - Saída",
+            "nullable": true
+          },
+          "documentType": {
+            "type": "integer",
+            "description": "Tipo de documento emitido. Campo \"Tipo de documento emitido\" do componente GERFM276.\r\n<br>0 - Não definido<br>1 - Nota fiscal<br>2 - ECF não concomitante<br>3 - ECF concomitante",
+            "format": "int32",
+            "nullable": true
+          },
+          "documentModel": {
+            "type": "integer",
+            "description": "Modelo de documento emitido. Campo \"Modelo de documento emitido\" do componente GERFM276.\r\n<br>01 - Nota Fiscal Modelo 1 ou 1A<br>02 - Nota Fiscal Venda ao Consumidor Final (Talão)<br>03 - Nota Fiscal de Produtor<br>06 - Nota Fiscal de Energia Elétrica<br>07 - Nota Fiscal de Serviço de Transporte<br>08 - Conhecimento de Transporte Rodoviário de Cargas<br>09 - Conhecimento de Transporte Aquário de Cargas<br>10 - Conhecimento Aério<br>11 - Conhecimento de Transporte Ferroviário de Cargas<br>13 - Bilhete de Passagem Rodoviário<br>14 - Bilhete de Passagem Aquaviário<br>15 - Bilhete de Passagem e Nota de Bagagem<br>16 - Bilhete de Passagem e Ferroviário<br>17 - Despacho de Transporte<br>18 - Resumo de Movimento Diário<br>20 - Resumo de Movimento Diário<br>21 - Nota Fiscal de Serviço de Comunicação<br>22 - Nota Fiscal de Serviço de Telecomunicação<br>23 - GNRE<br>24 - Autorização de Carregamento e Transporte<br>25 - Manifesto de Carga<br>26 - Conhecimento de Transporte Multimodal de cargas<br>27 - Nota Fiscal de Transporte Ferroviário de cargas<br>28 - Nota Fiscal/Conta de Fornecimento de Gás Canalizado<br>29 - Nota Fiscal/Conta de Fornecimento de Água Canalizada<br>35 - Documento interno<br>55 - Nota Fiscal Eletrônica (NF-e)<br>57 - Conhecimento de Transporte Eletrônico (CT-e)<br>58 - Manifesto Eletrônico de Documentos Fiscais (MDF-e)<br>59 - Cupom Fiscal Eletrônico (CF-e)<br>65 - Nota Fiscal Consumidor Eletrônica (NFC-e)<br>66 - Nota Fiscal de Energia Elétrica Eletrônica (NF3-e)<br>67 - Conhecimento de Transporte Eletrônico para Outros Serviços(CT-e OS)<br>70 - Nota Fiscal Avulsa<br>71 - Cupom Fiscal<br>72 - Cupom Fiscal Bilhete de Passagem<br>73 - Conhecimento de Transporte de Cargas Avulso<br>80 - Nota Fiscal de Prestação de Serviço (ISSQN)<br>81 - Nota Fiscal de Serviço Eletrônica (NFS-e)<br>82 - Fatura<br>85 - Complemento de ICMS<br>86 - Complemento de IPI<br>88 - Conhecimento de transporte eletrônico (CT-e) Complementar de ICMS",
+            "format": "int32",
+            "nullable": true
+          },
+          "taxRuleCode": {
+            "type": "integer",
+            "description": "Código da regra fiscal. Primeiro campo \"Regra fiscal\" do componente GERFM276.",
+            "format": "int32",
+            "nullable": true
+          },
+          "operationMode": {
+            "type": "string",
+            "description": "Modalidade da operação. Campo \"Modalidade da operação\" do componente GERFM276.\r\n<br>1 - Serviço<br>2 - Transferência<br>3 - Devolução<br>4 - Venda/Compra<br>5 - Outras Saídas/Entradas<br>6 - Produção<br>7 - Condicional<br>8 - Troca<br>9 - Reemissão<br>A - Produção de terceiro<br>B - Venda ambulante<br>C - Consignação<br>D - Complemento ICMS/IPI<br>E - Conhecimento de frete<br>F - Remessa/Retorno avulso<br>G - Nota fiscal CIAP<br>H - Adiantamento",
+            "nullable": true
+          },
+          "purposeNFE": {
+            "type": "integer",
+            "description": "Finalidade da nfe. Campo \"Finalidade da NF-e\" do componente GERFM276.\r\n<br>1 - NF-e normal<br>2 - NF-e complementar<br>3 - NF-e de ajuste<br>4 - Devolução de mercadoria",
+            "format": "int32",
+            "nullable": true
+          },
+          "presenceIndicator": {
+            "type": "integer",
+            "description": "Indicador de presença. Campo \"Indicador de presenção da NF-e/NFC-e\" do componente GERFM276.\r\n<br>1 - Não se aplica<br>2 - Operação presencial<br>3 - Operação não presencial, pela Internet<br>4 - Operação não presencial, Teleatendimento<br>5 - NFC-e em operação com entrega em domicícilo<br>6 - Operação não presencial, outros<br>7 - Operação presencial, fora do estabelecimento",
+            "format": "int32",
+            "nullable": true
+          },
+          "danfeType": {
+            "type": "integer",
+            "description": "Tipo de DANFE. Campo \"Tipo de DANFE\" do componente GERFM276.\r\n<br>1 - Sem geração de DANFE<br>2 - DANFE normal, Retrato<br>3 - DANFE normal, Paisagem<br>4 - DANFE Simplificado<br>5 - DANFE NFC-e<br>6 - DANFE NFC-e em mensagem eletrônica",
+            "format": "int32",
+            "nullable": true
+          },
+          "linkedOperationCode": {
+            "type": "integer",
+            "description": "Operação vinculada. Campo \"Operação vinculada\" do componente GERFM276.",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ItemPromotionalEngineModel": {
+        "type": "object",
+        "properties": {
+          "sequence": {
+            "type": "integer",
+            "description": "Código da sequência. Campo \"Sequência\" do componente TRAFL016 -> \"F12 na Transação\" -> TRAFL017 -> botão \"Motor promocional\" -> TRAFL088.\r\n<br>Tamanho máximo de 9 números inteiros.",
+            "format": "int32"
+          },
+          "engineSequence": {
+            "type": "integer",
+            "description": "Número do motor de promoção. Primeiro dado do campo \"Motor\" do componente TRAFL016 -> \"F12 na Transação\" -> TRAFL017 -> botão \"Motor promocional\" -> TRAFL088.\r\n<br>Tamanho máximo de 9 números inteiros.",
+            "format": "int32"
+          },
+          "engineDescription": {
+            "type": "string",
+            "description": "Descrição do motor de promoção. Segundo dado do campo \"Motor\" do componente TRAFL016 -> \"F12 na Transação\" -> TRAFL017 -> botão \"Motor promocional\" -> TRAFL088.\r\n<br>Tamanho máximo de 400 caracteres.",
+            "nullable": true
+          },
+          "mechanicsSequence": {
+            "type": "integer",
+            "description": "Número mecânica. Primeiro dado do campo \"Mecânica\" do componente TRAFL016 -> \"F12 na Transação\" -> TRAFL017 -> botão \"Motor promocional\" -> TRAFL088.\r\n<br>Tamanho máximo de 9 números inteiros.",
+            "format": "int32"
+          },
+          "mechanicsDescription": {
+            "type": "string",
+            "description": "Descrição mecânica. Primeiro dado do campo \"Mecânica\" do componente TRAFL016 -> \"F12 na Transação\" -> TRAFL017 -> botão \"Motor promocional\" -> TRAFL088.\r\n<br>Tamanho máximo de 400 caracteres.",
+            "nullable": true
+          },
+          "previousValue": {
+            "type": "number",
+            "description": "Valor anterior. Campo \"Vl. anterior\" do componente TRAFL016 -> \"F12 na Transação\" -> TRAFL017 -> botão \"Motor promocional\" -> TRAFL088.\r\n<br>Tamanho máximo de 12 números inteiros com 6 casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "currentValue": {
+            "type": "number",
+            "description": "Valor atual. Campo \"Vl. atual\" do componente TRAFL016 -> \"F12 na Transação\" -> TRAFL017 -> botão \"Motor promocional\" -> TRAFL088.\r\n<br>Tamanho máximo de 12 números inteiros com 6 casas decimais.",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Motor promocional item."
+      },
+      "MovementType": {
+        "enum": [
+          "Entry",
+          "NotMovement",
+          "Exit"
+        ],
+        "type": "integer",
+        "description": "Tipo de movimento. Campo \"Tipo movimento\" do quadro \"Movimentação de estoque da operação\" do componente GERFM276.\r\n<br>E - Entrada<br>N - Não movimenta<br>S - Saída",
+        "format": "int32"
+      },
+      "NegativeBalanceType": {
+        "enum": [
+          "Stock",
+          "StockAddTransactionEntry",
+          "StockSubtractTransactionExit",
+          "StockAddTransactionEntrySubtractTransactionExit",
+          "StockSubtractTransactionExitSubtractSugestionQuantity",
+          "StockAddTransactionEntrySubractTransactionExitSubtractSugestionQuantity",
+          "StockAddTransactionEntrySubractTransactionExitSubtractSalesOrder"
+        ],
+        "type": "integer",
+        "description": "Tipo de validação saldo negativo. Campo \"Tipo de validação saldo negativo\" do componente GERFM276.\r\n<br>1 - Estoque<br>2 - Estoque + transação entrada<br>3 - Estoque - transação saída<br>4 - Estoque + transação entrada - transação saída<br>5 - Estoque - transação saída - quantidade sugestão<br>6 - Estoque + transação entrada - transação saída - quantidade sugestão<br>7 - Estoque + transação entrada - transação saída - pedido venda",
+        "format": "int32"
+      },
+      "OmniFinancialCompensationRequestCommand": {
+        "required": [
+          "accessKey",
+          "document",
+          "items",
+          "orderCode",
+          "splitCode",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "orderCode": {
+            "type": "string",
+            "description": "Código do pedido Omni."
+          },
+          "splitCode": {
+            "type": "string",
+            "description": "Código do pedido filho."
+          },
+          "document": {
+            "type": "string",
+            "description": "CNPJ da empresa do faturamento."
+          },
+          "value": {
+            "type": "number",
+            "description": "Valor do pedido faturado.",
+            "format": "double"
+          },
+          "accessKey": {
+            "type": "string",
+            "description": "Chave de acesso da NF-e."
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OmniProductCompensationModel"
+            },
+            "description": "Lista de item de compensação financeira Omni."
+          }
+        },
+        "additionalProperties": false
+      },
+      "OmniProductCompensationModel": {
+        "required": [
+          "integrationCode",
+          "productCode"
+        ],
+        "type": "object",
+        "properties": {
+          "productCode": {
+            "type": "integer",
+            "description": "Código reduzido do produto.",
+            "format": "int32"
+          },
+          "integrationCode": {
+            "type": "string",
+            "description": "Sequência do item de integração do pedido Omni."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Itens de compensação financeira Omni."
+      },
+      "OperationBalanceDataModel": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "Código do saldo. Campo \"Saldo\" do componente GERFM276.",
+            "format": "int32"
+          },
+          "description": {
+            "type": "string",
+            "description": "Descrição do saldo. Campo \"Descrição saldo\" do componente GERFM276.",
+            "nullable": true
+          },
+          "historicCode": {
+            "type": "integer",
+            "description": "Código do histórico. Campo \"Histórico\" do componente GERFM276.",
+            "format": "int32",
+            "nullable": true
+          },
+          "historicDescription": {
+            "type": "string",
+            "description": "Descrição do histórico. Campo \"Descrição histórico\" do componente GERFM276.",
+            "nullable": true
+          },
+          "movementType": {
+            "$ref": "#/components/schemas/MovementType"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "description": "Indica se é o saldo padrão. Campo de controle interno do TOTVS Moda gravado pelo componente GERFM276.",
+            "nullable": true
+          },
+          "isKardex": {
+            "type": "boolean",
+            "description": "Indica kardex. Campo de controle interno do TOTVS Moda gravado pelo componente GERFM276.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Saldos da operação. Quadro \"Movimentação de estoque da operação\" do componente GERFM276."
+      },
+      "OperationClassificationDataModel": {
+        "type": "object",
+        "properties": {
+          "typeCode": {
+            "type": "integer",
+            "description": "Tipo da classificação. Campo \"Tipo classificação\" do componente GERFM276.",
+            "format": "int32"
+          },
+          "typeName": {
+            "type": "string",
+            "description": "Descrição da classificação. Campo \"Descrição do tipo de classificação\" do componente GERFM276.",
+            "nullable": true
+          },
+          "code": {
+            "type": "string",
+            "description": "Código da classificação. Campo \"Classificação\" do componente GERFM276.",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "description": "Descrição da classificação. Campo \"Descrição classificação\" do componente GERFM276.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Classificações da operação. Quadro \"Classificação da operação\" do componente GERFM276."
+      },
+      "OperationModel": {
+        "type": "object",
+        "properties": {
+          "operationCode": {
+            "type": "integer",
+            "description": "Código da operação. Campo \"Código da operação\" do componente GERFM276.",
+            "format": "int32"
+          },
+          "description": {
+            "type": "string",
+            "description": "Descrição da operação. Segundo campo \"Código da operação\" do componente GERFM276.",
+            "nullable": true
+          },
+          "isFinancial": {
+            "type": "boolean",
+            "description": "Indicador de financeiro. Campo \"Movimenta financeiro\" do componente GERFM276.",
+            "nullable": true
+          },
+          "isInactive": {
+            "type": "boolean",
+            "description": "Operação Inativa/Ativa. Campo \"Situação\" do componente GERFM276\r\n<br>True - Inativa<br>False - Ativa",
+            "nullable": true
+          },
+          "maxChangeFilterDate": {
+            "type": "string",
+            "description": "Maior data de alteração de intervalo de data. Campo populado apenas quando os campos \"startChangeDate\" e \"endChangeDate\" são informados.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "invoiceData": {
+            "$ref": "#/components/schemas/InvoiceDataModel"
+          },
+          "calculations": {
+            "$ref": "#/components/schemas/CalculationsDataModel"
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OperationValueDataModel"
+            },
+            "nullable": true
+          },
+          "balances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OperationBalanceDataModel"
+            },
+            "nullable": true
+          },
+          "classifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OperationClassificationDataModel"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "OperationResponseModel": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "description": "Total de registros obtidos na consulta.",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "description": "Total de páginas da consulta.",
+            "format": "int32"
+          },
+          "hasNext": {
+            "type": "boolean",
+            "description": "Possui mais páginas."
+          },
+          "totalItems": {
+            "type": "integer",
+            "description": "Total de registros da lista de itens.",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OperationModel"
+            },
+            "description": "Lista de itens.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "OperationValueDataModel": {
+        "type": "object",
+        "properties": {
+          "valueType": {
+            "$ref": "#/components/schemas/ValuesType"
+          },
+          "code": {
+            "type": "integer",
+            "description": "Código do valor. Campo \"Código valor\" do componente GERFM276.",
+            "format": "int32"
+          },
+          "description": {
+            "type": "string",
+            "description": "Descrição do valor. Segundo campo do campo \"Código valor\" do componente GERFM276.",
+            "nullable": true
+          },
+          "isDefault": {
+            "type": "boolean",
+            "description": "Indica se é o valor padrão. Campo de controle interno do TOTVS Moda gravado pelo componente GERFM276.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Valor da operação. Quadro \"Valor da operação\" do componente GERFM276."
+      },
+      "OrderBalanceType": {
+        "enum": [
+          "NotValidateBalance",
+          "ValidStock",
+          "ValidStockPurchaseOrder",
+          "ValidStockPurchaseOrderProductionOrder",
+          "ValidPurchaseOrderMaterial",
+          "ValidPlanningBatchColor",
+          "ValidPlanningBatch",
+          "ValidPlanningBatchPrev",
+          "Configurable"
+        ],
+        "type": "integer",
+        "description": "Tipo de validação saldo pedido. Campo \"Tipo de validação saldo pedido\" do componente GERFM276.\r\n<br>0 - Não valida saldo<br>1 - Valida para estoque<br>2 - Valida para estoque / pedido compra<br>3 - Valida para estoque / pedido compra/ OP<br>4 - Valida para pedido compra matéria-prima<br>5 - Valida para lote planejamento venda(cor)<br>6 - Valida para lote planejamento venda(item)<br>7 - Valida para lote planejamento venda prev<br>8 - Confíguravel",
+        "format": "int32"
+      },
+      "PaymentConditionDataOutDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "description": "Total de registros obtidos na consulta.",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "description": "Total de páginas da consulta.",
+            "format": "int32"
+          },
+          "hasNext": {
+            "type": "boolean",
+            "description": "Possui mais páginas."
+          },
+          "totalItems": {
+            "type": "integer",
+            "description": "Total de registros da lista de itens.",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentConditionModel"
+            },
+            "description": "Lista de itens.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PaymentConditionModel": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "Campo código de condição de pagamento. Primeiro campo \"Con. pgto\" do componente GERFM001.",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string",
+            "description": "Campo descrição da condição de pagamento. Segundo campo \"Con. pgto\" do componente GERFM001.",
+            "nullable": true
+          },
+          "installment": {
+            "type": "integer",
+            "description": "Campo número de parcela. Campo \"Nr. parcela\" do componente GERFM001.",
+            "format": "int32",
+            "nullable": true
+          },
+          "discountPercentage": {
+            "type": "number",
+            "description": "Campo percentual de desconto. Campo \"% Desconto\" do componente GERFM001.",
+            "format": "double",
+            "nullable": true
+          },
+          "interestPercentage": {
+            "type": "number",
+            "description": "Campo percentual de juro. Campo \"% Juro\" do componente GERFM001.",
+            "format": "double",
+            "nullable": true
+          },
+          "isBlocked": {
+            "type": "boolean",
+            "description": "Campo bloqueado. Campo \"Bloqueado\" do componente GERFM001.",
+            "nullable": true
+          },
+          "installmentDays": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Lista com o numero de dias referente a cada parcela. Coluna \"Nr. dias\" do componente GERFM001.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PaymentPlanItemModel": {
+        "type": "object",
+        "properties": {
+          "documentType": {
+            "$ref": "#/components/schemas/DocumentType"
+          },
+          "installmentQuantity": {
+            "type": "integer",
+            "description": "Quantidade de parcelas.",
+            "format": "int32",
+            "nullable": true
+          },
+          "mounthStartDueDate": {
+            "type": "integer",
+            "description": "Mes inicio do vencimento.",
+            "format": "int32",
+            "nullable": true
+          },
+          "percentVariation": {
+            "type": "number",
+            "description": "Variação da capa em %.",
+            "format": "double",
+            "nullable": true
+          },
+          "quantityMounthStartDueDate": {
+            "type": "integer",
+            "description": "Quantidade de meses para iniciar o vencimento.",
+            "format": "int32",
+            "nullable": true
+          },
+          "minimumValueToApplyVariation": {
+            "type": "number",
+            "description": "Valor minimo para aplicar a variação.",
+            "format": "double",
+            "nullable": true
+          },
+          "valueVariation": {
+            "type": "number",
+            "description": "Valor de variação.",
+            "format": "double",
+            "nullable": true
+          },
+          "integrationCode": {
+            "type": "integer",
+            "description": "Codigo de integração.",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PaymentPlanModel": {
+        "type": "object",
+        "properties": {
+          "planCode": {
+            "type": "integer",
+            "description": "Código do plano.",
+            "format": "int32"
+          },
+          "planName": {
+            "type": "string",
+            "description": "Nome do Plano.",
+            "nullable": true
+          },
+          "initialDate": {
+            "type": "string",
+            "description": "Data inicial de vigência do plano.",
+            "format": "date-time"
+          },
+          "finalDate": {
+            "type": "string",
+            "description": "Data onde encerra a vigência do plano.",
+            "format": "date-time"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusPlanType"
+          },
+          "isValidatePaymentEntry": {
+            "type": "boolean",
+            "description": "Valida Entrada do Pagamento."
+          },
+          "dueDateDay": {
+            "type": "integer",
+            "description": "Dia do Vencimento.",
+            "format": "int32",
+            "nullable": true
+          },
+          "percentVariation": {
+            "type": "number",
+            "description": "Variação em %.",
+            "format": "double",
+            "nullable": true
+          },
+          "paymentPlanItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentPlanItemModel"
+            },
+            "description": "Parcelas e forma de pagamento do plano.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PaymentPlanResponseModel": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "description": "Total de registros obtidos na consulta.",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "description": "Total de páginas da consulta.",
+            "format": "int32"
+          },
+          "hasNext": {
+            "type": "boolean",
+            "description": "Possui mais páginas."
+          },
+          "totalItems": {
+            "type": "integer",
+            "description": "Total de registros da lista de itens.",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentPlanModel"
+            },
+            "description": "Lista de itens.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PaymentPlanSimulateAdvanceModel": {
+        "required": [
+          "documentType"
+        ],
+        "type": "object",
+        "properties": {
+          "baseValue": {
+            "type": "number",
+            "description": "Valor bruto.",
+            "format": "double"
+          },
+          "variationValue": {
+            "type": "number",
+            "description": "Valor variação.",
+            "format": "double"
+          },
+          "value": {
+            "type": "number",
+            "description": "Valor líquido.",
+            "format": "double"
+          },
+          "integrationCode": {
+            "type": "integer",
+            "description": "Código do integrador.",
+            "format": "int32",
+            "nullable": true
+          },
+          "documentType": {
+            "$ref": "#/components/schemas/DocumentType"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Simulação de pagamento em adiantamento."
+      },
+      "PaymentPlanSimulateCardOperatorModel": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Quantidade de parcelas.",
+            "nullable": true
+          },
+          "documentTypeSequence": {
+            "type": "integer",
+            "description": "Identificador sequencia de forma de pagamento.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Operadora de cartão."
+      },
+      "PaymentPlanSimulateChashModel": {
+        "required": [
+          "documentType"
+        ],
+        "type": "object",
+        "properties": {
+          "baseValue": {
+            "type": "number",
+            "description": "Valor bruto.",
+            "format": "double"
+          },
+          "variationValue": {
+            "type": "number",
+            "description": "Valor variação.",
+            "format": "double"
+          },
+          "value": {
+            "type": "number",
+            "description": "Valor líquido.",
+            "format": "double"
+          },
+          "integrationCode": {
+            "type": "integer",
+            "description": "Código do integrador.",
+            "format": "int32",
+            "nullable": true
+          },
+          "documentType": {
+            "$ref": "#/components/schemas/DocumentType"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Simulação de pagamento em dinheiro."
+      },
+      "PaymentPlanSimulateCredevModel": {
+        "required": [
+          "documentType"
+        ],
+        "type": "object",
+        "properties": {
+          "baseValue": {
+            "type": "number",
+            "description": "Valor bruto.",
+            "format": "double"
+          },
+          "variationValue": {
+            "type": "number",
+            "description": "Valor variação.",
+            "format": "double"
+          },
+          "value": {
+            "type": "number",
+            "description": "Valor líquido.",
+            "format": "double"
+          },
+          "integrationCode": {
+            "type": "integer",
+            "description": "Código do integrador.",
+            "format": "int32",
+            "nullable": true
+          },
+          "documentType": {
+            "$ref": "#/components/schemas/DocumentType"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Simulação de pagamento em adiantamento."
+      },
+      "PaymentPlanSimulateCreditCardModel": {
+        "required": [
+          "documentType"
+        ],
+        "type": "object",
+        "properties": {
+          "baseValue": {
+            "type": "number",
+            "description": "Valor bruto.",
+            "format": "double"
+          },
+          "variationValue": {
+            "type": "number",
+            "description": "Valor variação.",
+            "format": "double"
+          },
+          "value": {
+            "type": "number",
+            "description": "Valor líquido.",
+            "format": "double"
+          },
+          "integrationCode": {
+            "type": "integer",
+            "description": "Código do integrador.",
+            "format": "int32",
+            "nullable": true
+          },
+          "documentType": {
+            "$ref": "#/components/schemas/DocumentType"
+          },
+          "installmentQuantity": {
+            "type": "integer",
+            "description": "Quantidade de parcelas.",
+            "format": "int32"
+          },
+          "installmentValue": {
+            "type": "number",
+            "description": "Valor da parcela.",
+            "format": "double"
+          },
+          "operators": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentPlanSimulateCardOperatorModel"
+            },
+            "description": "Lista de operadoras de cartão.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Simulação de pagamento em cartão de crédito."
+      },
+      "PaymentPlanSimulateDebitCardModel": {
+        "required": [
+          "documentType"
+        ],
+        "type": "object",
+        "properties": {
+          "baseValue": {
+            "type": "number",
+            "description": "Valor bruto.",
+            "format": "double"
+          },
+          "variationValue": {
+            "type": "number",
+            "description": "Valor variação.",
+            "format": "double"
+          },
+          "value": {
+            "type": "number",
+            "description": "Valor líquido.",
+            "format": "double"
+          },
+          "integrationCode": {
+            "type": "integer",
+            "description": "Código do integrador.",
+            "format": "int32",
+            "nullable": true
+          },
+          "documentType": {
+            "$ref": "#/components/schemas/DocumentType"
+          },
+          "operators": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentPlanSimulateCardOperatorModel"
+            },
+            "description": "Lista de operadoras de cartão.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Simulação de pagamento em cartão de débito."
+      },
+      "PaymentPlanSimulateInvoiceInstallmentInputModel": {
+        "required": [
+          "dueDate",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "dueDate": {
+            "type": "string",
+            "description": "Data de vencimento.",
+            "format": "date-time"
+          },
+          "value": {
+            "type": "number",
+            "description": "Valor parcela.",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Parcela de fatura."
+      },
+      "PaymentPlanSimulateInvoiceInstallmentOutputModel": {
+        "type": "object",
+        "properties": {
+          "dueDate": {
+            "type": "string",
+            "description": "Data de vencimento.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "value": {
+            "type": "number",
+            "description": "Valor parcela.",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Parcela de fatura."
+      },
+      "PaymentPlanSimulateInvoiceModel": {
+        "required": [
+          "documentType"
+        ],
+        "type": "object",
+        "properties": {
+          "baseValue": {
+            "type": "number",
+            "description": "Valor bruto.",
+            "format": "double"
+          },
+          "variationValue": {
+            "type": "number",
+            "description": "Valor variação.",
+            "format": "double"
+          },
+          "value": {
+            "type": "number",
+            "description": "Valor líquido.",
+            "format": "double"
+          },
+          "integrationCode": {
+            "type": "integer",
+            "description": "Código do integrador.",
+            "format": "int32",
+            "nullable": true
+          },
+          "documentType": {
+            "$ref": "#/components/schemas/DocumentType"
+          },
+          "installmentQuantity": {
+            "type": "integer",
+            "description": "Quantidade de parcelas.",
+            "format": "int32"
+          },
+          "installments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentPlanSimulateInvoiceInstallmentOutputModel"
+            },
+            "description": "Lista de parcelas.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Simulação de pagamento em fatura."
+      },
+      "PaymentPlanSimulateItemInputModel": {
+        "required": [
+          "documentType",
+          "documentTypeSequence",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "documentType": {
+            "$ref": "#/components/schemas/DocumentType"
+          },
+          "documentTypeSequence": {
+            "type": "integer",
+            "description": "Identificador sequencila de forma de pagamento.\r\n<br>Utilizado para 'Cartão de crédito' e 'Cartão de débito'.  Nas demais sempre será valor 1.",
+            "format": "int32"
+          },
+          "installmentQuantity": {
+            "type": "integer",
+            "description": "Quantidade de parcelas.\r\n<br>No caso de 'Cartão de crédito' e 'Fatura' o valor deve ser maior que 0.",
+            "format": "int32"
+          },
+          "value": {
+            "type": "number",
+            "description": "Valor do item.",
+            "format": "double"
+          },
+          "installments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentPlanSimulateInvoiceInstallmentInputModel"
+            },
+            "description": "Lista de parcelas.\r\n<br>Utilizado para 'Fatura'.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Item de pagamento."
+      },
+      "PaymentPlanSimulateItemOutputModel": {
+        "required": [
+          "documentType",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "documentType": {
+            "$ref": "#/components/schemas/DocumentType"
+          },
+          "documentTypeSequence": {
+            "type": "integer",
+            "description": "Identificador sequencila de forma de pagamento.",
+            "format": "int32"
+          },
+          "installmentQuantity": {
+            "type": "integer",
+            "description": "Quantidade de parcelas.",
+            "format": "int32"
+          },
+          "value": {
+            "type": "number",
+            "description": "Valor do item.",
+            "format": "double"
+          },
+          "installments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentPlanSimulateInvoiceInstallmentOutputModel"
+            },
+            "description": "Lista de parcelas.\r\n<br>Utilizado para 'Fatura'.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Item de pagamento."
+      },
+      "PaymentPlanSimulateModel": {
+        "type": "object",
+        "properties": {
+          "baseValue": {
+            "type": "number",
+            "description": "Valor bruto.",
+            "format": "double"
+          },
+          "variationValue": {
+            "type": "number",
+            "description": "Valor variação.",
+            "format": "double"
+          },
+          "value": {
+            "type": "number",
+            "description": "Valor líquido.",
+            "format": "double"
+          },
+          "integrationCode": {
+            "type": "integer",
+            "description": "Código do integrador.",
+            "format": "int32",
+            "nullable": true
+          },
+          "paymentItemValue": {
+            "type": "number",
+            "description": "Valor total dos lista de item de pagamento.",
+            "format": "double"
+          },
+          "remainderValue": {
+            "type": "number",
+            "description": "Valor restante para pagamento.",
+            "format": "double"
+          },
+          "simulationValue": {
+            "type": "number",
+            "description": "Valor base para cálculo de simulação.",
+            "format": "double"
+          },
+          "paymentItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentPlanSimulateItemOutputModel"
+            },
+            "description": "Lista de itens de pagamento.",
+            "nullable": true
+          },
+          "cashSimulation": {
+            "$ref": "#/components/schemas/PaymentPlanSimulateChashModel"
+          },
+          "advanceSimulation": {
+            "$ref": "#/components/schemas/PaymentPlanSimulateAdvanceModel"
+          },
+          "credevSimulation": {
+            "$ref": "#/components/schemas/PaymentPlanSimulateCredevModel"
+          },
+          "tefSimulations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentPlanSimulateTefModel"
+            },
+            "nullable": true
+          },
+          "pixSimulation": {
+            "$ref": "#/components/schemas/PaymentPlanSimulatePixModel"
+          },
+          "debitCardSimulation": {
+            "$ref": "#/components/schemas/PaymentPlanSimulateDebitCardModel"
+          },
+          "creditCardSimulations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentPlanSimulateCreditCardModel"
+            },
+            "description": "Lista de simulação de pagamento em cartão de crédito.",
+            "nullable": true
+          },
+          "invoiceSimulations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentPlanSimulateInvoiceModel"
+            },
+            "description": "Lista de simulação de pagamento em fatura.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PaymentPlanSimulatePixModel": {
+        "required": [
+          "documentType"
+        ],
+        "type": "object",
+        "properties": {
+          "baseValue": {
+            "type": "number",
+            "description": "Valor bruto.",
+            "format": "double"
+          },
+          "variationValue": {
+            "type": "number",
+            "description": "Valor variação.",
+            "format": "double"
+          },
+          "value": {
+            "type": "number",
+            "description": "Valor líquido.",
+            "format": "double"
+          },
+          "integrationCode": {
+            "type": "integer",
+            "description": "Código do integrador.",
+            "format": "int32",
+            "nullable": true
+          },
+          "documentType": {
+            "$ref": "#/components/schemas/DocumentType"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Simulação de pagamento em pix."
+      },
+      "PaymentPlanSimulateQuery": {
+        "required": [
+          "branchCode",
+          "paymentPlanCode",
+          "saleValue"
+        ],
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Código do plano de pagamento.",
+            "format": "int32"
+          },
+          "paymentPlanCode": {
+            "type": "integer",
+            "description": "Código do plano de pagamento.",
+            "format": "int32"
+          },
+          "saleValue": {
+            "type": "number",
+            "description": "Valor da venda.",
+            "format": "double"
+          },
+          "simulationValue": {
+            "type": "number",
+            "description": "Valor base para cálculo de simulação.\r\n<br>Em caso de 0 sera utilizado o valor da venda.",
+            "format": "double"
+          },
+          "paymentItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentPlanSimulateItemInputModel"
+            },
+            "description": "Lista de itens de pagamento.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PaymentPlanSimulateTefModel": {
+        "required": [
+          "documentType"
+        ],
+        "type": "object",
+        "properties": {
+          "baseValue": {
+            "type": "number",
+            "description": "Valor bruto.",
+            "format": "double"
+          },
+          "variationValue": {
+            "type": "number",
+            "description": "Valor variação.",
+            "format": "double"
+          },
+          "value": {
+            "type": "number",
+            "description": "Valor líquido.",
+            "format": "double"
+          },
+          "integrationCode": {
+            "type": "integer",
+            "description": "Código do integrador.",
+            "format": "int32",
+            "nullable": true
+          },
+          "documentType": {
+            "$ref": "#/components/schemas/DocumentType"
+          },
+          "installmentQuantity": {
+            "type": "integer",
+            "description": "Quantidade de parcelas.",
+            "format": "int32"
+          },
+          "installmentValue": {
+            "type": "number",
+            "description": "Valor da parcela.",
+            "format": "double"
+          },
+          "paymentConditionCode": {
+            "type": "integer",
+            "description": "Código de condição de pagamento.",
+            "format": "int32",
+            "nullable": true
+          },
+          "paymentConditionDescription": {
+            "type": "string",
+            "description": "Descrição da condição de pagamento.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Simulação de pagamento em TEF."
+      },
+      "ProductCountModel": {
+        "required": [
+          "productCode"
+        ],
+        "type": "object",
+        "properties": {
+          "productCode": {
+            "type": "integer",
+            "description": "Código do produto. Campo \"Produto\" do componente GERFM101.\r\n<br>Caso o campo \"productBarCode\" não seja informado, este campo será obrigatório",
+            "format": "int32"
+          },
+          "productBarCode": {
+            "type": "string",
+            "description": "Código de barras. Campo \"Código barras\" do componente GERFM101.\r\n<br>Caso o campo \"productCode\" não seja informado, este campo será obrigatório",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantidade. Campo \"Quantidade\" do componente GERFM101.\r\n<br>Quando não enviado será considerado 1.",
+            "format": "double"
+          },
+          "batchItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CountBatchItemsModel"
+            },
+            "description": "Lista de itens de lote.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "RelationshipCountCommand": {
+        "required": [
+          "branchCode",
+          "counts",
+          "transactionCode",
+          "transactionDate"
+        ],
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Código da empresa. Campo \"Empresa\" do componente TRAFL016.\r\n<br>Tamanho máximo de 4 números.",
+            "format": "int32"
+          },
+          "transactionCode": {
+            "type": "integer",
+            "description": "Número da transação. Campo \"Transação\" do componente TRAFL016.\r\n<br>Tamanho máximo de 9 números.",
+            "format": "int32"
+          },
+          "transactionDate": {
+            "type": "string",
+            "description": "Data da transação. Campo \"Data\" do componente TRAFL016.",
+            "format": "date"
+          },
+          "counts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CountModel"
+            },
+            "description": "Lista de contagem."
+          }
+        },
+        "additionalProperties": false
+      },
+      "RelationshipType": {
+        "enum": [
+          "Completion",
+          "RawMaterialMovement",
+          "ProductionOrderMovement"
+        ],
+        "type": "integer",
+        "description": "Tipo de relacionamento da Ordem de Produção com a Contagem. Campo \"Tipo relacionamento\" do componente PCPFM152.\r\n<br>1 - Finalização<br>2 - Movimentação de matéria prima<br>3 - Movimentação de ordem de produção",
+        "format": "int32"
+      },
+      "Severity": {
+        "enum": [
+          "Error",
+          "Warning",
+          "Info"
+        ],
+        "type": "integer",
+        "format": "int32"
+      },
+      "StatusCountType": {
+        "enum": [
+          "InProgress",
+          "Attended",
+          "Closed",
+          "Canceled",
+          "Grouped"
+        ],
+        "type": "integer",
+        "description": "Situação da contagem. Campo \"Situação\" do componente GERFM101.\r\n<br>1 - Em andamento<br>4 - Atendida<br>5 - Encerrada<br>6 - Cancelada<br>10 - Agrupada\r\n\r\n**Observação:** Para a inclusão caso não for informado o valor padrão será \"5 - Encerrada\".",
+        "format": "int32"
+      },
+      "StatusPlanType": {
+        "enum": [
+          "Normal",
+          "Inactive"
+        ],
+        "type": "integer",
+        "description": "Tipo de documento das faturas. Campo \"Tipo documento\" do componente FCRFM001\".\r\n<br>1 - Ativo<br>2 - Inativo",
+        "format": "int32"
+      },
+      "StatusTransactionType": {
+        "enum": [
+          "InProgress",
+          "BillingReleased",
+          "PartiallyAnswered",
+          "Attended",
+          "Closed",
+          "Canceled",
+          "PreBilled",
+          "BlockedForBilling",
+          "Recused",
+          "Grouped"
+        ],
+        "type": "integer",
+        "description": "Situação da transação. Campo \"Situação\" do quadro \"Transação\" do componente TRAFL016 -> TRAFL017.\r\n<br>1 - Em andamento<br>2 - Liberado para faturamento<br>3 - Parcialmente atendida<br>4 - Atendida<br>5 - Encerrada<br>6 - Cancelada<br>7 - Pré-faturada<br>8 - Bloqueada p/ faturamento<br>9 - Recusada<br>10 - Agrupada",
+        "format": "int32"
+      },
+      "SuccessProcessingModel": {
+        "type": "object",
+        "properties": {
+          "processingDate": {
+            "type": "string",
+            "description": "Data/hora de término do processamento.",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Dados de processamento bem sucedido."
+      },
+      "TransactionAdditionalItemDataModel": {
+        "type": "object",
+        "properties": {
+          "priceTable": {
+            "type": "integer",
+            "description": "Campo informado durante a inclusão de transações, não é listado nos componentes de consulta de transação.",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "items."
+      },
+      "TransactionAdditionalModel": {
+        "type": "object",
+        "properties": {
+          "simulationPercent": {
+            "type": "number",
+            "description": "Percentual de desconto informado no simulador",
+            "format": "double",
+            "nullable": true
+          },
+          "simulationValue": {
+            "type": "number",
+            "description": "Valor de desconto informado no simulador",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TransactionBatchItemsModel": {
+        "type": "object",
+        "properties": {
+          "barCode": {
+            "type": "string",
+            "description": "Código gerado automaticamente ou manualmente para controle de item de lote. Campo \"Lote fornecedor\" do componente PRDFM059.\r\n<br>Não pode ser informado simultaneamente com batchItems.branchCode, batchItems.Code, batchItems.sequence.<br>Tamanho máximo: 40 caracteres.",
+            "nullable": true
+          },
+          "branchCode": {
+            "type": "integer",
+            "description": "Código da empresa do lote. Campo \"Empresa\" do componente PRDFM059.\r\n<br>Não pode ser informado simultaneamente com batchItems.BarCode.<br>Tamanho máximo: 4 números.",
+            "format": "int32",
+            "nullable": true
+          },
+          "code": {
+            "type": "integer",
+            "description": "Código do lote. Campo \"Número lote\" do componente PRDFM059.\r\n<br>Não pode ser informado simultaneamente com batchItems.BarCode.<br>Tamanho máximo: 9 números.",
+            "format": "int32",
+            "nullable": true
+          },
+          "sequence": {
+            "type": "integer",
+            "description": "Número sequencia do item de lote. Campo \"Nr.\" do componente PRDFM059.\r\n<br>Não pode ser informado simultaneamente com batchItems.BarCode.<br>Tamanho máximo: 4 números.",
+            "format": "int32",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantidade solicitada para baixa do lote. Campo \"Quantidade lote\" do componente TRAFL017 -> \"Item\" -> \"Item Lote\".\r\n<br>Tamanho máximo: 9 números inteiros com 3 casas decimais.",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TransactionClassificationDataModel": {
+        "type": "object",
+        "properties": {
+          "typeCode": {
+            "type": "integer",
+            "description": "Código do tipo de classificação. Primeiro campo \"Tipo classificação\" do bloco \"Classificação da transação\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "format": "int32"
+          },
+          "typeName": {
+            "type": "string",
+            "description": "Nome do tipo de classificação. Segundo campo \"Tipo classificação\" do bloco \"Classificação da transação\" componente PRDFM009 -> \"Classificação\".",
+            "nullable": true
+          },
+          "code": {
+            "type": "string",
+            "description": "Código da classificação. Primeiro campo \"Classificação\" do bloco \"Classificação da transação\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome da classificação. Segundo campo \"Classificação\" do bloco \"Classificação da transação\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Classificação."
+      },
+      "TransactionClassificationRelationshipResponseModel": {
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Código da empresa. Campo \"Empresa\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "format": "int32"
+          },
+          "transactionCode": {
+            "type": "integer",
+            "description": "Número da transação. Campo \"Número\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "format": "int32"
+          },
+          "transactionDate": {
+            "type": "string",
+            "description": "Data da transação. Campo \"Data\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Classificação da transação."
+      },
+      "TransactionDataOutDto": {
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Código da empresa. Campo \"Empresa\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "format": "int32"
+          },
+          "transactionCode": {
+            "type": "integer",
+            "description": "Número da transação. Campo \"Número\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "format": "int32"
+          },
+          "transactionDate": {
+            "type": "string",
+            "description": "Data da transação. Campo \"Data\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "format": "date-time"
+          },
+          "customerCode": {
+            "type": "integer",
+            "description": "Código da pessoa da transação. Campo \"Código\" do componente TRAFL016.",
+            "format": "int32"
+          },
+          "lastchangeDate": {
+            "type": "string",
+            "description": "Data/hora da última atualização. Segundo campo \"Operador/Atualização\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "format": "date-time",
+            "nullable": true
+          },
+          "operationCode": {
+            "type": "integer",
+            "description": "Código da operação da transação. Campo \"Operação\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "format": "int32",
+            "nullable": true
+          },
+          "sellerCode": {
+            "type": "integer",
+            "description": "Código do vendedor/comprador. Campo \"Compr./Vend.\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "format": "int32",
+            "nullable": true
+          },
+          "guideCode": {
+            "type": "integer",
+            "description": "Código do guia. Campo \"Guia\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "format": "int32",
+            "nullable": true
+          },
+          "paymentConditionCode": {
+            "type": "integer",
+            "description": "Código da condição de pagamento. Campo \"Cond. pgto.\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "format": "int32",
+            "nullable": true
+          },
+          "priceTableCode": {
+            "type": "integer",
+            "description": "Código da tabela de preço Campo \"Tabela de preço\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "format": "int32",
+            "nullable": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusTransactionType"
+          },
+          "classifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionClassificationDataModel"
+            },
+            "description": "Lista de classificações.",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionItemsDataModel"
+            },
+            "description": "Lista de itens.",
+            "nullable": true
+          },
+          "originDestination": {
+            "$ref": "#/components/schemas/TransactionOriginDestinationModel"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Dados da transação."
+      },
+      "TransactionDestinationModel": {
+        "type": "object",
+        "properties": {
+          "branchCodeDestination": {
+            "type": "integer",
+            "description": "Código da empresa. Campo \"Emp.\" do componente TRAFL016 -> \"F12 na Transação -> Origem/Destino componente TRAFL039\".\r\n<br>Tamanho máximo: 4 caracteres.",
+            "format": "int32"
+          },
+          "transactionCodeDestination": {
+            "type": "integer",
+            "description": "Número da transação. Campo \"Transação\" do componente TRAFL016 -> \"F12 na Transação -> Origem/Destino componente TRAFL039\".\r\n<br>Tamanho máximo: 9 caracteres.",
+            "format": "int32"
+          },
+          "transactionDateDestination": {
+            "type": "string",
+            "description": "Data da transação. Campo \"Data\" do componente TRAFL016 -> \"F12 na Transação -> Origem/Destino componente TRAFL039\".",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TransactionInvoiceObservationModel": {
+        "type": "object",
+        "properties": {
+          "observation": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TransactionItemModel": {
+        "required": [
+          "cFOP",
+          "quantity",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "productCode": {
+            "type": "integer",
+            "description": "Código interno do produto. Campo \"Código\" do componente PRDFL001.\r\n<br>Não pode ser informado simultaneamente com productSku, mas um dos dois deve ser informado obrigatoriamente.<br>Tamanho máximo: 9 números.",
+            "format": "int32",
+            "nullable": true
+          },
+          "productSku": {
+            "type": "string",
+            "description": "Código de identificação única do produto. Campo do bloco \"Código barra\" do componente PRDFL001.\r\n<br>Não pode ser informado simultaneamente com productCode, mas um dos dois deve ser informado obrigatoriamente.<br>Tamanho máximo: 40 caracteres.",
+            "nullable": true
+          },
+          "descriptionProduct": {
+            "type": "string",
+            "description": "Descrição do produto. Segundo campo da coluna \"Produto\" da grade do bloco \"Item\" do componente TRAFL017 -> \"Item\".\r\n<br>Tamanho máximo: 60 caracteres.",
+            "nullable": true
+          },
+          "cfop": {
+            "type": "integer",
+            "description": "CFOP do produto. Campo \"CFOP\" do componente TRAFL017 -> \"Item\".\r\n<br>Tamanho máximo: 5 números inteiros.",
+            "format": "int32"
+          },
+          "taxRoleCode": {
+            "type": "integer",
+            "description": "Regra fiscal do produto. Campo \"Regra fiscal\" do componente TRAFL017 -> \"Item\".\r\n<br>Tamanho máximo: 6 números inteiros.",
+            "format": "int32",
+            "nullable": true
+          },
+          "sellerCode": {
+            "type": "integer",
+            "description": " Código do vendedor ou comprador. Campo \"Compr./Vend.\" do componente TRAFL017 -> \"Item\".\r\n<br>Não pode ser informado simultaneamente com sellerCpfCnpj.",
+            "format": "int32",
+            "nullable": true
+          },
+          "sellerCpfCnpj": {
+            "type": "string",
+            "description": "CPF ou CNPJ do vendedor ou comprador. Campo \"CPF/CNPJ\" do componente PESFM010.\r\n<br>Não pode ser informado simultaneamente com sellerCode.<br>Tamanho máximo: 14 caracteres.",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantidade solicitada. Campo da grade do bloco \"Item\" do componente TRAFL017 -> \"Item\".\r\n<br>Tamanho máximo: 9 números inteiros com 3 casas decimais.",
+            "format": "double"
+          },
+          "value": {
+            "type": "number",
+            "description": "Preço unitário. Campo \"Vl. unit. bruto\" do componente TRAFL017 -> \"Item\".\r\n<br>Tamanho máximo: 9 números inteiros com 3 casas decimais.",
+            "format": "double"
+          },
+          "discountValue": {
+            "type": "number",
+            "description": "Desconto unitário. Campo \"Vl. desconto\" do componente TRAFL017 -> \"Item\".\r\n<br>Tamanho máximo: 9 números inteiros com 3 casas decimais.",
+            "format": "double"
+          },
+          "priceTableCode": {
+            "type": "integer",
+            "description": "Tabela de preço do item da transação. Campo \"Tabela de preço\"  do componente TRAFM060 -> duplo clique  sobre o item da transação.",
+            "format": "int32",
+            "nullable": true
+          },
+          "batchItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionBatchItemsModel"
+            },
+            "nullable": true
+          },
+          "returnItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionReturnItemsModel"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TransactionItemsDataModel": {
+        "type": "object",
+        "properties": {
+          "productCode": {
+            "type": "integer",
+            "description": "Código do Produto. Campo \"Produto\" do componente TRAFL016 -> \"F12 na Transação\" botão \"Item\".",
+            "format": "int32",
+            "nullable": true
+          },
+          "measuredUnit": {
+            "type": "string",
+            "description": "Descritivo de especie do produto. Campo \"Esp\" do componente TRAFL016 -> \"F12 na Transação\" botão \"Item\".",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantidade de produto. Campo \"Qt\" do componente TRAFL016 -> \"F12 na Transação\" botão \"Item\".",
+            "format": "double"
+          },
+          "value": {
+            "type": "number",
+            "description": "Valor unitário bruto. Campo \"Vl. unit. bruto\" do componente TRAFL016 -> \"F12 na Transação\" botão \"Item\".",
+            "format": "double",
+            "nullable": true
+          },
+          "unitDiscountValue": {
+            "type": "number",
+            "description": "Valor unitário de desconto. Campo \"Vl.desc\" do componente TRAFL016 -> \"F12 na Transação\" botão \"Item\".",
+            "format": "double",
+            "nullable": true
+          },
+          "netValue": {
+            "type": "number",
+            "description": "Valor total liquido. Campo \"Vl.tot. liq\" do componente TRAFL016 -> \"F12 na Transação\" botão \"Item\".",
+            "format": "double",
+            "nullable": true
+          },
+          "sellerCode": {
+            "type": "integer",
+            "description": "Codigo do vendedor/comprador do item. Campo \"Cmp. /vend.\" do componente TRAFL016 -> \"F12 na Transação\" botão \"Item\".",
+            "format": "int32",
+            "nullable": true
+          },
+          "additionalItem": {
+            "$ref": "#/components/schemas/TransactionAdditionalItemDataModel"
+          },
+          "promotionalEngines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemPromotionalEngineModel"
+            },
+            "description": "Lista de motor promocional do item.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "items."
+      },
+      "TransactionObservationModel": {
+        "type": "object",
+        "properties": {
+          "observation": {
+            "type": "string",
+            "description": "Observação da transação. Campo \"Observação\"  do componente TRAFL017 -> \"Observação\" -> \"Transação\".\r\n<br>Tamanho máximo: 80 caracteres.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TransactionOriginDestinationModel": {
+        "type": "object",
+        "properties": {
+          "branchCodeOrigin": {
+            "type": "integer",
+            "description": "Código da empresa. Campo \"Emp.\" do componente TRAFL016 -> \"F12 na Transação -> Origem/Destino componente TRAFL039\".\r\n<br>Tamanho máximo: 4 caracteres.",
+            "format": "int32",
+            "nullable": true
+          },
+          "transactionCodeOrigin": {
+            "type": "integer",
+            "description": "Número da transação. Campo \"Transação\" do componente TRAFL016 -> \"F12 na Transação -> Origem/Destino componente TRAFL039\".\r\n<br>Tamanho máximo: 9 caracteres.",
+            "format": "int32",
+            "nullable": true
+          },
+          "transactionDateOrigin": {
+            "type": "string",
+            "description": "Data da transação. Campo \"Data\" do componente TRAFL016 -> \"F12 na Transação -> Origem/Destino componente TRAFL039\".",
+            "format": "date-time",
+            "nullable": true
+          },
+          "destination": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionDestinationModel"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TransactionPaymentPlanSimulationItemModel": {
+        "type": "object",
+        "properties": {
+          "documentType": {
+            "$ref": "#/components/schemas/DocumentType"
+          },
+          "documentTypeSequence": {
+            "type": "integer",
+            "description": "Numero sequencia referente ao tipo do documento.",
+            "format": "int32"
+          },
+          "installmentValue": {
+            "type": "number",
+            "description": "Valor referente a parcela.",
+            "format": "double"
+          },
+          "expirationDate": {
+            "type": "string",
+            "description": "Data de expiração do plano.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "invoiceClassificationTypeCode": {
+            "type": "integer",
+            "description": "Codigo do tipo classificação.",
+            "format": "int32",
+            "nullable": true
+          },
+          "invoiceClassificationCode": {
+            "type": "integer",
+            "description": "Codigo da classificação.",
+            "format": "int32",
+            "nullable": true
+          },
+          "installmentValueOrigin": {
+            "type": "number",
+            "description": "Valor Parcela origem.",
+            "format": "double",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "description": "Descrição adicional.",
+            "nullable": true
+          },
+          "paymentFormSequence": {
+            "type": "integer",
+            "description": "Sequecia da forma de pagamento",
+            "format": "int32",
+            "nullable": true
+          },
+          "integrationCode": {
+            "type": "integer",
+            "description": "Código de integração.",
+            "format": "int32",
+            "nullable": true
+          },
+          "installmentType": {
+            "$ref": "#/components/schemas/InstallmentType"
+          },
+          "isTef": {
+            "type": "boolean",
+            "description": "Bool se é Tef.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TransactionResponseModel": {
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Código da empresa. Campo \"Emp.\" do componente TRAFL016\".\r\n<br>Tamanho máximo: 4 caracteres.",
+            "format": "int32"
+          },
+          "transactionCode": {
+            "type": "integer",
+            "description": "Número da transação. Campo \"Transação\" do componente TRAFL016\".\r\n<br>Tamanho máximo: 9 caracteres.",
+            "format": "int32"
+          },
+          "transactionDate": {
+            "type": "string",
+            "description": "Data da transação. Campo \"Data\" do componente TRAFL016\".",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TransactionReturnItemsModel": {
+        "required": [
+          "branchCode",
+          "invoiceDate",
+          "invoiceNumber",
+          "quantity",
+          "sequence"
+        ],
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Código da empresa da fatura origem. Campo \"Empresa\" do frame \"Nota fiscal/cupom\" do componente TRAFP062.\r\n<br>Tamanho máximo: 4 números.",
+            "format": "int32"
+          },
+          "invoiceNumber": {
+            "type": "integer",
+            "description": "Número da fatura origem. Campo \"Número\" do frame \"Nota fiscal/cupom\" do componente TRAFP062.\r\n<br>Tamanho máximo: 6 números.",
+            "format": "int32"
+          },
+          "invoiceDate": {
+            "type": "string",
+            "description": "Data da fatura origem. Campo \"Data\" do frame \"Nota fiscal/cupom\" do componente TRAFP062.",
+            "format": "date-time"
+          },
+          "sequence": {
+            "type": "integer",
+            "description": "Item da fatura origem. Campo \"Item nota fiscal\" do frame \"Nota fiscal/cupom\" do componente TRAFP062.\r\n<br>Tamanho máximo: 4 números.",
+            "format": "int32"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantidade da fatura origem. Campo \"Qt. faturado\" do frame \"Nota fiscal/cupom\" do componente TRAFP062.\r\n<br>Tamanho máximo: 9 números inteiros com 3 casas decimais.",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TransactionSearchModel": {
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Código da empresa. Campo \"Empresa\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "format": "int32"
+          },
+          "transactionCode": {
+            "type": "integer",
+            "description": "Número da transação. Campo \"Número\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "format": "int32"
+          },
+          "transactionDate": {
+            "type": "string",
+            "description": "Data da transação. Campo \"Data\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "format": "date-time"
+          },
+          "customerCode": {
+            "type": "integer",
+            "description": "Código da pessoa da transação. Campo \"Código\" do componente TRAFL016.",
+            "format": "int32"
+          },
+          "lastchangeDate": {
+            "type": "string",
+            "description": "Data/hora da última atualização. Segundo campo \"Operador/Atualização\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "format": "date-time",
+            "nullable": true
+          },
+          "operationCode": {
+            "type": "integer",
+            "description": "Código da operação da transação. Campo \"Operação\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "format": "int32",
+            "nullable": true
+          },
+          "sellerCode": {
+            "type": "integer",
+            "description": "Código do vendedor/comprador. Campo \"Compr./Vend.\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "format": "int32",
+            "nullable": true
+          },
+          "guideCode": {
+            "type": "integer",
+            "description": "Código do guia. Campo \"Guia\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "format": "int32",
+            "nullable": true
+          },
+          "paymentConditionCode": {
+            "type": "integer",
+            "description": "Código da condição de pagamento. Campo \"Cond. pgto.\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "format": "int32",
+            "nullable": true
+          },
+          "priceTableCode": {
+            "type": "integer",
+            "description": "Código da tabela de preço Campo \"Tabela de preço\" do componente TRAFL016 -> \"F12 na Transação\".",
+            "format": "int32",
+            "nullable": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusTransactionType"
+          },
+          "maxChangeFilterDate": {
+            "type": "string",
+            "description": "Maior data de alteração dentro do filtro de intervalo de data. Campo populado apenas quando os campos \"StartChangeDate\" e \"EndChangeDate\" são informados.",
+            "format": "date-time"
+          },
+          "classifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionClassificationDataModel"
+            },
+            "description": "Lista de classificações.",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionItemsDataModel"
+            },
+            "description": "Lista de itens.",
+            "nullable": true
+          },
+          "originDestination": {
+            "$ref": "#/components/schemas/TransactionOriginDestinationModel"
+          },
+          "additionalInformation": {
+            "$ref": "#/components/schemas/TransactionAdditionalModel"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TransactionSearchResultModel": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "description": "Total de registros obtidos na consulta.",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "description": "Total de páginas da consulta.",
+            "format": "int32"
+          },
+          "hasNext": {
+            "type": "boolean",
+            "description": "Possui mais páginas."
+          },
+          "totalItems": {
+            "type": "integer",
+            "description": "Total de registros da lista de itens.",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionSearchModel"
+            },
+            "description": "Lista de itens.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TransactionStatusType": {
+        "enum": [
+          "InProgress",
+          "BlockedForBilling",
+          "InExternalProcess",
+          "InExternalEdition"
+        ],
+        "type": "integer",
+        "description": "Situação da transação. Campo \"Situação\" do quadro \"Transação\" do componente TRAFL016 -> TRAFL017.\r\n<br>1 - Em andamento",
+        "format": "int32"
+      },
+      "UpdateProductCountCommand": {
+        "required": [
+          "branchCode",
+          "countNumber"
+        ],
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "description": "Empresa da contagem. Campo \"Empresa\" do componente GERFM101.",
+            "format": "int32"
+          },
+          "countNumber": {
+            "type": "integer",
+            "description": "Número da contagem. Campo \"Número\" do componente GERFM101.",
+            "format": "int32"
+          },
+          "description": {
+            "type": "string",
+            "description": "Descrição da contagem. Campo a frente do campo \"Número\" do componente GERFM101.",
+            "nullable": true
+          },
+          "quantityVolume": {
+            "type": "integer",
+            "description": "Quantidade de volume. Campo \"Qt. volume\" do componente GERFM047.",
+            "format": "int32",
+            "nullable": true
+          },
+          "grossWeight": {
+            "type": "number",
+            "description": "Peso bruto. Campo \"Peso bruto\" do componente GERFM047.",
+            "format": "double",
+            "nullable": true
+          },
+          "netWeight": {
+            "type": "number",
+            "description": "Peso líquido. Campo \"Peso líquido\" do componente GERFM047.",
+            "format": "double",
+            "nullable": true
+          },
+          "measuredUnit": {
+            "type": "string",
+            "description": "Espécie. Campo \"Espécie\" do componente GERFM047.",
+            "nullable": true
+          },
+          "packagingTypeCode": {
+            "type": "integer",
+            "description": "Tipo de embalagem. Campo \"Tipo embalagem\" do componente GERFM047.",
+            "format": "int32",
+            "nullable": true
+          },
+          "cubage": {
+            "type": "number",
+            "description": "Cubagem. Campo \"Qt. cubagem\" do componente GERFM047.",
+            "format": "double",
+            "nullable": true
+          },
+          "personCode": {
+            "type": "integer",
+            "description": "Código da pessoa. Campo \"Pessoa\" do componente GERFM047.",
+            "format": "int32",
+            "nullable": true
+          },
+          "countType": {
+            "$ref": "#/components/schemas/CountType"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusCountType"
+          },
+          "separatorCode": {
+            "type": "integer",
+            "description": "Código do separador. Campo \"Separador\" do componente GERFM047.",
+            "format": "int32",
+            "nullable": true
+          },
+          "isManualVolume": {
+            "type": "boolean",
+            "description": "Indicador de volume manual. Campo \"Valume manual\" do componente GERFM047.",
+            "nullable": true
+          },
+          "seller": {
+            "$ref": "#/components/schemas/CountSellerModel"
+          },
+          "additionalFields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CountAdditionalFieldModel"
+            },
+            "description": "Lista de campo adicional.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidationFailure": {
+        "type": "object",
+        "properties": {
+          "propertyName": {
+            "type": "string",
+            "nullable": true
+          },
+          "errorMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "attemptedValue": {
+            "nullable": true
+          },
+          "customState": {
+            "nullable": true
+          },
+          "severity": {
+            "$ref": "#/components/schemas/Severity"
+          },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "formattedMessagePlaceholderValues": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValuesType": {
+        "enum": [
+          "Cost",
+          "Price"
+        ],
+        "type": "integer",
+        "description": "Tipo de valor da operação. Campo \"Tipo de valor\" do componente GERFM276.\r\n<br>P - Preço<br>C - Custo",
+        "format": "int32"
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "apiKey",
+        "description": "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        "name": "Authorization",
+        "in": "header"
+      }
+    }
+  },
+  "security": [
+    {
+      "Bearer": [ ]
+    }
+  ]
+}

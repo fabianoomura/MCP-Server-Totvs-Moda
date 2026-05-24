@@ -22,15 +22,46 @@ class PurchaseOrderTools:
             flt["branchCodeList"] = args["branchCodeList"]
         elif args.get("branchCode"):
             flt["branchCodeList"] = [args["branchCode"]]
-        for field in ("orderCodeList", "startDate", "endDate", "statusList",
-                      "supplierCodeList", "operationCodeList"):
+
+        filter_fields = (
+            "change",
+            "orderCodeList",
+            "supplierOrderCodeList",
+            "supplierCodeList",
+            "supplierCpfCnpjList",
+            "orderStatusList",
+            "operationCodeList",
+            "startBasePaymentDate",
+            "endBasePaymentDate",
+            "startDeliveryForecastDate",
+            "endDeliveryForecastDate",
+            "startDeliveryDeadlineDate",
+            "endDeliveryDeadlineDate",
+            "productCodeList",
+        )
+        for field in filter_fields:
             if args.get(field) is not None:
                 flt[field] = args[field]
+
+        # Backward-compatible aliases used by earlier MCP versions.
+        if args.get("statusList") is not None and "orderStatusList" not in flt:
+            flt["orderStatusList"] = args["statusList"]
+        if args.get("startDate") is not None or args.get("endDate") is not None:
+            flt.setdefault("change", {})
+            if args.get("startDate") is not None:
+                flt["change"]["startDate"] = args["startDate"]
+            if args.get("endDate") is not None:
+                flt["change"]["endDate"] = args["endDate"]
+
         body: dict[str, Any] = {
             "filter": flt,
             "page": args.get("page", 1),
             "pageSize": args.get("pageSize", 100),
         }
+        if args.get("expand"):
+            body["expand"] = args["expand"]
+        if args.get("order"):
+            body["order"] = args["order"]
         result = await self.client.post(f"{BASE}/search", body)
         return apply_fields(result, args)
 

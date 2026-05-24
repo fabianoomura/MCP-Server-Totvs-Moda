@@ -25,6 +25,7 @@ class AccountPayableTools:
             "branchCodeList": args["branchCodeList"],
         }
         for field in (
+            "change",
             "duplicateCodeList", "supplierCodeList", "bearerCodeList",
             "startIssueDate", "endIssueDate",
             "startExpiredDate", "endExpiredDate",
@@ -35,7 +36,7 @@ class AccountPayableTools:
             if args.get(field) is not None:
                 flt[field] = args[field]
 
-        if args.get("startChangeDate") or args.get("endChangeDate"):
+        if "change" not in flt and (args.get("startChangeDate") or args.get("endChangeDate")):
             flt["change"] = {k: v for k, v in {
                 "startDate": args.get("startChangeDate"),
                 "endDate": args.get("endChangeDate"),
@@ -88,3 +89,8 @@ class AccountPayableTools:
         args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/duplicates", body)
+
+    async def group_duplicates(self, args: dict[str, Any]) -> Any:
+        """POST /group-duplicates — ⚠️ Agrupa duplicatas a pagar."""
+        body = {k: v for k, v in args.items() if v is not None}
+        return await self.client.post(f"{BASE}/group-duplicates", body)

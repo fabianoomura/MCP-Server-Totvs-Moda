@@ -80,6 +80,39 @@ async def update_xxx(self, args: dict[str, Any]) -> Any:
 
 ---
 
+### 2.1. Padrao de upsert TOTVS
+
+Alguns endpoints da TOTVS se dividem em **incluir** e **alterar**. Nesses casos, o MCP nao deve deixar o agente escolher no escuro.
+
+Use estes dois fluxos:
+
+- `update -> create`: quando a intencao do usuario e "garantir valor atual". Ex.: preco/custo. Tenta alterar primeiro; se a API retornar `NotFound`, inclui.
+- `create -> update`: quando a intencao e "vincular/incluir se ainda nao existe". Ex.: classificacao/vinculo. Tenta incluir primeiro; se a API retornar `AlreadyExist`, altera.
+
+Helpers disponiveis:
+
+```python
+await client.upsert(
+    update_path="/api/totvsmoda/product/v2/values/update",
+    create_path="/api/totvsmoda/product/v2/values/create",
+    body=body,
+)
+
+await client.create_or_update(
+    create_path="/api/totvsmoda/product/v2/classification-relationship/create",
+    update_path="/api/totvsmoda/product/v2/classification-relationship/update",
+    body=body,
+)
+```
+
+Regras:
+
+- Fallback so deve acontecer em erro esperado: `NotFound` ou `AlreadyExist`.
+- Qualquer erro de validacao, permissao ou regra de negocio deve subir para o usuario.
+- Em lote misto, se a TOTVS informar quais itens ja existem, separe: novos em `create`, existentes em `update`.
+
+---
+
 ## 3. Padrão de Tool no `server.py`
 
 **Toda tool registrada no `server.py` deve ter:**

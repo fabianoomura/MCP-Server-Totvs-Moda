@@ -1,0 +1,1654 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "API Accounts Payable",
+    "description": "TOTVS.Moda API Swagger Surface",
+    "contact": {
+      "name": "TOTVS.Moda Atendimento",
+      "url": "https://totvssuporte.zendesk.com",
+      "email": "atendimentova@totvs.com.br"
+    },
+    "license": {
+      "name": "TOTVS",
+      "url": "https://www.totvs.com/"
+    },
+    "version": "2.1.07",
+    "Status": "True"
+  },
+  "paths": {
+    "/api/totvsmoda/accounts-payable/v2/duplicates": {
+      "post": {
+        "tags": [
+          "AccountsPayable"
+        ],
+        "summary": "Inclusão de duplicata.",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatedDuplicateCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatedDuplicateCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatedDuplicateCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessProcessingModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/accounts-payable/v2/duplicates/search": {
+      "post": {
+        "tags": [
+          "AccountsPayable"
+        ],
+        "summary": "Consulta de duplicata.",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DuplicateSearchRequestModel"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DuplicateSearchRequestModel"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DuplicateSearchRequestModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DuplicateSearchResponseModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/accounts-payable/v2/group-duplicates": {
+      "post": {
+        "tags": [
+          "AccountsPayable"
+        ],
+        "summary": "Agrupamento de duplicata.",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupDuplicateCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupDuplicateCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupDuplicateCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupedDuplicateResponseModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/totvsmoda/accounts-payable/v2/comissions-paid/search": {
+      "post": {
+        "tags": [
+          "Commission"
+        ],
+        "summary": "Obter os dados de fechamento de comissão.,",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClosingCommissionDataSearchRequestModel"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClosingCommissionDataSearchRequestModel"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClosingCommissionDataSearchRequestModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClosingCommissionDataSearchResponseModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainNotificationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AccountMovementResponseModel": {
+        "type": "object",
+        "properties": {
+          "movementDate": {
+            "type": "string",
+            "description": "Data de movimento. Campo \"Data\" da grade de movimento do componente FCCFM004.\r\n<br>Formato de data",
+            "format": "date-time"
+          },
+          "auxiliaryHistoryDescription": {
+            "type": "string",
+            "description": "Descrição do histórico auxiliar. Campo \"Histírico auxiliar\" da grade de movimento do componente FCCFM004.\r\n<br>Tamanho máximo de 60 caracteres.",
+            "nullable": true
+          },
+          "documentDescription": {
+            "type": "string",
+            "description": "Descrição do documento. Campo \"Documento\" da grade de movimento do componente FCCFM004.\r\n<br>Tamanho máximo de 15 caracteres.",
+            "nullable": true
+          },
+          "historyCode": {
+            "type": "integer",
+            "description": "Código da histórico. Campo \"Operação\" da grade de movimento do componente FCCFM004.\r\n<br>Tamanho máximo de 4 caracteres.",
+            "format": "int32"
+          },
+          "historyDescription": {
+            "type": "string",
+            "description": "Descrição do histórico. Campo \"Operação\" da grade de movimento do componente FCCFM004.\r\n<br>Tamanho máximo de 40 caracteres.",
+            "nullable": true
+          },
+          "launchValue": {
+            "type": "number",
+            "description": "Valor de lançamento. Campo \"Vl. lançto\" da grade de movimento do componente FCCFM004.\r\n<br>Tamanho máximo de 12 números inteiros com 2 casas decimais.",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdvanceDiscountType": {
+        "enum": [
+          "None",
+          "FixedValueDiscountExpiredDate",
+          "FixedPercentageDiscountExpiredDate",
+          "ValueDiscountAntecipationBusyDay",
+          "ValueDiscountAntecipationBusinessDay",
+          "PercentageOverValueNominalBusyDay",
+          "PercentageOverValueNominalBusinessDay",
+          "DiscountCancellation"
+        ],
+        "type": "integer",
+        "description": "Tipo de desconto antecipação. Campos \"Tipo pontual\", \"Tipo desconto 1\" e \"Tipo desconto 2\" do componente FCPFM004.\r\n<br>0 - Nenhum<br>1 - Valor fixo de desconto até o vencimento<br>2 - Percentual fixo de desconto até o vencimento<br>3 - Valor de desconto por antecipação dia corrido<br>4 - Valor de desconto por antecipação dia útil<br>5 - Percentual sobre o valor nominal dia corrido<br>6 - Percentual sobre o valor nominal dia útil",
+        "format": "int32"
+      },
+      "BillingAcceptModel": {
+        "type": "object",
+        "properties": {
+          "barCode": {
+            "type": "string",
+            "description": "Código de barras da duplicata. Campo \"Código de barras\" do frame \"Aceite\" do componente FCPFM007. FCPFM004 -> Botão \"Código barras...\".",
+            "nullable": true
+          },
+          "assignorCnpj": {
+            "type": "string",
+            "description": "CNPJ do cedente. Campo \"CNPJ cedente\" do frame \"Aceite\" do componente FCPFM007. FCPFM004 -> Botão \"Código barras...\".",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BusinessUnitModel": {
+        "type": "object",
+        "properties": {
+          "classificationCode": {
+            "type": "string",
+            "description": "Código da unidade de negócio. Campo \"Código\" do frame \"Unidade de negócio\" do componente FCPFM030. FCPFM004 -> Botão \"Outras inf...\", FCMFP015-> Botão \"Unidade negócio...\".\r\n<br>Tamanho máximo: 10 caracteres",
+            "nullable": true
+          },
+          "proratedPercentage": {
+            "type": "number",
+            "description": "Percentual de ratio. Campo \"% Rateio\" do frame \"Unidade de negócio\" do componente FCPFM030. FCPFM004 -> Botão \"Outras inf...\", FCMFP015-> Botão \"Unidade negócio...\".\r\n<br>Tamanho máximo: 3 Inteiros com 6 casas decimais",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ClosingCommissionDataFilterModel": {
+        "required": [
+          "closingCompanyCode"
+        ],
+        "type": "object",
+        "properties": {
+          "closingCompanyCode": {
+            "type": "integer",
+            "description": "Código da empresa do fechamento da comissão. Frame Fechamento - Campo Emp. - do componente COMFC008 -> \"Detalhe\" COMFD008.\r\n<br>Tamanho máximo de 4 caracteres",
+            "format": "int32"
+          },
+          "closingCode": {
+            "type": "integer",
+            "description": "Número do fechamento da comissão. Frame Fechamento - Campo Fechamento - do componente COMFC008 -> \"Detalhe\" COMFD008.\r\n<br>Tamanho máximo de 9 caracteres",
+            "format": "int32",
+            "nullable": true
+          },
+          "startClosingDate": {
+            "type": "string",
+            "description": "Data inicial do Fechamento. Frame Fechamento - Campo Data - do componente COMFC008 -> \"Detalhe\" COMFD008.\r\n<br>Formato de data",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endClosingDate": {
+            "type": "string",
+            "description": "Data final do Fechamento. Frame Fechamento - Campo Data - do componente COMFC008 -> \"Detalhe\" COMFD008.\r\n<br>Formato de data",
+            "format": "date-time",
+            "nullable": true
+          },
+          "commissionedCodeList": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Lista de código do comissionado. Componente COMFC008 -> \"Detalhe\" COMFD008 -> Frame Resumo por comissionado. Campo \"Comissionado\".\r\n<br>Tamanho máximo de 9 caracteres",
+            "nullable": true
+          },
+          "commissionedCpfCnpjList": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Lista de código CPF/CNPJ do comissionado. Componente COMFC008 -> \"Detalhe\" COMFD008 -> Frame Resumo por comissionado. Campo \"Comissionado\".\r\n<br>Tamanho máximo de 14 caracteres",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ClosingCommissionDataOutModel": {
+        "type": "object",
+        "properties": {
+          "closingBranchCode": {
+            "type": "integer",
+            "description": "Código da empresa do fechamento da comissão. Frame Fechamento - Campo Emp. - do componente COMFC008.\r\n<br>Tamanho máximo de 4 caracteres",
+            "format": "int32"
+          },
+          "closingDate": {
+            "type": "string",
+            "description": "Data do fechamento da comissão. Frame Fechamento - Campo Data - do componente COMFC008.\r\n<br>Formato de data",
+            "format": "date-time"
+          },
+          "closingCode": {
+            "type": "integer",
+            "description": "Código do fechamento da comissão. Frame Fechamento - Campo Fechamento - do componente COMFC008.\r\n<br>Tamanho máximo de 9 caracteres",
+            "format": "int32"
+          },
+          "commissionedCpfCnpj": {
+            "type": "string",
+            "description": "CPF ou CNPJ do comissionado vinculado à pessoa do comissionado cadastrada no componente PESFM010.\r\nCampo \"Comissionado\" do Frame \"Comissionado\" do componente FCRFM001.\r\n<br>Tamanho máximo de 14 caracteres",
+            "nullable": true
+          },
+          "commissionedName": {
+            "type": "string",
+            "description": "Nome do comissionado vinculado à pessoa do comissionado cadastrada no componente PESFM010.\r\nCampo \"Comissionado\" do Frame \"Comissionado\" do componente FCRFM001.",
+            "nullable": true
+          },
+          "commissionStatus": {
+            "type": "integer",
+            "description": "Situação da comissão. Campo \"Situação\" do bloco \"Comissionado\" do componente FCRFM001.\r\n<br>0 Normal<br>1 Excluida<br>2 Transferida<br>3 Transferida recebimento<br>4 Trocado comissionado<br>5 Responsabilidade<br>6 Abatida por exportação<br>9 Cancelada",
+            "format": "int32"
+          },
+          "valueBilling": {
+            "type": "number",
+            "description": "Valor de faturamento. Frame Fechamento - Campo Faturamento/Valor - do componente COMFC008.\r\n<br>Tamanho máximo: 12 caracteres mais 2 caracteres para casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "valueBillingCommission": {
+            "type": "number",
+            "description": "Valor de comissão de faturamento. Frame Fechamento - Campo Faturamento/Comissão - do componente COMFC008.\r\n<br>Tamanho máximo: 12 caracteres mais 2 caracteres para casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "valueReceiving": {
+            "type": "number",
+            "description": "Valor de recebimento. Frame Fechamento - Campo Recebimento/Valor - do componente COMFC008.\r\n<br>Tamanho máximo: 12 caracteres mais 2 caracteres para casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "valueReceivingCommission": {
+            "type": "number",
+            "description": "Valor de comissão de recebimento. Frame Fechamento - Campo Recebimento/Comissão - do componente COMFC008.\r\n<br>Tamanho máximo: 12 caracteres mais 2 caracteres para casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "irrfValue": {
+            "type": "number",
+            "description": "Valor IRRF. Frame Fechamento - Campo Valor total/IRRF - do componente COMFC008.\r\n<br>Tamanho máximo: 12 caracteres mais 2 caracteres para casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "issqnValue": {
+            "type": "number",
+            "description": "Valor ISSQN. Frame Resumo por comissionado - Campo ISSQN - do componente COMFP001.\r\n<br>Tamanho máximo: 12 caracteres mais 2 caracteres para casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "valueRebate": {
+            "type": "number",
+            "description": "Valor de abatimento. Frame Fechamento - Campo Abatimento/Valor - do componente COMFC008.\r\n<br>Tamanho máximo: 12 caracteres mais 2 caracteres para casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "valueRebateBilling": {
+            "type": "number",
+            "description": "Valor de abatimento de faturamento. Frame Fechamento - Campo Abatimento/Valor - do componente COMFC008.\r\n<br>Tamanho máximo: 12 caracteres mais 2 caracteres para casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "valueRebateReceiving": {
+            "type": "number",
+            "description": "Valor de abatimento de recebimento. Frame Fechamento - Campo Abatimento/Valor - do componente COMFC008.\r\n<br>Tamanho máximo: 12 caracteres mais 2 caracteres para casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "discountValue": {
+            "type": "number",
+            "description": "Valor de desconto. Frame Resumo por comissionado - Campo Valor total/Desconto - do componente COMFC008 -> \"Detalhe\" COMFD008.\r\n<br>Tamanho máximo: 12 caracteres mais 2 caracteres para casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "netValue": {
+            "type": "number",
+            "description": "Valor líquido do pagamento da comissão. Frame Resumo por comissionado - Campo Valor total/Liquido - do componente COMFC008 -> \"Detalhe\" COMFD008.\r\n<br>Tamanho máximo: 12 caracteres mais 2 caracteres para casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "accountBalanceValue": {
+            "type": "number",
+            "description": "Valor de saldo da conta da pessoa. Frame Lista movimento - Campo Saldo - do componente FCCFL004.\r\n<br>Tamanho máximo: 12 caracteres mais 2 caracteres para casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "grossValue": {
+            "type": "number",
+            "description": "Valor bruto do pagamento da comissão. Frame Resumo por comissionado - Campo Valor total/Bruto - do componente COMFC008 -> \"Detalhe\" COMFD008.\r\n<br>Tamanho máximo: 12 caracteres mais 2 caracteres para casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "returnValue": {
+            "type": "number",
+            "description": "Valor de devolução. Frame Resumo por comissionado - Campo Valor total/Devolução - do componente COMFC008 -> \"Detalhe\" COMFD008.\r\n<br>Tamanho máximo: 12 caracteres mais 2 caracteres para casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "accountMovements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccountMovementResponseModel"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ClosingCommissionDataSearchRequestModel": {
+        "required": [
+          "filter"
+        ],
+        "type": "object",
+        "properties": {
+          "filter": {
+            "$ref": "#/components/schemas/ClosingCommissionDataFilterModel"
+          },
+          "order": {
+            "type": "string",
+            "description": "Lista de campos para ordenação separados por \",\". Para ordenação descendente utilizar o caracter \"-\".\r\n<br> As seguintes expressões são suportadas: \"closingDate\" e \"commissionedCode\"<br> Ex.: \"order\": \"commissionedCode, closingDate\"",
+            "nullable": true
+          },
+          "page": {
+            "type": "integer",
+            "description": "Número da página. Página inicial é 1.",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "description": "Quantidade de itens por página. Valor padrão é 100. Valor máximo é 100.",
+            "format": "int32"
+          },
+          "expand": {
+            "type": "string",
+            "description": "Lista de grupo de dados para expansão separados por \",\".\r\n<br>As seguintes expressões são suportadas: \"accountMovements\".<br>Ex.: \"expand\": \"accountMovements\".",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ClosingCommissionDataSearchResponseModel": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "description": "Total de registros obtidos na consulta.",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "description": "Total de páginas da consulta.",
+            "format": "int32"
+          },
+          "hasNext": {
+            "type": "boolean",
+            "description": "Possui mais páginas."
+          },
+          "totalItems": {
+            "type": "integer",
+            "description": "Total de registros da lista de itens.",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClosingCommissionDataOutModel"
+            },
+            "description": "Lista de itens.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreatedDuplicateCommand": {
+        "required": [
+          "branchCnpj",
+          "duplicateCode",
+          "installments",
+          "supplierCpfCnpj"
+        ],
+        "type": "object",
+        "properties": {
+          "branchCnpj": {
+            "type": "string",
+            "description": "CNPJ da empresa. CNPJ da empresa que será feita a gravação da duplicata.\r\n<br>Tamanho máximo de 14 caracteres."
+          },
+          "supplierCpfCnpj": {
+            "type": "string",
+            "description": "Documento do fornecedor. Campo \"CPF/CNPJ\" do quadro \"Fornecedor\" do componente FCPFM004 -> Duplo clique no campo \"Duplicata\" -> duplo clique no campo \"Fornecedor\". \r\n<br>Tamanho máximo de 14 caracteres."
+          },
+          "duplicateCode": {
+            "type": "integer",
+            "description": "Código da duplicata. Campo \"Duplicata\" do componente FCPFM004.\r\n<br>Tamanho máximo de 10 caracteres.",
+            "format": "int64"
+          },
+          "installments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InstallmentModel"
+            },
+            "description": "Lista de parcelas."
+          }
+        },
+        "additionalProperties": false
+      },
+      "DocumentType": {
+        "enum": [
+          "Duplicate",
+          "InvoicePrint",
+          "Commission",
+          "Guide",
+          "Financing",
+          "Voucher",
+          "Invoice",
+          "AccountDiscountNote",
+          "AdministrationFee",
+          "InterestWithoutFinancing",
+          "Bonus",
+          "BankDeposit",
+          "Compror",
+          "Vendor",
+          "Receipt",
+          "TedDoc",
+          "Loan",
+          "FreightKnowledge",
+          "ProLabore",
+          "AdvanceMoney",
+          "DarfNormal",
+          "Gps",
+          "Gare",
+          "Gare120",
+          "Fgts",
+          "IPTU",
+          "Gnre",
+          "DarfSimple",
+          "Darj",
+          "GiftCheck",
+          "InvoiceThird",
+          "Ipva",
+          "Licensing",
+          "Dpvat",
+          "GareSpIcms",
+          "GareSpDr",
+          "GareSpItcmd",
+          "GareSpIcmsImport",
+          "DareSp",
+          "Iss",
+          "Daems",
+          "GnreSp",
+          "OutherTitle",
+          "DuplicatePublic",
+          "ConcessionLoan",
+          "ReturnAdvanceCustomer",
+          "ReturnCredevCustomer",
+          "IndemnityTermination"
+        ],
+        "type": "integer",
+        "description": "Tipo de documento. Campo \"Tipo documento\" do componente FCPFM004.\r\n<br>1 - Duplicata<br>2 - Boleto bancário<br>3 - Comissão<br>4 - Guia (doc.)<br>5 - Financiamento<br>6 - Vale<br>7 - Nota fiscal<br>8 - Nota de desconto em conta<br>9 - Taxa de administração<br>10 - Juros s/ financiamento<br>11 - Bonificação<br>12 - Deposito bancario<br>13 - Compror<br>14 - Vendor<br>15 - Recibo<br>16 - TED / DOC<br>17 - Emprestimo<br>18 - Conhecimento de frete<br>19 - Pro-labore<br>20 - Adiantamento<br>21 - Guia (DARF Normal)<br>22 - Guia (GPS)<br>23 - Guia (GARE)<br>24 - Guia (GARE 120)<br>25 - Guia (FGTS)<br>26 - Guia (IPTU)<br>27 - Guia (GNRE)<br>28 - Guia (DARF Simples)<br>29 - Guia (DARJ)<br>30 - Cheque presente<br>31 - Fatura terceiro<br>32 - Guia (IPVA)<br>33 - Guia (Licenciamento)<br>34 - Guia (DPVAT)<br>35 - Guia (GARE SP ICMS)<br>36 - Guia (GARE SP DR)<br>37 - Guia (GARE SP ITCMD)<br>38 - Guia (GARE SP ICNS Importação)<br>39 - Guia (DARE SP)<br>40 - Guia (ISS)<br>41 - Guia (DAEMS)<br>42 - Guia (GNRE-SP)<br>50 - Outro título<br>51 - Duplicata pública<br>52 - Empréstimo concessão<br>53 - Devolução adiant. cliente<br>54 - Devolução CREDEV cliente<br>55 - Comissão(recisão indenizatória)",
+        "format": "int32"
+      },
+      "DomainNotificationMessage": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Código da mensagem.",
+            "nullable": true,
+            "readOnly": true
+          },
+          "message": {
+            "type": "string",
+            "description": "Conteúdo da mensagem.",
+            "nullable": true,
+            "readOnly": true
+          },
+          "detailedMessage": {
+            "type": "string",
+            "description": "Detalhamento adicional da mensagem.",
+            "nullable": true,
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Mensagem de notificação."
+      },
+      "DuplicateChangeModel": {
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "type": "string",
+            "description": "Data/hora inicial de atualização.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endDate": {
+            "type": "string",
+            "description": "Data/hora final de atualização.",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Filtro por alteração de dados. Este filtro é o primeiro a ser aplicado.\r\n<br>Caso seja informado, irá carregar uma lista de dados alterados, e este sofrerá ação dos demais filtros de forma restritiva, ou seja, como \"E\". Caso não seja informado, os demais filtros serão aplicados a todos os dados da base de dados, também como \"E\".<br>**Caso seja informado o intervalo de data de alteração, obrigatoriamente terá que informar a lista de empresas e pelo menos uma das opções \"in\".**\r\n\r\nAo utilizar o filtro change, será verificado se houve alteração nos dados dos seguintes componentes:\r\n-> FCPFM004\r\n-> FCPFM004 - bloco \"Parcela\"\r\n-> FCPFM004 - bloco \"Despesa\""
+      },
+      "DuplicateClassificationModel": {
+        "type": "object",
+        "properties": {
+          "classificationType": {
+            "type": "integer",
+            "description": "Código do tipo de classificação da duplicata. Campo \"Tipo classificação\" do frame Classificação do componente FCPFM022. FCPFM004 botão \"Outras Inf...\" -> FCPFM015 botão \"Classificação\"\r\n<br> Tamanho máximo 4 caracteres",
+            "format": "int32"
+          },
+          "classificationCode": {
+            "type": "string",
+            "description": "Código da classificação da duplicata. Campo \"Classificação\" do frame Classificação do componente FCPFM022. FCPFM004 botão \"Outras Inf...\" -> FCPFM015 botão \"Classificação\"\r\n<br> Tamanho máximo 10 caracteres\r\n///",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DuplicateFieldModel": {
+        "type": "object",
+        "properties": {
+          "typeFieldCode": {
+            "type": "integer",
+            "description": "Tipo de Campo adicional da duplicata. Campo \"Campo\" do frame \"Campo adicional\" do componente FCPFM039. FCPFM004 botão \"Outras Inf...\" -> FCPFM015 botão \"Campo adicional\"\r\n<br>Tamanho máximo 4 caracteres",
+            "format": "int32"
+          },
+          "descriptionField": {
+            "type": "string",
+            "description": "Campo dados da duplicata. Campo \"Dados\" do frame \"Campo adicional\" do componente FCPFM039. FCPFM004 botão \"Outras Inf...\" -> FCPFM015 botão \"Campo adicional\"\r\n<br>Tamanho máximo 80 caracteres",
+            "nullable": true
+          },
+          "numericField": {
+            "type": "number",
+            "description": "Campo dados da duplicata. Campo \"Dados\" do frame \"Campo adicional\" do componente FCPFM039. FCPFM004 botão \"Outras Inf...\" -> FCPFM015 botão \"Campo adicional\"\r\n<br>Tamanho maximo 12 com 2 decimais",
+            "format": "double",
+            "nullable": true
+          },
+          "dateField": {
+            "type": "string",
+            "description": "Campo dados da duplicata. Campo \"Dados\" do frame \"Campo adicional\" do componente FCPFM039. FCPFM004 botão \"Outras Inf...\" -> FCPFM015 botão \"Campo adicional\"\r\n<br>Formato de data",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DuplicateFilterModel": {
+        "required": [
+          "branchCodeList"
+        ],
+        "type": "object",
+        "properties": {
+          "change": {
+            "$ref": "#/components/schemas/DuplicateChangeModel"
+          },
+          "branchCodeList": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Lista de código empresa. Campo \"Código\" do componente GERFM009.\r\n<br>Lista com tamanho máximo de 900 registros."
+          },
+          "duplicateCodeList": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Lista de duplicata. Campo \"Duplicata\" do componente FCPFM004.\r\n<br>Lista com tamanho máximo de 900 registros.",
+            "nullable": true
+          },
+          "supplierCodeList": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Lista de fornecedor. Campo \"Fornecedor\" do componente FCPFM004.\r\n<br>Lista com tamanho máximo de 900 registros.",
+            "nullable": true
+          },
+          "bearerCodeList": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Lista de portador. Campo \"Portador\" do componente FCPFM004.\r\n<br>Lista com tamanho máximo de 900 registros.",
+            "nullable": true
+          },
+          "startIssueDate": {
+            "type": "string",
+            "description": "Filtro inicial de data de emissão da duplicata. Campo \"Data emissão\" do componente FCPFM004.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endIssueDate": {
+            "type": "string",
+            "description": "Filtro final de data de emissão da duplicata. Campo \"Data emissão\" do componente FCPFM004.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "startExpiredDate": {
+            "type": "string",
+            "description": "Filtro inicial de data de vencimento da duplicata. Campo \"Data vencimento\" do componente FCPFM004.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endExpiredDate": {
+            "type": "string",
+            "description": "Filtro final de data de vencimento da duplicata. Campo \"Data vencimento\" do componente FCPFM004.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "startSettlementDate": {
+            "type": "string",
+            "description": "Filtro inicial de data de liquidação da duplicata. Campo \"Data\" do frame \"Liquidação\" no componente FCPFM004.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endSettlementDate": {
+            "type": "string",
+            "description": "Filtro final de data de liquidação da duplicata. Campo \"Data\" do frame \"Liquidação\" no componente FCPFM004.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "inclusionTypeList": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InclusionType"
+            },
+            "description": "Filtro para tipo de inclusão da duplicata. \r\nCampo \"inclusão\" do frame \"Parcela\" no componente FCPFM004.\r\n\r\nTipos disponíveis:\r\n<list type=\"bullet\"><item><description>Totvs.Moda.ApiAccountsPayable.Domain.Types.InclusionType.Manual - Inclusão manual.</description></item><item><description>Totvs.Moda.ApiAccountsPayable.Domain.Types.InclusionType.Automatic - Inclusão automática.</description></item><item><description>Totvs.Moda.ApiAccountsPayable.Domain.Types.InclusionType.ViaCashier - Inclusão via caixa.</description></item><item><description>Totvs.Moda.ApiAccountsPayable.Domain.Types.InclusionType.Payroll - Inclusão via folha de pagamento.</description></item><item><description>Totvs.Moda.ApiAccountsPayable.Domain.Types.InclusionType.OwnCheckExchange - Troca de cheque próprio.</description></item><item><description>Totvs.Moda.ApiAccountsPayable.Domain.Types.InclusionType.CostsApportionment - Rateio de despesas.</description></item><item><description>Totvs.Moda.ApiAccountsPayable.Domain.Types.InclusionType.RevenueApportionment - Rateio de receitas.</description></item><item><description>Totvs.Moda.ApiAccountsPayable.Domain.Types.InclusionType.Conversion - Conversão.</description></item><item><description>!:InclusionType.PaymentDuplicateBetweenBranches - Pagamento de duplicata entre empresas.</description></item><item><description>!:InclusionType.ReceiptInvoicesBetweenBranches - Recebimento de faturas entre empresas.</description></item><item><description>!:InclusionType.PaymentCheckBetweenBranches - Pagamento de cheque entre empresas.</description></item><item><description>!:InclusionType.BalanceTransferBetweenBranches - Transferência de saldo entre empresas.</description></item></list>",
+            "nullable": true
+          },
+          "startArrivalDate": {
+            "type": "string",
+            "description": "Filtro inicial de data de chegada da duplicata. Campo \"Data chegada\" do componente FCPFF001.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endArrivalDate": {
+            "type": "string",
+            "description": "Filtro final de data de chegada da duplicata. Campo \"Data chegada\" do componente FCPFF001.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusType"
+          },
+          "documentTypeList": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DocumentType"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DuplicateOutModel": {
+        "type": "object",
+        "properties": {
+          "maxChangeFilterDate": {
+            "type": "string",
+            "description": "Maior data de alteração dentro do filtro de intervalo de data. Campo populado apenas quando os campos \"filter.change.startDate\" e \"filter.change.endDate\" são informados.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "branchCode": {
+            "type": "integer",
+            "description": "Código da empresa da duplicata. Campo \"Empresa\" do frame \"Duplicata\" do componente FCPFM004.\r\n<br>Tamanho máximo de 4 caracteres.",
+            "format": "int32"
+          },
+          "duplicateCode": {
+            "type": "integer",
+            "description": "Código da duplicata. Campo \"Duplicata\" do frame \"Duplicata\" do componente FCPFM004.\r\n<br>Tamanho máximo de 10 caracteres.",
+            "format": "int64"
+          },
+          "supplierCode": {
+            "type": "integer",
+            "description": "Código do fornecedor. Campo \"Fornecedor\" do frame \"Duplicata\" do componente FCPFM004.\r\n<br>Tamanho máximo de 9 caracteres.",
+            "format": "int32"
+          },
+          "supplierCpfCnpj": {
+            "type": "string",
+            "description": "CPF/CNPJ do fornecedor. Campo \"Número CPF\" ou \"Número CNPJ\" do componente PESFM010.\r\n<br>Tamanho máximo de 14 caracteres.",
+            "nullable": true
+          },
+          "installmentCode": {
+            "type": "integer",
+            "description": "Código da parcela duplicata. Campo \"Parcela\" do frame \"Parcela\" do componente FCPFM004.\r\n<br>Tamanho máximo de 3 caracteres.",
+            "format": "int32"
+          },
+          "bearerCode": {
+            "type": "integer",
+            "description": "Código do portador. Campo \"Portador\" do componente FCPFM004.\r\n<br>Tamanho máximo de 4 caracteres.",
+            "format": "int32"
+          },
+          "entryDate": {
+            "type": "string",
+            "description": "Data de entrada parcela da duplicata. Campo \"Data entrada\" do frame \"Parcela\" do componente FCPFM004.",
+            "format": "date-time"
+          },
+          "issueDate": {
+            "type": "string",
+            "description": "Data de emissão parcela da duplicata. Campo \"Data emissão\" do frame \"Parcela\" do componente FCPFM004.",
+            "format": "date-time"
+          },
+          "dueDate": {
+            "type": "string",
+            "description": "Data de vencimento parcela da duplicata. Campo \"Data vencimento\" do frame \"Parcela\" do componente FCPFM004.",
+            "format": "date-time"
+          },
+          "settlementDate": {
+            "type": "string",
+            "description": "Data de liquidação da duplicata. Campo \"Data\" do frame \"Liquidação\" no componente FCPFM004.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "arrivalDate": {
+            "type": "string",
+            "description": "Data de entrega da duplicata. Campo \"Chegada\" do frame \"Filtro\" no componente FCPFF001.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusType"
+          },
+          "duplicateValue": {
+            "type": "number",
+            "description": "Valor da parcela. Campo \"Valor\" do frame \"Parcela\" do componente FCPFM004.\r\n<br>Tamanho máximo de 12 números inteiros com 2 casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "feesValue": {
+            "type": "number",
+            "description": "Valor juros. Soma dos campos \"Valor acréscimo\", mais \"Juro fixo/outro\", mais \"Valor desp. financeira\", mais \"Valor mora dia\" do frame \"Parcela\" do componente FCPFM004.\r\n<br>Tamanho máximo de 12 números inteiros com 2 casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "discountValue": {
+            "type": "number",
+            "description": "Valor desconto da duplicata. Soma dos campos \"Valor indenização\" mais \"Desc. pontual\" do frame \"Parcela\" do componente FCPFM004.\r\n<br>Tamanho máximo de 12 números inteiros com 2 casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "paidValue": {
+            "type": "number",
+            "description": "Valor pago da duplicata. Campo \"Valor pago\" do frame \"Parcela\" no componente FCPFM004.\r\n<br>Tamanho máximo de 12 números inteiros com 2 casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "expense": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExpenseOutModel"
+            },
+            "nullable": true
+          },
+          "inclusionType": {
+            "$ref": "#/components/schemas/InclusionType"
+          },
+          "userInclusionCode": {
+            "type": "integer",
+            "description": "Código do usuário que realizou a inclusão da duplicata. Campo \"Operador/inclusão\" no componente FCPFM004.",
+            "format": "int32"
+          },
+          "userInclusionName": {
+            "type": "string",
+            "description": "Nome do usuário que realizou a inclusão da duplicata. Campo \"Operador/inclusão\" no componente FCPFM004.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DuplicateSearchRequestModel": {
+        "required": [
+          "filter"
+        ],
+        "type": "object",
+        "properties": {
+          "filter": {
+            "$ref": "#/components/schemas/DuplicateFilterModel"
+          },
+          "order": {
+            "type": "string",
+            "description": "Lista de campos para ordenação separados por \",\". Para ordenação descendente utilizar o caracter \"-\".\r\n<br> As seguintes expressões são suportadas: \"productCode\" e \"maxChangeFilterDate\"<br> Ex.: \"order\": \"productCode, maxChangeFilterDate\"",
+            "nullable": true
+          },
+          "page": {
+            "type": "integer",
+            "description": "Número da página. Página inicial é 1.",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "description": "Quantidade de itens por página. Valor padrão é 100. Valor máximo é 100.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DuplicateSearchResponseModel": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "description": "Total de registros obtidos na consulta.",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "description": "Total de páginas da consulta.",
+            "format": "int32"
+          },
+          "hasNext": {
+            "type": "boolean",
+            "description": "Possui mais páginas."
+          },
+          "totalItems": {
+            "type": "integer",
+            "description": "Total de registros da lista de itens.",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DuplicateOutModel"
+            },
+            "description": "Lista de itens.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ExpenseModel": {
+        "required": [
+          "costCenterCode",
+          "expenseCode",
+          "proratedPercentage"
+        ],
+        "type": "object",
+        "properties": {
+          "expenseCode": {
+            "type": "integer",
+            "description": "Código da despesa. Campo \"Despesa\" do componente FCPFM004.\r\n<br>Tamanho máximo de 8 caracter.",
+            "format": "int32"
+          },
+          "costCenterCode": {
+            "type": "integer",
+            "description": "Código do centro de custo. Campo \"C. custo\" do componente FCPFM004.\r\n<br>Tamanho máximo de 9 caracter.",
+            "format": "int32"
+          },
+          "proratedPercentage": {
+            "type": "number",
+            "description": "Percentual de rateio. Campo \"% rateio\" do componente FCPFM004.\r\n<br>Não pode ser informado simultaneamente com proratedValue, mas um dos dois deve ser informado obrigatoriamente.<br>Tamanho máximo: 3 números inteiros com 6 casas decimais.",
+            "format": "double"
+          },
+          "proratedValue": {
+            "type": "number",
+            "description": "Valor de rateio. Campo \"Valor rateio\" do componente FCPFM004.\r\n<br>Não pode ser informado simultaneamente com proratedPercentage, mas um dos dois deve ser informado obrigatoriamente.<br>Tamanho máximo: 12 números inteiros com duas casas decimais.",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Lista de despesa."
+      },
+      "ExpenseOutModel": {
+        "type": "object",
+        "properties": {
+          "expenseCode": {
+            "type": "integer",
+            "description": "Código da despesa. Campo \"Despesa\" do componente FCPFM004.\r\n<br>Tamanho máximo de 8 caracteres.",
+            "format": "int32"
+          },
+          "expenseName": {
+            "type": "string",
+            "description": "Descrição da despesa. Campo \"Despesa\" do componente FCPFM004.\r\n<br>Tamanho máximo de 100 caracteres.",
+            "nullable": true
+          },
+          "costCenterCode": {
+            "type": "integer",
+            "description": "Código do centro de custo. Campo \"C. custo\" do componente FCPFM004.\r\n<br>Tamanho máximo de 9 caracteres.",
+            "format": "int32"
+          },
+          "proratedPercentage": {
+            "type": "number",
+            "description": "Percentual de rateio. Campo \"% rateio\" do componente FCPFM004.        \r\n<br>Tamanho máximo de 3 números inteiros com 6 casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "proratedValue": {
+            "type": "number",
+            "description": "Valor de rateio. Campo \"Valor rateio\" do componente FCPFM004.\r\n<br>Tamanho máximo de 12 números inteiros com 2 casas decimais.",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "GroupDocumentType": {
+        "enum": [
+          "Duplicate",
+          "FreightBill"
+        ],
+        "type": "integer",
+        "description": "Tipo de documento. Campo \"Tipo documento\" do componente FCPFM004.\r\n<br>1 - Duplicata<br>18 - Conhecimento de frete",
+        "format": "int32"
+      },
+      "GroupDuplicateCommand": {
+        "required": [
+          "branchCnpj",
+          "dueDate",
+          "duplicateCode",
+          "groupInstallments",
+          "supplierCpfCnpj"
+        ],
+        "type": "object",
+        "properties": {
+          "branchCnpj": {
+            "type": "string",
+            "description": "CNPJ da empresa. CNPJ da empresa que será feita a gravação da duplicata.\r\n<br>Tamanho máximo de 14 caracteres."
+          },
+          "supplierCpfCnpj": {
+            "type": "string",
+            "description": "Documento do fornecedor. Campo \"CPF/CNPJ\" do quadro \"Fornecedor\" do componente FCPFM004 -> Duplo clique no campo \"Duplicata\" -> duplo clique no campo \"Fornecedor\". \r\n<br>Tamanho máximo de 14 caracteres."
+          },
+          "duplicateCode": {
+            "type": "integer",
+            "description": "Código da duplicata. Campo \"Duplicata\" do componente FCPFM004.\r\n<br>Tamanho máximo de 10 caracteres.",
+            "format": "int64"
+          },
+          "document": {
+            "$ref": "#/components/schemas/GroupDocumentType"
+          },
+          "dueDate": {
+            "type": "string",
+            "description": "Data de vencimento. Campo \"Data vencimento\" do componente FCPFM004.",
+            "format": "date-time"
+          },
+          "groupInstallments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GroupDuplicateModel"
+            },
+            "description": "Lista de duplicatas que serão agrupadas."
+          }
+        },
+        "additionalProperties": false
+      },
+      "GroupDuplicateModel": {
+        "required": [
+          "branchCnpj",
+          "duplicateCode",
+          "installmentCode",
+          "supplierCpfCnpj"
+        ],
+        "type": "object",
+        "properties": {
+          "branchCnpj": {
+            "type": "string",
+            "description": "CNPJ da empresa. CNPJ da empresa da duplicata.\r\n<br>Tamanho máximo de 14 caracteres."
+          },
+          "supplierCpfCnpj": {
+            "type": "string",
+            "description": "Documento do fornecedor. Campo \"CPF/CNPJ\" do quadro \"Fornecedor\" do componente FCPFM004 -> Duplo clique no campo \"Duplicata\" -> duplo clique no campo \"Fornecedor\". \r\n<br>Tamanho máximo de 14 caracteres."
+          },
+          "duplicateCode": {
+            "type": "integer",
+            "description": "Código da duplicata. Campo \"Duplicata\" do componente FCPFM004.\r\n<br>Tamanho máximo de 10 caracteres.",
+            "format": "int64"
+          },
+          "installmentCode": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "GroupedDuplicateResponseModel": {
+        "type": "object",
+        "properties": {
+          "branchCode": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "supplierCode": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "duplicateCode": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "installmentCode": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "InclusionType": {
+        "enum": [
+          "Manual",
+          "Automatic",
+          "ViaCashier",
+          "Payroll",
+          "OwnCheckExchange",
+          "CostsApportionment",
+          "RevenueApportionment",
+          "Conversion",
+          "PaymentDuplicateBetweenBranchs",
+          "ReceivementIncoicesBetweenBranchs",
+          "PaymentCheckBetweenBranchs",
+          "BalanceTransferBetweenBranchs"
+        ],
+        "type": "integer",
+        "description": "Tipo de inclusão. Segundo campo do campo \"Situação\" do componente FCPFM004.\r\n<br>1 - Manual<br>2 - Automático<br>3 - Via caixa<br>4 - Folha pagamento<br>5 - Troca de cheque próprio<br>6 - Rateio de despesas<br>7 - Rateio de receitas<br>9 - Conversão<br>11 - Pagamento duplicata entre empresas<br>12 - Recebimento faturas entre empresas<br>13 - Pagamento cheque presente entre empresas<br>14 - Transferencia de saldo entre empresas",
+        "format": "int32"
+      },
+      "InstallmentModel": {
+        "required": [
+          "arrivalDate",
+          "bearerCode",
+          "document",
+          "dueDate",
+          "duplicateValue",
+          "expenses",
+          "installmentCode",
+          "issueDate",
+          "prevision",
+          "stage"
+        ],
+        "type": "object",
+        "properties": {
+          "installmentCode": {
+            "type": "integer",
+            "description": "Número da parcela. Campo \"Parcela\" do componente FCPFM004.\r\n<br>Tamanho máximo de 3 caracteres",
+            "format": "int32"
+          },
+          "bearerCode": {
+            "type": "integer",
+            "description": "Código do portador. Campo \"Portador\" do componente FCPFM004.\r\n<br>Tamanho máximo de 4 caracteres.",
+            "format": "int32"
+          },
+          "issueDate": {
+            "type": "string",
+            "description": "Data de emissão. Campo \"Data emissão\" do componente FCPFM004.",
+            "format": "date-time"
+          },
+          "dueDate": {
+            "type": "string",
+            "description": "Data de vencimento. Campo \"Data vencimento\" do componente FCPFM004.",
+            "format": "date-time"
+          },
+          "arrivalDate": {
+            "type": "string",
+            "description": "Data de chegada. Campo \"Data chegada\" do componente FCPFM004.\r\n<br>Será a data da liquidação de inclusão da duplicata caso o tipo de previsão seja \"Real\".",
+            "format": "date-time"
+          },
+          "document": {
+            "$ref": "#/components/schemas/DocumentType"
+          },
+          "prevision": {
+            "$ref": "#/components/schemas/PrevisionType"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/StageType"
+          },
+          "duplicateValue": {
+            "type": "number",
+            "description": "Valor da parcela. Campo \"Valor\" do componente FCPFM004.\r\n<br>Tamanho máximo: 12 números inteiros com duas casas decimais.",
+            "format": "double"
+          },
+          "punctualityDiscountValue": {
+            "type": "number",
+            "description": "Valor de desconto pontual. Campo \"Desc. pontual\" do componente FCPFM004.\r\n<br>Tamanho máximo: 12 números inteiros com duas casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "punctualityDiscountPercentage": {
+            "type": "number",
+            "description": "Percentual de desconto pontual. Campo \"Desc. pontual\" do componente FCPFM004.\r\n<br>Tamanho máximo: 3 números inteiros com quatro casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "advanceDiscountValue1": {
+            "type": "number",
+            "description": "Valor de desconto por adiantamento. Campo \"Desc. adiant. 1\" do componente FCPFM004.\r\n<br>Tamanho máximo: 12 números inteiros com duas casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "advanceDiscountPercentage1": {
+            "type": "number",
+            "description": "Percentual de desconto por adiantamento. Campo \"Desc. adiant. 1\" do componente FCPFM004.\r\n<br>Tamanho máximo: 3 números inteiros com quatro casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "advanceDiscountValue2": {
+            "type": "number",
+            "description": "Valor de desconto por adiantamento. Campo \"Desc. adiant. 2\" do componente FCPFM004.\r\n<br>Tamanho máximo: 12 números inteiros com duas casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "advanceDiscountPercentage2": {
+            "type": "number",
+            "description": "Percentual de desconto por adiantamento. Campo \"Desc. adiant. 2\" do componente FCPFM004.\r\n<br>Tamanho máximo: 3 números inteiros com quatro casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "advanceDiscountDate1": {
+            "type": "string",
+            "description": "Data de desconto por adiantamento. Campo \"Data desconto 1\" do componente FCPFM004.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "advanceDiscountDate2": {
+            "type": "string",
+            "description": "Data de desconto por adiantamento. Campo \"Data desconto 2\" do componente FCPFM004.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "advanceDiscount1": {
+            "$ref": "#/components/schemas/AdvanceDiscountType"
+          },
+          "advanceDiscount2": {
+            "$ref": "#/components/schemas/AdvanceDiscountType"
+          },
+          "advanceDiscount": {
+            "$ref": "#/components/schemas/AdvanceDiscountType"
+          },
+          "assessmentValue": {
+            "type": "number",
+            "description": "Valor de multa. Campo \"Valor multa\" do componente FCPFM004.\r\n<br>Tamanho máximo: 12 números inteiros com duas casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "assessmentPercentage": {
+            "type": "number",
+            "description": "Percentual de multa. Campo \"Valor multa\" do componente FCPFM004.\r\n<br>Tamanho máximo: 3 números inteiros com quatro casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "assessmentDate": {
+            "type": "string",
+            "description": "Data da multa. Campo \"Data multa\" do componente FCPFM004.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "interestDayValue": {
+            "type": "number",
+            "description": "Valor de mora dia. Campo \"Valor mora dia\" do componente FCPFM004.\r\n<br>Tamanho máximo: 12 números inteiros com duas casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "interestDayPercentage": {
+            "type": "number",
+            "description": "Percentual de mora dia. Campo \"Valor mora dia\" do componente FCPFM004.\r\n<br>Tamanho máximo: 3 números inteiros com quatro casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "expenseFinancial": {
+            "type": "number",
+            "description": "Valor de despesa financeira. Campo \"Vl. desp. financeira\" do componente FCPFM004.\r\n<br>Tamanho máximo: 12 números inteiros com duas casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "additionValue": {
+            "type": "number",
+            "description": "Valor de acréscimo. Campo \"Valor acréscimo\" do componente FCPFM004.\r\n<br>Tamanho máximo: 12 números inteiros com duas casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "outherAdditionalsValue": {
+            "type": "number",
+            "description": "Valor de juros fixo/outros valores. Campo \"Juro fixo/outro\" do componente FCPFM004.\r\n<br>Tamanho máximo: 12 números inteiros com duas casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "supplierOutputDate": {
+            "type": "string",
+            "description": "Data de saída para fornecedor. Campo \"Dt. saída fornecedor\" do componente FCPFM004.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "indemnityValue": {
+            "type": "number",
+            "description": "Valor de indenização. Campo \"Valor indenização\" do componente FCPFM004.\r\n<br>Tamanho máximo: 12 números inteiros com duas casas decimais.",
+            "format": "double",
+            "nullable": true
+          },
+          "isAccumulatedDiscount": {
+            "type": "boolean",
+            "description": "Indicador de desconto acumulativo. Campo \"Desconto acumulativo\" do componente FCPFM004.\r\n<br>Tamanho máximo de 1 caracter.",
+            "nullable": true
+          },
+          "taxValue": {
+            "type": "number",
+            "description": "Valor do imposto da duplicata. Campo \"Valor imposto\" do componente FCPFM004",
+            "format": "double",
+            "nullable": true
+          },
+          "taxCalculationBasePercentage": {
+            "type": "number",
+            "description": "Percentual da base de calculo do imposto. Campo \"% Base Calc. imposto\" do componente FCPFM004",
+            "format": "double",
+            "nullable": true
+          },
+          "expenses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExpenseModel"
+            },
+            "description": "Lista de despesas."
+          },
+          "observations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ObservationInstallmentModel"
+            },
+            "description": "Lista de observações.",
+            "nullable": true
+          },
+          "billingAccept": {
+            "$ref": "#/components/schemas/BillingAcceptModel"
+          },
+          "classifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DuplicateClassificationModel"
+            },
+            "description": "Classificações da duplicata",
+            "nullable": true
+          },
+          "additionalFields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DuplicateFieldModel"
+            },
+            "description": "Campo adicional da duplicata",
+            "nullable": true
+          },
+          "taxAdditional": {
+            "$ref": "#/components/schemas/TaxAdditionalModel"
+          },
+          "taxDuplicates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaxDuplicateModel"
+            },
+            "description": "Imposto da Duplicata",
+            "nullable": true
+          },
+          "businessUnits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusinessUnitModel"
+            },
+            "description": "Unidade de negócio da duplicata",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Lista de parcela."
+      },
+      "ObservationInstallmentModel": {
+        "type": "object",
+        "properties": {
+          "observation": {
+            "type": "string",
+            "description": "Linha de observação. Campo \"Observação\" do frame \"Observação\" do componente FCPFL003. FCPFM004 -> Botão \"Observação...\"\r\n<br>Tamanho máximo: 80 caracteres.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PrevisionType": {
+        "enum": [
+          "Forecast",
+          "Real",
+          "Consignment"
+        ],
+        "type": "integer",
+        "description": "Tipo de previsão da duplicata. Campo \"Tipo previsão\" do componente FCPFM004.\r\n<br>1 - Previsão<br>2 - Real<br>3 - Consignação",
+        "format": "int32"
+      },
+      "RetentionType": {
+        "enum": [
+          "Direct",
+          "RoffValue",
+          "MinimumTaxAmountPerMonth",
+          "MaximumTaxAmountPerDuplicate",
+          "RoffValuePerDuplicate",
+          "RoofDayValue"
+        ],
+        "type": "integer",
+        "description": "Tipo de retenção. Campo \"Tipo de retenção\" do frame \"Duplicata\" do componente FCPFC007. FCPFM004 -> botão do campo \"Tipo situação\" do frame \"Imposto\"\r\n<br>1 - Direto<br>2 - Valor de teto<br>3 - Vl. mín. imposto por mês<br>4 - Vl. mín. imposto por duplicata<br>5 - Vl. teto por duplicata<br>6 - Vl. teto/dia",
+        "format": "int32"
+      },
+      "StageType": {
+        "enum": [
+          "InvoiceNotConfered",
+          "ReleasedForPayment",
+          "AuthorizedCheck",
+          "CheckIssued",
+          "InvoiceAccept",
+          "Endossado",
+          "PaymentInBank",
+          "Reserved",
+          "PaymentAutomatic",
+          "ShippingInvoiceSchedulingSupplier",
+          "InvoiceSchedulingSupplier",
+          "PaymentImpost",
+          "WithRestriction",
+          "WithPendingRestriction",
+          "Finished"
+        ],
+        "type": "integer",
+        "description": "Estágio da duplicata. Campo \"Estágio\" do componente FCPFM004.\r\n<br>1 - Título não conferido<br>2 - Liberado para pagamento<br>3 - Cheque autorizado<br>4 - Cheque emitido<br>5 - Título aceito<br>10 - Endossado<br>20 - Pagamento em banco<br>30 - Reservado<br>40 - Pagamento automático<br>41 - Envio título agendamento fornecedor<br>42 - Título em agendamento fornecedor<br>43 - Pagamento tributo<br>43 - Pagamento tributo<br>70 - Com restrição<br>71 - Com restrição pendência<br>90 - Liquidado",
+        "format": "int32"
+      },
+      "StatusTaxDuplicateType": {
+        "enum": [
+          "NotRetained",
+          "DuplicateSelfRetained",
+          "DuplicateAnotherRetained"
+        ],
+        "type": "integer",
+        "description": "Tipagem do campo. Campo \"Tipo\" do frame \"Campo adicional\" do componente FCPFM037. FCPFM004 -> botão \"Dados adicionais...\" FCPFM015 -> botão \"Campo adicional...\"\r\n<br>0 - Não retido<br>1 - Retido própria dup.<br>2 - Retido outra dup.",
+        "format": "int32"
+      },
+      "StatusType": {
+        "enum": [
+          "Grouped",
+          "Canceled",
+          "Retorned",
+          "CommissionSettled",
+          "Normal",
+          "Broken"
+        ],
+        "type": "integer",
+        "description": "Situação da duplicata. Campo \"Situação\" do componente FCPFM004.\r\n<br>N - Normal<br>C - Cancelada<br>A - Agrupada<br>D - Devolvida<br>L - Liquidada comissão<br>Q - Quebrada",
+        "format": "int32"
+      },
+      "SuccessProcessingModel": {
+        "type": "object",
+        "properties": {
+          "processingDate": {
+            "type": "string",
+            "description": "Data/hora de término do processamento.",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Dados de processamento bem sucedido."
+      },
+      "TaxAdditionalModel": {
+        "type": "object",
+        "properties": {
+          "revenue": {
+            "type": "integer",
+            "description": "Código de receita do adicional de tributo da duplicata. Campo \"Código receita\" do frame \"Dados adicionais\" do componente FCPFM037. FCPFM004 -> botão \"Dados adicionais...\" FCPFM015 -> botão \"Adicional tributo\"\r\n<br>Tamanho máximo 6 caracteres",
+            "format": "int32"
+          },
+          "calculationPeriod": {
+            "type": "string",
+            "description": "Período do adicional de tributo da duplicata. Campo \"Período\" do frame \"Dados adicionais\" do componente FCPFM037. FCPFM004 -> botão \"Dados adicionais...\" FCPFM015 -> botão \"Adicional tributo\"\r\n<br>Formato data",
+            "format": "date-time"
+          },
+          "competenceDate": {
+            "type": "string",
+            "description": "Competência do adicional de tributo da duplicata. Campo \"Competência\" do frame \"Dados adicionais\" do componente FCPFM037. FCPFM004 -> botão \"Dados adicionais...\" FCPFM015 -> botão \"Adicional tributo\"\r\n<br>Formato data",
+            "format": "date-time"
+          },
+          "reference": {
+            "type": "string",
+            "description": "Referência do adicional de tributo da duplicata. Campo \"Referência\" do frame \"Dados adicionais\" do componente FCPFM037. FCPFM004 -> botão \"Dados adicionais...\" FCPFM015 -> botão \"Adicional tributo\"\r\n<br>Tamanho máximo 20 caracteres",
+            "nullable": true
+          },
+          "grossRevenueValue": {
+            "type": "number",
+            "description": "Valor da receita bruta do adicional de tributo da duplicata. Campo \"Receita bruta\" do frame \"Dados adicionais\" do componente FCPFM037. FCPFM004 -> botão \"Dados adicionais...\" FCPFM015 -> botão \"Adicional tributo\"\r\n<br>Tamanho maximo 12 com 2 decimais",
+            "format": "double",
+            "nullable": true
+          },
+          "isThirteenthSalary": {
+            "type": "boolean",
+            "description": "Indicativo de 13º salário da duplicata. Campo \"13º salário\" do frame \"Dados adicionais\" do componente FCPFM037. FCPFM004 -> botão \"Dados adicionais...\" FCPFM015 -> botão \"Adicional tributo\"\r\n<br>Tamanho máximo 1 caracter"
+          },
+          "otherEntitiesValue": {
+            "type": "number",
+            "description": "Valor de outras entidades da duplicata. Campo \"Valor outras entidades\" do frame \"Dados adicionais\" do componente FCPFM037. FCPFM004 -> botão \"Dados adicionais...\" FCPFM015 -> botão \"Adicional tributo\"\r\n<br>Tamanho máximo 1 caracter",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TaxDuplicateModel": {
+        "type": "object",
+        "properties": {
+          "tax": {
+            "type": "integer",
+            "description": "Código do imposto da duplicata. Campo \"Imposto\" do frame \"Imposto\" do componente FCPFM0004.\r\n<br>Tamanho máximo 2 caracteres",
+            "format": "int32"
+          },
+          "branchCnpj": {
+            "type": "string",
+            "description": "Cnpj da empresa do imposto retido. Campo \"Empresa\" do frame \"Duplicata imposto retido\" do componente FCPFC007. FCPFM004 -> campo \"Tipo situação\" do frame \"Imposto\"\r\n<br>Tamanho máximo 14 caracteres",
+            "nullable": true
+          },
+          "suplierCpfCnpj": {
+            "type": "string",
+            "description": "Código do CPF/CNPJ fornecedor do imposto retido. Campo \"Fornecedor\" do frame \"Duplicata imposto retido\" do componente FCPFC007. FCPFM004 -> campo \"Tipo situação\" do frame \"Imposto\"\r\n<br>Tamanho máximo 14 caracteres",
+            "nullable": true
+          },
+          "duplicateCodeTax": {
+            "type": "integer",
+            "description": "Código da duplicata do imposto retido. Campo \"Duplicata\" do frame \"Duplicata imposto retido\" do componente FCPFC007. FCPFM004 -> campo \"Tipo situação\" do frame \"Imposto\"\r\n<br>Tamanho máximo 10 caracteres",
+            "format": "int64"
+          },
+          "installmentCodeTax": {
+            "type": "integer",
+            "description": "Código da parcela duplicata do imposto retido. Campo \"Duplicata\" do frame \"Duplicata imposto retido\" do componente FCPFC007. FCPFM004 -> campo \"Tipo situação\" do frame \"Imposto\"\r\n<br>Tamanho máximo 3 caracteres",
+            "format": "int32"
+          },
+          "ratePercentage": {
+            "type": "number",
+            "description": "Alíquota do imposto da duplicata. Campo \"% Alíquota\" do frame \"Imposto\" do componente FCPFM0004.\r\n<br>Tamanho máximo 3 com 6 decimais",
+            "format": "double"
+          },
+          "taxValue": {
+            "type": "number",
+            "description": "Valor do imposto da duplicata. Campo \"Valor\" do frame \"Imposto\" do componente FCPFM0004.\r\n<br>Tamanho máximo 12 com 2 decimais",
+            "format": "double"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusTaxDuplicateType"
+          },
+          "baseCalculationValue": {
+            "type": "number",
+            "description": "Valor da base de calculo do imposto duplicata do imposto retido. Campo \"% Base cálc.\" do frame \"Duplicata \" do componente FCPFC007. FCPFM004 -> campo \"Tipo situação\" do frame \"Imposto\"\r\n<br>Tamanho 12 com 2 decimais",
+            "format": "double",
+            "nullable": true
+          },
+          "baseCalculationPercentage": {
+            "type": "number",
+            "description": "Valor da base de calculo do imposto duplicata do imposto retido. Campo \"% Base cálc.\" do frame \"Duplicata \" do componente FCPFC007. FCPFM004 -> campo \"Tipo situação\" do frame \"Imposto\"\r\n<br>Tamanho 3 com 6 decimais",
+            "format": "double",
+            "nullable": true
+          },
+          "retentionType": {
+            "$ref": "#/components/schemas/RetentionType"
+          },
+          "dirfRevenue": {
+            "type": "string",
+            "description": "Codigo de receita da DIRF que vai para o REINF.\r\n<br>Tamanho máximo 4 caracteres",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "apiKey",
+        "description": "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        "name": "Authorization",
+        "in": "header"
+      }
+    }
+  },
+  "security": [
+    {
+      "Bearer": [ ]
+    }
+  ]
+}

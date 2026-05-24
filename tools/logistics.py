@@ -18,6 +18,12 @@ logger = logging.getLogger("totvs-moda-mcp.logistics")
 BASE = "/api/totvsmoda/logistics/v2"
 
 
+def _with_branch_code(args: dict[str, Any]) -> dict[str, Any]:
+    out = inject_branch_defaults(args)
+    out.pop("branchCodeList", None)
+    return out
+
+
 class LogisticsTools:
     def __init__(self, client: TotvsClient) -> None:
         self.client = client
@@ -38,14 +44,20 @@ class LogisticsTools:
             body["order"] = args["order"]
         return await self.client.post(f"{BASE}/product-storages/search", body)
 
+    async def upsert_product_packaging(self, args: dict[str, Any]) -> Any:
+        """POST /product-packagings - manutencao de produto em embalagem."""
+        args = _with_branch_code(args)
+        body = {k: v for k, v in args.items() if v is not None}
+        return await self.client.post(f"{BASE}/product-packagings", body)
+
     async def add_product_packaging(self, args: dict[str, Any]) -> Any:
         """POST /product-packagings/add-quantity — ⚠️ Adiciona quantidade de produto em embalagem."""
-        args = inject_branch_defaults(args)
+        args = _with_branch_code(args)
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/product-packagings/add-quantity", body)
 
     async def subtract_product_packaging(self, args: dict[str, Any]) -> Any:
         """POST /product-packagings/subtract-quantity — ⚠️ Remove quantidade de produto de embalagem."""
-        args = inject_branch_defaults(args)
+        args = _with_branch_code(args)
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/product-packagings/subtract-quantity", body)
