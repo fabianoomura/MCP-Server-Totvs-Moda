@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.7.1] - 2026-05-24
+
+### Changed
+- Removed raw Swagger exports from the public repository and package source distribution.
+- Moved strategy/roadmap/performance notes out of public version control.
+- Updated public docs to clarify that only the derived endpoint matrix is published.
+
 ## [3.7.0] - 2026-05-24
 
 ### Added
@@ -22,7 +29,6 @@
 ### Added
 - Endpoint harness generated from local Swagger files with coverage matrix in `docs/API_ENDPOINT_MATRIX.md`.
 - Agent endpoint harness guide in `docs/AGENT_ENDPOINT_HARNESS.md`.
-- n8n/agent architecture proposal in `docs/N8N_AUTOMATION_ARCHITECTURE.md`.
 - Product auxiliary read endpoints:
   - `totvs_get_product_additional_field_types`
   - `totvs_get_product_classification_types`
@@ -47,7 +53,6 @@
 - Fast 360 aggregators: `totvs_product_360`, `totvs_raw_material_360`, `totvs_order_360`, `totvs_invoice_360`.
 - Operational shortcuts: `totvs_sales_today_summary`, `totvs_new_customers_today`.
 - Fast open-order aggregators: `totvs_open_purchase_orders` and `totvs_open_production_orders`.
-- `docs/PERFORMANCE.md` with benchmark notes and guidance for fast composed tools.
 - Operational defaults in startup context: price, cost and stock code lists are now exposed via `operationalDefaults`.
 
 ### Changed
@@ -116,8 +121,7 @@ Se você tem `TOTVS_ENABLE_ANALYTICS` no seu `.env` ou `mcp.json`, pode remover.
 Nenhuma outra mudança. Tools dos demais 15 módulos continuam idênticas.
 
 ### Documentação adicionada
-- `docs/PROJECT_STATE.md` — estado consolidado do projeto
-- `docs/ROADMAP.md` — plano de evolução
+- Technical docs for project patterns and setup
 - `docs/PATTERNS.md` — padrões obrigatórios
 
 ---

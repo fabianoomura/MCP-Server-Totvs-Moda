@@ -9,6 +9,23 @@ dist/
 build/
 PUBLISHING.md
 
+# Material privado/local
+private/
+private-notes/
+local-notes/
+*.local.md
+
+# Swagger bruto e exports locais. Manter fora do repo publico.
+json/
+
+# Notas estrategicas/operacionais internas
+docs/START.md
+docs/PROJECT_STATE.md
+docs/ROADMAP.md
+docs/PERFORMANCE.md
+docs/N8N_AUTOMATION_ARCHITECTURE.md
+docs/MIGRATION_v*.md
+
 # Arquivos temporários e pacotes de desenvolvimento
 *.zip
 fixes/

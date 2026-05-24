@@ -45,7 +45,7 @@ Exemplos reais do que funciona hoje:
 
 **200+ tools** organizadas por módulos da API V2:
 
-- Harness de endpoints: `251/251` caminhos do Swagger local mapeados
+- Harness de endpoints: `251/251` caminhos mapeados na matriz derivada
 - Núcleo não-Analytics: `190/190`
 - Analytics/painéis: `61/61` via gateway opcional, desabilitado por padrão
 - Suite local: `202` testes
@@ -307,8 +307,8 @@ totvs-moda-mcp/
 │   └── _value_types.py    # Resolução de tipos de valor
 ├── tests/                 # 202 testes (pytest + respx)
 └── docs/
-    ├── PROJECT_STATE.md   # Estado completo do projeto
-    ├── START.md           # Contexto rápido para novas conversas
+    ├── API_ENDPOINT_MATRIX.md  # Matriz derivada de endpoints
+    ├── AGENT_ENDPOINT_HARNESS.md
     └── PATTERNS.md        # Padrões obrigatórios de código
 ```
 
@@ -319,6 +319,7 @@ totvs-moda-mcp/
 - Limitado ao que a **API V2 do TOTVS Moda** expõe publicamente
 - Não cobre todas as funcionalidades do ERP — apenas o que a API disponibiliza
 - Projeto em evolução — novos módulos adicionados conforme necessidade
+- Os exports Swagger brutos e notas estratégicas ficam fora do repositório público; o repo publica apenas código, documentação técnica e matriz derivada.
 
 ---
 

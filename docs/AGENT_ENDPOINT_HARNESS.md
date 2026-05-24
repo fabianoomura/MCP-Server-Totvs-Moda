@@ -26,7 +26,9 @@ area, endpoint type, read/write risk, and current MCP mapping status.
 python scripts/build_endpoint_harness.py --write
 ```
 
-Run this after adding or replacing Swagger JSON files.
+Run this after adding or replacing Swagger JSON files in the local/private
+`json/` directory. The raw Swagger exports are intentionally not versioned in
+the public repository; only the derived endpoint matrix is public.
 
 ## Classification
 
