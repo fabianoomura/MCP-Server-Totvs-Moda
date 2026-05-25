@@ -125,6 +125,8 @@ pip install totvs-moda-mcp
 | `TOTVS_OPERATION_CONTEXT` | — | Texto descrevendo o significado dos status de pedido na sua empresa |
 | `TOTVS_TLS_VERIFY` | — | `false` para desativar verificação TLS (self-signed certs) |
 | `TOTVS_ENABLE_ANALYTICS` | — | `true` para habilitar o gateway opcional `totvs_analytics_call` |
+| `TOTVS_ENV_FILE` | — | Caminho absoluto para um `.env` a carregar quando o cliente MCP inicia em outro diretório |
+| `TOTVS_DOTENV_OVERRIDE` | — | `true` para o `.env` sobrescrever variáveis antigas herdadas pelo processo MCP |
 | `TOTVS_DEFAULT_PRICE_CODES` | — | Tabelas de preço padrão, ex: `1` |
 | `TOTVS_DEFAULT_COST_CODES` | — | Tipos de custo padrão, ex: `1,2,3` |
 | `TOTVS_DEFAULT_STOCK_CODES` | — | Tipos de saldo padrão, ex: `1` |
@@ -256,7 +258,7 @@ Analytics/painéis do TOTVS Moda podem depender de módulo contratado ou permiss
 | `totvs_get_context` | Filiais, operações, priceTypes, costTypes |
 | `totvs_get_instructions` | Guia de uso completo do servidor |
 
-Nota de conexão: `totvs_get_context` pode retornar cache do startup. Ele ajuda a descobrir defaults da empresa, mas não deve ser usado como única prova de autenticação em tempo real. Se ele funcionar e outra consulta retornar `InvalidUserPassword`, reinicie o processo MCP e confira as variáveis `TOTVS_USERNAME`/`TOTVS_PASSWORD` no `mcp.json` ou ambiente do cliente.
+Nota de conexão: `totvs_get_context` pode retornar cache do startup. Ele ajuda a descobrir defaults da empresa, mas não deve ser usado como única prova de autenticação em tempo real. Se ele funcionar e outra consulta retornar `InvalidUserPassword`, reinicie o processo MCP e confira as variáveis `TOTVS_USERNAME`/`TOTVS_PASSWORD` no `mcp.json` ou ambiente do cliente. Quando o cliente estiver herdando env antigo, configure `TOTVS_ENV_FILE` com o caminho absoluto do `.env` correto e `TOTVS_DOTENV_OVERRIDE=true`.
 
 ---
 
@@ -271,7 +273,7 @@ pip install -e ".[dev]"
 PYTHONPATH=. pytest tests/ -v
 ```
 
-202 testes cobrindo contratos de endpoints, agregadores, defaults, campos e cliente HTTP.
+204 testes cobrindo contratos de endpoints, agregadores, defaults, campos, carregamento de ambiente e cliente HTTP.
 
 ---
 
@@ -307,7 +309,7 @@ totvs-moda-mcp/
 │   ├── _defaults.py       # Injeção automática de branchCode
 │   ├── _fields.py         # Filtro de campos na resposta
 │   └── _value_types.py    # Resolução de tipos de valor
-├── tests/                 # 202 testes (pytest + respx)
+├── tests/                 # 204 testes (pytest + respx)
 └── docs/
     ├── API_ENDPOINT_MATRIX.md  # Matriz derivada de endpoints
     ├── AGENT_ENDPOINT_HARNESS.md

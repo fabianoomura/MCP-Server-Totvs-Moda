@@ -13,6 +13,7 @@ import logging
 import os
 import sys
 import time
+from pathlib import Path
 from typing import Any
 
 import mcp.server.stdio
@@ -56,11 +57,57 @@ server = Server("totvs-moda-mcp")
 _client: TotvsClient | None = None
 _modules: dict[str, Any] = {}
 ANALYTICS_ENABLED = os.environ.get("TOTVS_ENABLE_ANALYTICS", "").lower() in {"1", "true", "yes", "sim"}
+_dotenv_loaded = False
+
+
+def _truthy_env(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "sim"}
+
+
+def _load_dotenv_once() -> None:
+    """Load a local .env file without adding a runtime dependency.
+
+    Default behavior is conservative: .env only fills missing variables.
+    Set TOTVS_DOTENV_OVERRIDE=true to force .env to replace inherited env vars.
+    Set TOTVS_ENV_FILE to point at a specific file when the MCP client starts
+    from a different working directory.
+    """
+    global _dotenv_loaded
+    if _dotenv_loaded:
+        return
+    _dotenv_loaded = True
+
+    explicit = os.environ.get("TOTVS_ENV_FILE", "").strip()
+    candidates = [Path(explicit)] if explicit else [Path.cwd() / ".env", Path(__file__).resolve().parent / ".env"]
+    env_path = next((path for path in candidates if path and path.exists()), None)
+    if not env_path:
+        return
+
+    override = _truthy_env("TOTVS_DOTENV_OVERRIDE")
+    loaded: list[str] = []
+    try:
+        for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if not key:
+                continue
+            if override or not os.environ.get(key):
+                os.environ[key] = value
+                loaded.append(key)
+        if loaded:
+            logger.info("Loaded TOTVS env keys from %s: %s", env_path, ", ".join(sorted(loaded)))
+    except OSError as exc:
+        logger.warning("Failed to load TOTVS_ENV_FILE/.env: %s", exc)
 
 
 def get_client() -> TotvsClient:
     global _client
     if _client is None:
+        _load_dotenv_once()
         _client = TotvsClient(
             base_url=os.environ["TOTVS_BASE_URL"],
             client_id=os.environ["TOTVS_CLIENT_ID"],
@@ -139,6 +186,7 @@ Se uma informação não estiver disponível via tools, informe ao usuário em v
 - `totvs_get_context` pode retornar dados de cache carregados no startup; ele NÃO prova que a autenticação em tempo real ainda está válida.
 - Se `totvs_get_context` funcionar mas outras tools retornarem `InvalidUserPassword`, trate como configuração/ambiente do processo MCP, não como falha da pergunta.
 - Nesse caso, peça para reiniciar o MCP Server/cliente e conferir se `TOTVS_USERNAME` e `TOTVS_PASSWORD` do mcp.json/env são os mesmos do `.env` esperado.
+- Se o cliente MCP estiver usando credenciais antigas, configure `TOTVS_ENV_FILE` com o caminho absoluto do `.env` correto e `TOTVS_DOTENV_OVERRIDE=true`, depois reinicie o MCP.
 - Para validar conexão real, use uma consulta read-only pequena, por exemplo `totvs_sales_today_summary` com `topN=1` ou uma busca paginada com `pageSize=1`.
 - Não entre em loop tentando tools de cliente/produto quando a API retornar erro de autenticação.
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.7.3] - 2026-05-25
+
+### Added
+- Optional `.env` loader for MCP clients that start outside the project directory.
+- `TOTVS_ENV_FILE` to point at a specific credentials file.
+- `TOTVS_DOTENV_OVERRIDE=true` to let `.env` replace stale inherited environment variables.
+
+### Tests
+- Added dotenv loader tests; suite now has 204 tests.
+
 ## [3.7.2] - 2026-05-25
 
 ### Changed
