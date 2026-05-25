@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.7.2] - 2026-05-25
+
+### Changed
+- Improved startup instructions for AI clients: `totvs_get_context` may return cached data and must not be used as the only real-time authentication check.
+- Documented `InvalidUserPassword` troubleshooting when cached context works but live tools fail.
+- Strengthened tool-selection guidance so "vendas de hoje/hj" uses `totvs_sales_today_summary` instead of customer statistics tools.
+
 ## [3.7.1] - 2026-05-24
 
 ### Changed

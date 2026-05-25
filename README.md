@@ -256,6 +256,8 @@ Analytics/painéis do TOTVS Moda podem depender de módulo contratado ou permiss
 | `totvs_get_context` | Filiais, operações, priceTypes, costTypes |
 | `totvs_get_instructions` | Guia de uso completo do servidor |
 
+Nota de conexão: `totvs_get_context` pode retornar cache do startup. Ele ajuda a descobrir defaults da empresa, mas não deve ser usado como única prova de autenticação em tempo real. Se ele funcionar e outra consulta retornar `InvalidUserPassword`, reinicie o processo MCP e confira as variáveis `TOTVS_USERNAME`/`TOTVS_PASSWORD` no `mcp.json` ou ambiente do cliente.
+
 ---
 
 ## Desenvolvimento e testes

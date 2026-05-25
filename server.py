@@ -135,7 +135,19 @@ Se uma informação não estiver disponível via tools, informe ao usuário em v
 2. Use as datas no formato ISO 8601 (YYYY-MM-DD ou YYYY-MM-DDTHH:MM:SS)
 3. Use o parâmetro `fields` nas buscas para reduzir tokens: ex. `fields=['orderCode','customerName','totalValue']`
 
+## Validação de conexão e autenticação
+- `totvs_get_context` pode retornar dados de cache carregados no startup; ele NÃO prova que a autenticação em tempo real ainda está válida.
+- Se `totvs_get_context` funcionar mas outras tools retornarem `InvalidUserPassword`, trate como configuração/ambiente do processo MCP, não como falha da pergunta.
+- Nesse caso, peça para reiniciar o MCP Server/cliente e conferir se `TOTVS_USERNAME` e `TOTVS_PASSWORD` do mcp.json/env são os mesmos do `.env` esperado.
+- Para validar conexão real, use uma consulta read-only pequena, por exemplo `totvs_sales_today_summary` com `topN=1` ou uma busca paginada com `pageSize=1`.
+- Não entre em loop tentando tools de cliente/produto quando a API retornar erro de autenticação.
+
 ## Tools por categoria
+
+### Regra de escolha para vendas
+- Perguntas como "vendas de hoje", "o que vendi hoje", "traga as vendas de hj", "resumo de vendas" ou "quanto vendi" devem usar `totvs_sales_today_summary`.
+- Se o usuario pedir vendas + financeiro do dia, use `totvs_daily_dashboard`.
+- NUNCA use `totvs_get_person_statistics` para responder vendas gerais; essa tool e apenas para um cliente especifico ja identificado.
 
 ### Pedidos de venda
 - `totvs_search_orders` — busca por data, status, cliente, código. Use `expand='items'` APENAS quando precisar dos produtos
@@ -161,7 +173,7 @@ Se uma informação não estiver disponível via tools, informe ao usuário em v
 ### Clientes
 - `totvs_search_individual_customers` — PF por nome ou CPF
 - `totvs_search_legal_customers` — PJ por nome ou CNPJ
-- `totvs_get_person_statistics` — histórico: total comprado, ticket médio, primeira/última compra
+- `totvs_get_person_statistics` — histórico de UM cliente específico: total comprado, ticket médio, primeira/última compra. Não use para vendas gerais/de hoje.
 - `totvs_create_or_update_individual_customer` — cadastra/atualiza PF
 - `totvs_create_or_update_legal_customer` — cadastra/atualiza PJ
 
@@ -1123,7 +1135,7 @@ TOOLS: list[types.Tool] = [
         }}),
     types.Tool(name="totvs_get_customer_bonus_balance", description="Saldo de bônus/desconto de um cliente.",
         inputSchema={"type":"object","properties":{"customerCode":{"type":"integer"},"cpfCnpj":{"type":"string"}}}),
-    types.Tool(name="totvs_get_person_statistics", description="Estatísticas do cliente: total comprado, ticket médio, frequência.",
+    types.Tool(name="totvs_get_person_statistics", description="Estatísticas de UM cliente específico: total comprado, ticket médio, frequência. NÃO use para 'vendas de hoje', 'o que vendi', ranking, resumo geral ou clientes novos; nesses casos use totvs_sales_today_summary, totvs_daily_dashboard ou totvs_new_customers_today.",
         inputSchema={"type":"object","properties":{"customerCode":{"type":"integer"},"branchCode":{"type":"integer","description":"Código da filial"}},"required":["customerCode"]}),
     types.Tool(name="totvs_create_or_update_individual_customer", description="⚠️ ESCRITA — Cria ou atualiza cliente PF no TOTVS.",
         inputSchema={"type":"object","properties":{"cpf":{"type":"string"},"name":{"type":"string"},"email":{"type":"string"},"phone":{"type":"string"},"birthDate":{"type":"string"},"branchCode":{"type":"integer","description":"Código da filial"}},"required":["cpf","name"]}),
@@ -1915,6 +1927,8 @@ TOOLS: list[types.Tool] = [
         description=(
             "Retorna dados de referência da empresa: filiais, tabelas de preço/custo "
             "EXISTENTES, operações, condições de pagamento. "
+            "Pode vir de cache; NÃO use como prova de autenticação em tempo real. "
+            "Se outras tools retornarem InvalidUserPassword, reinicie o MCP e confira env/mcp.json. "
             "Por padrão retorna SLIM (~5KB com top 5 de cada lista). "
             "Use verbose=true pra retornar tudo (pode ser grande, ~50-300KB). "
             "Use isto pra descobrir priceCode/costCode válidos antes de chamar "
@@ -1975,13 +1989,13 @@ TOOLS: list[types.Tool] = [
         },"required":["startDate","endDate"]}),
 
     # ── Aggregators v3.3 — speed tools ────────────────────────────────
-    types.Tool(name="totvs_daily_dashboard", description="Painel completo do dia em 1 chamada: vendas (lista + total + por status) + contas a receber + contas a pagar (aberto vs pago). Use para 'como foi o dia', 'resumo de hoje', 'vendas + financeiro do dia'. Retorna: {date, sales: {totalOrders, totalValue, orders[], byStatus[]}, receivable: {count, totalValue, items[]}, payable: {count, totalOpen, totalPaid, open[], paid[]}}.",
+    types.Tool(name="totvs_daily_dashboard", description="Painel completo do dia em 1 chamada: vendas (lista + total + por status) + contas a receber + contas a pagar (aberto vs pago). Use para 'como foi o dia', 'resumo de hoje', 'vendas + financeiro do dia'. Para somente vendas de hoje prefira totvs_sales_today_summary. Retorna: {date, sales: {totalOrders, totalValue, orders[], byStatus[]}, receivable: {count, totalValue, items[]}, payable: {count, totalOpen, totalPaid, open[], paid[]}}.",
         inputSchema={"type":"object","properties":{
             "date":{"type":"string","description":"YYYY-MM-DD (default=hoje)"},
             "branchCodeList":{"type":"array","items":{"type":"integer"}}
         }}),
 
-    types.Tool(name="totvs_customer_360", description="Visão 360 do cliente em 1 chamada: dados cadastrais + histórico completo de pedidos + flag recompra + ticket médio. Use para 'dados do cliente X', 'histórico de compras', 'é recompra?'. Retorna: {customer: {code, name, cpfCnpj}, orders: {count, totalValue, firstOrder, lastOrder, items[]}, isRepeatBuyer, averageTicket}.",
+    types.Tool(name="totvs_customer_360", description="Visão 360 de UM cliente em 1 chamada: dados cadastrais + histórico completo de pedidos + flag recompra + ticket médio. Use para 'dados do cliente X', 'histórico de compras do cliente X', 'é recompra?'. NÃO use para vendas gerais/de hoje. Retorna: {customer: {code, name, cpfCnpj}, orders: {count, totalValue, firstOrder, lastOrder, items[]}, isRepeatBuyer, averageTicket}.",
         inputSchema={"type":"object","properties":{
             "customerCode":{"type":"integer","description":"Código do cliente"},
             "customerCpfCnpj":{"type":"string","description":"CPF ou CNPJ do cliente"}
@@ -2039,7 +2053,7 @@ TOOLS: list[types.Tool] = [
             "productPageSize":{"type":"integer","description":"Produtos da NF (default 100)"}
         }}),
 
-    types.Tool(name="totvs_sales_today_summary", description="Resumo rápido de vendas de uma data: total, valor, status e ranking de pedidos. Use para 'o que vendi hoje'.",
+    types.Tool(name="totvs_sales_today_summary", description="Resumo rápido de vendas de uma data em 1 chamada: total de pedidos, valor total, status e ranking/lista de pedidos. PRIMEIRA OPÇÃO para 'vendas de hoje', 'vendas de hj', 'o que vendi hoje', 'traga as vendas de hoje', 'quanto vendi' e resumo de vendas.",
         inputSchema={"type":"object","properties":{
             "date":{"type":"string","description":"YYYY-MM-DD (default=hoje)"},
             "branchCodeList":{"type":"array","items":{"type":"integer"}},
