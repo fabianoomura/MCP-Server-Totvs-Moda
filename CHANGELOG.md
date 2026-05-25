@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.7.4] - 2026-05-25
+
+### Changed
+- Updated the public MCP configuration example to use a generic `TOTVS_ENV_FILE` + `.env` setup instead of credentials directly in `mcp.json`.
+- Clarified that the project is not tied to a specific company or machine path.
+
 ## [3.7.3] - 2026-05-25
 
 ### Added

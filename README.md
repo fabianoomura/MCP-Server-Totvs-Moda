@@ -90,22 +90,34 @@ pip install totvs-moda-mcp
 
 ### mcp.json (Claude Desktop / VS Code)
 
+Recomendado: mantenha as credenciais em um `.env` local e aponte o MCP para
+esse arquivo. Assim o projeto não fica amarrado a uma empresa ou máquina
+específica, e o cliente MCP não herda credenciais antigas do sistema.
+
 ```json
 {
   "servers": {
     "totvs-moda": {
       "command": "totvs-moda-mcp",
       "env": {
-        "TOTVS_BASE_URL": "https://seu-servidor:9443",
-        "TOTVS_CLIENT_ID": "seu_client_id",
-        "TOTVS_CLIENT_SECRET": "seu_client_secret",
-        "TOTVS_USERNAME": "usuario",
-        "TOTVS_PASSWORD": "senha",
+        "TOTVS_ENV_FILE": "C:\\\\caminho\\\\para\\\\totvs-moda-mcp\\\\.env",
+        "TOTVS_DOTENV_OVERRIDE": "true",
         "TOTVS_BRANCH_CODES": "1"
       }
     }
   }
 }
+```
+
+Exemplo de `.env`:
+
+```env
+TOTVS_BASE_URL=https://seu-servidor:9443
+TOTVS_CLIENT_ID=seu_client_id
+TOTVS_CLIENT_SECRET=seu_client_secret
+TOTVS_USERNAME=usuario
+TOTVS_PASSWORD=senha
+TOTVS_BRANCH_CODES=1
 ```
 
 ### Variáveis de ambiente
