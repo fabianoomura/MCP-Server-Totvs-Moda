@@ -585,6 +585,45 @@ async def test_pay_invoices_accepts_numeric_paid_type(client):
 
 @pytest.mark.asyncio
 @respx.mock
+async def test_pay_invoices_drops_zero_optional_invoice_values(client):
+    """TOTVS rejects optional invoice amount fields when they are sent as zero."""
+    _mock_token()
+    route = respx.post(f"{TOTVS_BASE}/api/totvsmoda/accounts-receivable/v2/invoices-payment").mock(
+        return_value=Response(200, json={"success": True})
+    )
+
+    tools = AccountsReceivableTools(client)
+    await tools.pay_invoices({
+        "branchCode": 1,
+        "settlementDate": "2026-04-30T00:00:00",
+        "invoices": [{
+            "branchCode": 1,
+            "customerCode": 33435,
+            "receivableCode": 143821,
+            "installmentCode": 1,
+            "paidValue": 19757.20,
+            "interestValue": 0,
+            "discountValue": 0,
+            "grossUpValue": 0,
+            "expensesValue": 0,
+        }],
+        "payments": [{
+            "value": 19757.20,
+            "paidType": 4,
+            "bank": {"accountCode": 19000},
+            "movementDate": "2026-04-30T00:00:00",
+        }],
+    })
+
+    invoice = _body(route)["invoices"][0]
+    assert "interestValue" not in invoice
+    assert "discountValue" not in invoice
+    assert "grossUpValue" not in invoice
+    assert "expensesValue" not in invoice
+
+
+@pytest.mark.asyncio
+@respx.mock
 async def test_product_engineering_services_wraps_filter(client):
     _mock_token()
     route = respx.post(f"{TOTVS_BASE}/api/totvsmoda/product-engineering/v2/services/search").mock(

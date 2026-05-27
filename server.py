@@ -1,5 +1,5 @@
 """
-TOTVS Moda MCP Server v3.8.2
+TOTVS Moda MCP Server v3.8.3
 =============================
 MCP server para API V2 do TOTVS Moda.
 15 módulos | 200+ tools | OAuth2 ROPC
@@ -1408,7 +1408,7 @@ TOOLS: list[types.Tool] = [
             "agencyNumber":{"type":"integer","description":"Número da agência"},
             "account":{"type":"string","description":"Número da conta bancária"},
         },"required":["branchCode","customerCode","receivableCode","installmentCode","bankNumber","agencyNumber","account"]}),
-    types.Tool(name="totvs_pay_invoices", description="⚠️ ESCRITA — Baixa/liquidação de faturas a receber com múltiplas formas de pagamento: cartão de crédito, débito, adiantamento (dinheiro/caixa), conta corrente ou CREDEV.",
+    types.Tool(name="totvs_pay_invoices", description="⚠️ ESCRITA — Baixa/liquidação de faturas a receber com múltiplas formas de pagamento: cartão de crédito, débito, adiantamento (dinheiro/caixa), conta corrente ou CREDEV. A API rejeita interestValue/discountValue/grossUpValue/expensesValue quando enviados como 0; omita esses campos quando não houver valor.",
         inputSchema={"type":"object","properties":{
             "branchCode":{"type":"integer","description":"Filial da liquidação"},
             "settlementDate":{"type":"string","description":"Data da liquidação (ISO 8601, ex: 2026-04-27T00:00:00)"},
@@ -1420,10 +1420,10 @@ TOOLS: list[types.Tool] = [
                     "receivableCode":{"type":"integer","description":"Código da fatura"},
                     "installmentCode":{"type":"integer","description":"Código da parcela"},
                     "paidValue":{"type":"number","description":"Valor pago"},
-                    "interestValue":{"type":"number","description":"Valor de juros"},
-                    "discountValue":{"type":"number","description":"Valor de desconto"},
-                    "grossUpValue":{"type":"number","description":"Valor de acréscimo"},
-                    "expensesValue":{"type":"number","description":"Valor de despesas financeiras"},
+                    "interestValue":{"type":"number","description":"Valor de juros. Opcional: omita quando for 0."},
+                    "discountValue":{"type":"number","description":"Valor de desconto. Opcional: omita quando for 0."},
+                    "grossUpValue":{"type":"number","description":"Valor de acréscimo. Opcional: omita quando for 0."},
+                    "expensesValue":{"type":"number","description":"Valor de despesas financeiras. Opcional: omita quando for 0."},
                 },"required":["branchCode","customerCode","receivableCode","installmentCode","paidValue"],
             }},
             "payments":{"type":"array","description":"Lista de pagamentos","items":{
@@ -2511,7 +2511,7 @@ async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[types.T
 
 
 async def main() -> None:
-    logger.info(f"TOTVS Moda MCP Server v3.8.2 — {len(TOOLS)} tools | {len(get_modules())} módulos")
+    logger.info(f"TOTVS Moda MCP Server v3.8.3 — {len(TOOLS)} tools | {len(get_modules())} módulos")
     try:
         await context_cache.load_context(get_client())
     except Exception as e:
@@ -2521,7 +2521,7 @@ async def main() -> None:
             read_stream, write_stream,
             InitializationOptions(
                 server_name="totvs-moda-mcp",
-                server_version="3.8.2",
+                server_version="3.8.3",
                 capabilities=server.get_capabilities(
                     notification_options=NotificationOptions(),
                     experimental_capabilities={},

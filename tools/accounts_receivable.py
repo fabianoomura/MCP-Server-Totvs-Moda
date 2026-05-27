@@ -12,6 +12,21 @@ import response_cache as cache
 
 logger = logging.getLogger("totvs-moda-mcp.accounts-receivable")
 BASE = "/api/totvsmoda/accounts-receivable/v2"
+ZERO_OPTIONAL_INVOICE_VALUES = {
+    "interestValue",
+    "discountValue",
+    "grossUpValue",
+    "expensesValue",
+}
+
+
+def _drop_zero_optional_invoice_values(body: dict[str, Any]) -> None:
+    for invoice in body.get("invoices", []):
+        if not isinstance(invoice, dict):
+            continue
+        for field in ZERO_OPTIONAL_INVOICE_VALUES:
+            if invoice.get(field) == 0:
+                invoice.pop(field)
 
 
 class AccountsReceivableTools:
@@ -161,6 +176,7 @@ class AccountsReceivableTools:
         args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
         body.pop("branchCodeList", None)
+        _drop_zero_optional_invoice_values(body)
         return await self.client.post(f"{BASE}/invoices-payment", body)
 
     async def create_gift_check(self, args: dict[str, Any]) -> Any:

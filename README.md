@@ -48,7 +48,7 @@ Exemplos reais do que funciona hoje:
 - Harness de endpoints: `251/251` caminhos mapeados na matriz derivada
 - Núcleo não-Analytics: `190/190`
 - Analytics/painéis: `61/61` via gateway opcional, desabilitado por padrão
-- Suite local: `209` testes
+- Suite local: `210` testes
 
 | Módulo | Principais operações |
 |---|---|
@@ -328,7 +328,7 @@ pip install -e ".[dev]"
 PYTHONPATH=. pytest tests/ -v
 ```
 
-209 testes cobrindo contratos de endpoints, agregadores, defaults, campos, carregamento de ambiente e cliente HTTP.
+210 testes cobrindo contratos de endpoints, agregadores, defaults, campos, carregamento de ambiente e cliente HTTP.
 
 ---
 
@@ -364,7 +364,7 @@ totvs-moda-mcp/
 │   ├── _defaults.py       # Injeção automática de branchCode
 │   ├── _fields.py         # Filtro de campos na resposta
 │   └── _value_types.py    # Resolução de tipos de valor
-├── tests/                 # 209 testes (pytest + respx)
+├── tests/                 # 210 testes (pytest + respx)
 └── docs/
     ├── API_ENDPOINT_MATRIX.md  # Matriz derivada de endpoints
     ├── AGENT_ENDPOINT_HARNESS.md

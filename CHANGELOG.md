@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.8.3] - 2026-05-27
+
+### Fixed
+- Updated `totvs_pay_invoices` guidance for bank-account settlements: zero optional amount fields (`interestValue`, `discountValue`, `grossUpValue`, `expensesValue`) are omitted because the TOTVS API rejects them as explicit zero values.
+
+### Tests
+- Added regression coverage for zero-value cleanup in receivable invoice payment payloads.
+
 ## [3.8.2] - 2026-05-27
 
 ### Fixed
