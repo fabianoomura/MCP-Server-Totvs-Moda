@@ -1,6 +1,6 @@
 # Documentacao - TOTVS Moda MCP
 
-Este diretorio concentra o contexto necessario para manter e evoluir o projeto.
+Este diretorio concentra o contexto tecnico necessario para manter o projeto.
 
 ## Leitura recomendada
 

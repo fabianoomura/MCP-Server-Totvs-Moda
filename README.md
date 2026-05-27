@@ -7,7 +7,7 @@
 Servidor MCP (Model Context Protocol) para a **API V2 do TOTVS Moda**.
 
 > **Projeto inicial e não oficial.** Não tem vínculo com a TOTVS S.A.
-> Construído de forma independente, evolui conforme necessidades reais de uso.
+> Construído de forma independente, com foco em uso real da API.
 > Se encontrar problema, abra uma issue. PRs são bem-vindos.
 
 ---
@@ -48,7 +48,7 @@ Exemplos reais do que funciona hoje:
 - Harness de endpoints: `251/251` caminhos mapeados na matriz derivada
 - Núcleo não-Analytics: `190/190`
 - Analytics/painéis: `61/61` via gateway opcional, desabilitado por padrão
-- Suite local: `202` testes
+- Suite local: `204` testes
 
 | Módulo | Principais operações |
 |---|---|
@@ -176,6 +176,44 @@ Cache em memória com TTL diferenciado por tipo de dado:
 
 A primeira consulta busca da API normalmente. Consultas subsequentes dentro do TTL retornam instantaneamente do cache. Nenhum dado é hardcoded — cada empresa tem seus próprios dados cacheados.
 
+### Context Cache e defaults operacionais
+
+No startup, o servidor carrega um contexto curto da empresa para reduzir erros de parametrizacao:
+
+- filiais configuradas em `TOTVS_BRANCH_CODES`;
+- operacoes e condicoes de pagamento;
+- tabelas de preco (`priceTypes`);
+- tipos de custo (`costTypes`);
+- defaults operacionais para preco, custo e saldo.
+
+Os codigos de preco e custo variam por empresa. Por isso, o projeto tenta descobri-los automaticamente:
+
+1. Busca pedidos vendidos nos ultimos 30 dias.
+2. Extrai ate 20 produtos vendidos.
+3. Consulta preco e custo desses produtos sondando codigos validos.
+4. Publica o resultado em `totvs_get_context`.
+
+Se a empresa nao tiver vendas recentes ou a descoberta nao retornar dados, configure explicitamente:
+
+```env
+TOTVS_DEFAULT_PRICE_CODES=1
+TOTVS_DEFAULT_COST_CODES=1,2,3
+TOTVS_DEFAULT_STOCK_CODES=1
+```
+
+### Consultas historicas
+
+Algumas tools compostas precisam olhar historico para responder corretamente. Por exemplo:
+
+- `totvs_customer_360` busca pedidos do cliente desde `2020-01-01`.
+- `totvs_new_customers_today` usa `lookbackStartDate` com default `2020-01-01` para decidir se o cliente realmente e novo.
+
+Esse comportamento reduz falso positivo em "cliente novo", mas pode aumentar o tempo de resposta em bases grandes. Para consultas rapidas ou demonstracoes, passe uma janela menor quando fizer sentido:
+
+```text
+Analise os clientes novos de hoje considerando historico desde 2025-01-01.
+```
+
 ### Usage Intelligence
 
 O servidor registra cada chamada de tool localmente (`~/.totvs-moda-usage.jsonl`), sem envio externo. A tool `totvs_get_usage_insights` analisa o histórico e retorna:
@@ -186,7 +224,7 @@ O servidor registra cada chamada de tool localmente (`~/.totvs-moda-usage.jsonl`
 - **Padrões de parâmetros**: filtros que se repetem em 70%+ das chamadas (candidatos a default)
 - **Sugestões**: recomendações automáticas de composite tools, cache e rotinas
 
-Esses dados ficam no computador do usuário e ajudam a evoluir o servidor com base em uso real.
+Esses dados ficam no computador do usuário e ajudam a identificar padrões, sequências e consultas que podem se beneficiar de cache.
 
 ### Composite Tools (painéis rápidos)
 
@@ -334,7 +372,6 @@ totvs-moda-mcp/
 
 - Limitado ao que a **API V2 do TOTVS Moda** expõe publicamente
 - Não cobre todas as funcionalidades do ERP — apenas o que a API disponibiliza
-- Projeto em evolução — novos módulos adicionados conforme necessidade
 - Os exports Swagger brutos e notas estratégicas ficam fora do repositório público; o repo publica apenas código, documentação técnica e matriz derivada.
 
 ---

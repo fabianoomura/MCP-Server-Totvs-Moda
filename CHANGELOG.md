@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.7.6] - 2026-05-27
+
+### Changed
+- Updated README with current operational behavior for context cache, price/cost code discovery and historical lookback defaults.
+- Corrected the advertised local test count to 204 tests.
+- Kept private planning/checklist docs out of the public repository.
+
 ## [3.7.5] - 2026-05-27
 
 ### Changed
