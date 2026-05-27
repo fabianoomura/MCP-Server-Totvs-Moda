@@ -55,8 +55,7 @@ class ImageTools:
 
     async def upload_product_image(self, args: dict[str, Any]) -> Any:
         """POST /product — ⚠️ Upload de imagem de produto (base64)."""
-        body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/product", body)
+        return await self.client.post(f"{BASE}/product", _image_body(args))
 
     async def import_image_no_link(self, args: dict[str, Any]) -> Any:
         """POST /imports - importa imagem de produto sem vinculo."""

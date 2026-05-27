@@ -1145,9 +1145,10 @@ async def test_upload_product_image_uses_product_endpoint(client):
     )
 
     tools = ImageTools(client)
-    await tools.upload_product_image({"imageBase64": "abc123"})
+    await tools.upload_product_image({"imageBase64": "abc123", "fileName": "foto.jpg"})
 
     assert right_route.called
+    assert _body(right_route) == {"base64": "abc123", "name": "foto.jpg"}
 
 
 # ════════════════════════════════════════════════════════════════════════════

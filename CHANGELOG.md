@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.8.2] - 2026-05-27
+
+### Fixed
+- Fixed `totvs_upload_product_image` to map `imageBase64`/`fileName` to the real `Base64`/`Name` upload contract.
+
+### Tests
+- Added regression coverage for product image upload body serialization.
+
 ## [3.8.1] - 2026-05-27
 
 ### Fixed
