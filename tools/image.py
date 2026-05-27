@@ -40,7 +40,17 @@ class ImageTools:
 
     async def search_product_images(self, args: dict[str, Any]) -> Any:
         """POST /product/search — Lista imagens de produto por filtro."""
-        body = {k: v for k, v in args.items() if v is not None}
+        excluded = ("page", "pageSize", "order", "fields", "expand")
+        flt = {k: v for k, v in args.items() if k not in excluded and v is not None}
+        body: dict[str, Any] = {
+            "filter": flt,
+            "page": args.get("page", 1),
+            "pageSize": args.get("pageSize", 100),
+        }
+        if args.get("order"):
+            body["order"] = args["order"]
+        if args.get("expand"):
+            body["expand"] = args["expand"]
         return await self.client.post(f"{BASE}/product/search", body)
 
     async def upload_product_image(self, args: dict[str, Any]) -> Any:

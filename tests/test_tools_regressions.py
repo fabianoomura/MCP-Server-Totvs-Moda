@@ -1127,10 +1127,12 @@ async def test_search_product_images_uses_product_search_endpoint(client):
     )
 
     tools = ImageTools(client)
-    await tools.search_product_images({"referenceCode": "REF-1"})
+    await tools.search_product_images({"productCodeList": [23], "page": 1, "pageSize": 10})
 
     assert right_route.called
     assert not wrong_route.called
+    body = _body(right_route)
+    assert body == {"filter": {"productCodeList": [23]}, "page": 1, "pageSize": 10}
 
 
 @pytest.mark.asyncio

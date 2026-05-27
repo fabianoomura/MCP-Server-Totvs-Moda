@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "totvs-moda-mcp"
-version = "3.8.0"
+version = "3.8.1"
 description = "MCP Server para API V2 do TOTVS Moda — integre Claude e outros clientes MCP ao seu ERP de moda brasileiro"
 readme = "README.md"
 license = { text = "MIT" }
@@ -41,6 +41,8 @@ exclude = [
     "/.env",
     "/docs/01_ajustes_pontuais.md",
     "/docs/02_evolucao_projeto.md",
+    "/tmp_image_tests",
+    "/tmp_xml_tests",
 ]
 
 [tool.pytest.ini_options]

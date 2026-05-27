@@ -31,6 +31,8 @@ docs/MIGRATION_v*.md
 
 # Arquivos temporários e pacotes de desenvolvimento
 *.zip
+tmp_image_tests/
+tmp_xml_tests/
 fixes/
 v2.2.0_package/
 v2.3.0_delivery/

@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.8.1] - 2026-05-27
+
+### Fixed
+- Fixed `totvs_search_product_images` to send search criteria inside `filter`, matching the real `/image/v2/product/search` contract.
+- Excluded local image/XML test output folders from Git and package builds.
+
+### Tests
+- Added regression coverage for product image search body serialization.
+
 ## [3.8.0] - 2026-05-27
 
 ### Added

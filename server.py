@@ -1,5 +1,5 @@
 """
-TOTVS Moda MCP Server v3.8.0
+TOTVS Moda MCP Server v3.8.1
 =============================
 MCP server para API V2 do TOTVS Moda.
 15 módulos | 200+ tools | OAuth2 ROPC
@@ -2511,7 +2511,7 @@ async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[types.T
 
 
 async def main() -> None:
-    logger.info(f"TOTVS Moda MCP Server v3.8.0 — {len(TOOLS)} tools | {len(get_modules())} módulos")
+    logger.info(f"TOTVS Moda MCP Server v3.8.1 — {len(TOOLS)} tools | {len(get_modules())} módulos")
     try:
         await context_cache.load_context(get_client())
     except Exception as e:
@@ -2521,7 +2521,7 @@ async def main() -> None:
             read_stream, write_stream,
             InitializationOptions(
                 server_name="totvs-moda-mcp",
-                server_version="3.8.0",
+                server_version="3.8.1",
                 capabilities=server.get_capabilities(
                     notification_options=NotificationOptions(),
                     experimental_capabilities={},
