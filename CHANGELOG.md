@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.7.5] - 2026-05-27
+
+### Changed
+- Added MCP annotations to high-risk write tools so compatible clients can surface destructive/open-world metadata.
+- Added upper bounds for critical runtime dependencies (`mcp<2.0.0`, `httpx<0.28.0`).
+- Updated point-adjustment docs with current status, completed items and remaining follow-ups.
+- Aligned the advertised MCP server version with the package version.
+
 ## [3.7.4] - 2026-05-25
 
 ### Changed

@@ -1,5 +1,5 @@
 """
-TOTVS Moda MCP Server v3.0.0
+TOTVS Moda MCP Server v3.7.5
 =============================
 MCP server para API V2 do TOTVS Moda.
 15 módulos | ~111 tools | OAuth2 ROPC
@@ -58,6 +58,13 @@ _client: TotvsClient | None = None
 _modules: dict[str, Any] = {}
 ANALYTICS_ENABLED = os.environ.get("TOTVS_ENABLE_ANALYTICS", "").lower() in {"1", "true", "yes", "sim"}
 _dotenv_loaded = False
+
+WRITE_TOOL_ANNOTATIONS: dict[str, bool] = {
+    "destructiveHint": True,
+    "idempotentHint": False,
+    "readOnlyHint": False,
+    "openWorldHint": True,
+}
 
 
 def _truthy_env(name: str) -> bool:
@@ -319,7 +326,8 @@ TOOLS: list[types.Tool] = [
             "orderCode":{"type":"integer"},
             "reasonCancellationCode":{"type":"integer","description":"Código do motivo de cancelamento (obrigatório)"},
             "ReasonCancellationDescription":{"type":"string","description":"Descrição do cancelamento (max 80 chars)"}
-        },"required":["branchCode","orderCode","reasonCancellationCode"]}),
+        },"required":["branchCode","orderCode","reasonCancellationCode"]},
+        annotations=WRITE_TOOL_ANNOTATIONS),
     types.Tool(name="totvs_change_order_status", description="⚠️ ESCRITA — Altera situação do pedido. Aceita apenas valores do enum: InProgress (Em andamento), BillingReleased (Liberado p/ faturamento), Blocked (Bloqueado), InComposition (Em composição), InAnalysis (Em análise).",
         inputSchema={"type":"object","properties":{
             "branchCode":{"type":"integer","description":"Código da filial"},
@@ -327,9 +335,11 @@ TOOLS: list[types.Tool] = [
             "statusOrder":{"type":"string","enum":["InProgress","BillingReleased","Blocked","InComposition","InAnalysis"],"description":"Nova situação do pedido"},
             "reasonBlockingCode":{"type":"integer","description":"Código do motivo de bloqueio (apenas para statusOrder=Blocked)"},
             "reasonBlockingDescription":{"type":"string","description":"Descrição do motivo de bloqueio"}
-        },"required":["branchCode","orderCode","statusOrder"]}),
+        },"required":["branchCode","orderCode","statusOrder"]},
+        annotations=WRITE_TOOL_ANNOTATIONS),
     types.Tool(name="totvs_update_order_items_price", description="⚠️ ESCRITA — Altera preço de itens do pedido.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"orderCode":{"type":"integer"},"items":{"type":"array","items":{"type":"object","properties":{"itemSequential":{"type":"integer"},"price":{"type":"number"}},"required":["itemSequential","price"]}}},"required":["branchCode","orderCode","items"]}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"orderCode":{"type":"integer"},"items":{"type":"array","items":{"type":"object","properties":{"itemSequential":{"type":"integer"},"price":{"type":"number"}},"required":["itemSequential","price"]}}},"required":["branchCode","orderCode","items"]},
+        annotations=WRITE_TOOL_ANNOTATIONS),
 
     # ── SALES ORDER v2.3 (item management) ────────────────────────────────────
     types.Tool(name="totvs_add_order_items", description="⚠️ ESCRITA — Adiciona itens a pedido existente. Informe branchCode+orderCode OU orderId + lista 'items'.",
@@ -912,7 +922,8 @@ TOOLS: list[types.Tool] = [
                 "value": {"type": "number"}
             },
             "required": ["productCode", "valueCode", "value"]
-        }
+        },
+        annotations=WRITE_TOOL_ANNOTATIONS,
     ),
     types.Tool(
         name="totvs_update_product_price_only",
@@ -959,7 +970,8 @@ TOOLS: list[types.Tool] = [
         }
     ),
     types.Tool(name="totvs_update_promotion_price", description="⚠️ ESCRITA — Altera preço de promoção de produto.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"productCode":{"type":"integer"},"promotionPrice":{"type":"number"},"startDate":{"type":"string"},"endDate":{"type":"string"}},"required":["branchCode","productCode","promotionPrice"]}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"productCode":{"type":"integer"},"promotionPrice":{"type":"number"},"startDate":{"type":"string"},"endDate":{"type":"string"}},"required":["branchCode","productCode","promotionPrice"]},
+        annotations=WRITE_TOOL_ANNOTATIONS),
     types.Tool(name="totvs_search_product_codes", description="Lista de produtos com filtro — retorna apenas código e dados básicos. Use fields para reduzir tokens.",
         inputSchema={"type":"object","properties":{
             "productCodeList":{"type":"array","items":{"type":"integer"}},
@@ -1186,7 +1198,8 @@ TOOLS: list[types.Tool] = [
     types.Tool(name="totvs_get_person_statistics", description="Estatísticas de UM cliente específico: total comprado, ticket médio, frequência. NÃO use para 'vendas de hoje', 'o que vendi', ranking, resumo geral ou clientes novos; nesses casos use totvs_sales_today_summary, totvs_daily_dashboard ou totvs_new_customers_today.",
         inputSchema={"type":"object","properties":{"customerCode":{"type":"integer"},"branchCode":{"type":"integer","description":"Código da filial"}},"required":["customerCode"]}),
     types.Tool(name="totvs_create_or_update_individual_customer", description="⚠️ ESCRITA — Cria ou atualiza cliente PF no TOTVS.",
-        inputSchema={"type":"object","properties":{"cpf":{"type":"string"},"name":{"type":"string"},"email":{"type":"string"},"phone":{"type":"string"},"birthDate":{"type":"string"},"branchCode":{"type":"integer","description":"Código da filial"}},"required":["cpf","name"]}),
+        inputSchema={"type":"object","properties":{"cpf":{"type":"string"},"name":{"type":"string"},"email":{"type":"string"},"phone":{"type":"string"},"birthDate":{"type":"string"},"branchCode":{"type":"integer","description":"Código da filial"}},"required":["cpf","name"]},
+        annotations=WRITE_TOOL_ANNOTATIONS),
     types.Tool(name="totvs_create_or_update_legal_customer", description="⚠️ Cria ou atualiza cliente PJ no TOTVS.",
         inputSchema={"type":"object","properties":{
             "cnpj":{"type":"string"},"corporateName":{"type":"string"},
@@ -1800,7 +1813,8 @@ TOOLS: list[types.Tool] = [
     types.Tool(name="totvs_search_voucher", description="Consulta vouchers/cupons. Use fields para reduzir tokens.",
         inputSchema={"type":"object","properties":{"voucherCode":{"type":"string"},"customerCode":{"type":"integer"},"branchCode":{"type":"integer","description":"Código da filial"},"fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."}}}),
     types.Tool(name="totvs_create_voucher", description="⚠️ ESCRITA — Cria voucher/cupom.",
-        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"value":{"type":"number"},"expirationDate":{"type":"string"},"customerCode":{"type":"integer"}},"required":["branchCode","value"]}),
+        inputSchema={"type":"object","properties":{"branchCode":{"type":"integer","description":"Código da filial"},"value":{"type":"number"},"expirationDate":{"type":"string"},"customerCode":{"type":"integer"}},"required":["branchCode","value"]},
+        annotations=WRITE_TOOL_ANNOTATIONS),
 
     # ── MANAGEMENT ────────────────────────────────────────────────────────────
     types.Tool(name="totvs_get_users", description="Lista usuários do TOTVS Moda.",
@@ -2444,7 +2458,7 @@ async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[types.T
 
 
 async def main() -> None:
-    logger.info(f"TOTVS Moda MCP Server v3.1 — {len(TOOLS)} tools | {len(get_modules())} módulos")
+    logger.info(f"TOTVS Moda MCP Server v3.7.5 — {len(TOOLS)} tools | {len(get_modules())} módulos")
     try:
         await context_cache.load_context(get_client())
     except Exception as e:
@@ -2454,7 +2468,7 @@ async def main() -> None:
             read_stream, write_stream,
             InitializationOptions(
                 server_name="totvs-moda-mcp",
-                server_version="3.5.0",
+                server_version="3.7.5",
                 capabilities=server.get_capabilities(
                     notification_options=NotificationOptions(),
                     experimental_capabilities={},
