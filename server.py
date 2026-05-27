@@ -1,8 +1,8 @@
 """
-TOTVS Moda MCP Server v3.7.6
+TOTVS Moda MCP Server v3.8.0
 =============================
 MCP server para API V2 do TOTVS Moda.
-15 módulos | ~111 tools | OAuth2 ROPC
+15 módulos | 200+ tools | OAuth2 ROPC
 
 Author: ATL4S
 """
@@ -2132,6 +2132,54 @@ TOOLS: list[types.Tool] = [
             "pageSize":{"type":"integer","description":"Pedidos do dia lidos (default 500)"}
         }}),
 
+    types.Tool(name="totvs_sales_by_representative", description="Resumo executivo de vendas por representante/vendedor em um periodo. Use para diretoria comercial e ranking de representantes. Retorna representatives[] com representativeCode, representativeName, orderCount, totalValue, blockedValue e averageTicket.",
+        inputSchema={"type":"object","properties":{
+            "startDate":{"type":"string","description":"YYYY-MM-DD"},
+            "endDate":{"type":"string","description":"YYYY-MM-DD"},
+            "branchCodeList":{"type":"array","items":{"type":"integer"}},
+            "topN":{"type":"integer","description":"Quantidade no ranking (default 20)"},
+            "pageSize":{"type":"integer","description":"Pedidos lidos (default 500)"}
+        },"required":["startDate","endDate"]}),
+
+    types.Tool(name="totvs_sales_by_channel", description="Resumo executivo de vendas por canal em um periodo. Agrupa automaticamente por integrationCode/operacao, ou pelo campo informado em channelField. Use para comparar canais, ecommerce, loja, operacoes e origem de venda.",
+        inputSchema={"type":"object","properties":{
+            "startDate":{"type":"string","description":"YYYY-MM-DD"},
+            "endDate":{"type":"string","description":"YYYY-MM-DD"},
+            "branchCodeList":{"type":"array","items":{"type":"integer"}},
+            "channelField":{"type":"string","description":"Campo do pedido usado para agrupar. Default auto; exemplos: integrationCode, operationCode, operationName."},
+            "topN":{"type":"integer","description":"Quantidade no ranking (default 20)"},
+            "pageSize":{"type":"integer","description":"Pedidos lidos (default 500)"}
+        },"required":["startDate","endDate"]}),
+
+    types.Tool(name="totvs_overdue_financial_summary", description="Titulos em atraso no contas a receber e contas a pagar. Use para gerente financeiro/diretoria: inadimplencia, maiores clientes em atraso, fornecedores vencidos e posicao liquida vencida.",
+        inputSchema={"type":"object","properties":{
+            "asOfDate":{"type":"string","description":"Data limite YYYY-MM-DD (default=hoje)"},
+            "startDate":{"type":"string","description":"Inicio da busca de vencimentos (default 2000-01-01)"},
+            "branchCodeList":{"type":"array","items":{"type":"integer"}},
+            "topN":{"type":"integer","description":"Quantidade nos rankings (default 20)"},
+            "pageSize":{"type":"integer","description":"Titulos lidos por lado (default 500)"}
+        }}),
+
+    types.Tool(name="totvs_cash_flow_forecast", description="Fluxo de caixa previsto por vencimento: contas a receber, contas a pagar e saldo liquido por dia. Use para 'quanto tenho para receber/pagar nos proximos dias'.",
+        inputSchema={"type":"object","properties":{
+            "startDate":{"type":"string","description":"Data inicial YYYY-MM-DD (default=hoje)"},
+            "endDate":{"type":"string","description":"Data final YYYY-MM-DD; se omitida usa days"},
+            "days":{"type":"integer","description":"Quantidade de dias se endDate omitida (default 7)"},
+            "branchCodeList":{"type":"array","items":{"type":"integer"}},
+            "pageSize":{"type":"integer","description":"Titulos lidos por lado (default 500)"}
+        }}),
+
+    types.Tool(name="totvs_product_stock_by_kind_summary", description="Resumo de estoque por tipo: produto acabado, materia-prima e material a granel. Use para diretor, gerente de producao e PCP. Retorna total de SKUs/unidades e topProducts por tipo. Usa cache curto de saldo.",
+        inputSchema={"type":"object","properties":{
+            "branchCode":{"type":"integer","description":"Filial (default do contexto)"},
+            "productKindList":{"type":"array","items":{"type":"string","enum":["finished","raw_material","bulk"]},"description":"Tipos a consultar (default finished, raw_material, bulk)"},
+            "minStock":{"type":"number","description":"Saldo minimo (default 1)"},
+            "topN":{"type":"integer","description":"Produtos por tipo (default 10)"},
+            "pageSize":{"type":"integer","description":"Itens por pagina interna (default 1000)"},
+            "concurrency":{"type":"integer","description":"Paginas paralelas (default 10, max 20)"},
+            "maxPages":{"type":"integer","description":"Limite de seguranca de paginas (default 100)"}
+        }}),
+
     types.Tool(name="totvs_open_purchase_orders", description="Pedidos de compra em aberto em 1 chamada rápida. Pagina em paralelo, filtra status abertos e retorna totais, resumo por status, mais recentes e maiores valores. Use para 'pedidos de compra em aberto'.",
         inputSchema={"type":"object","properties":{
             "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Filiais (default do contexto)"},
@@ -2402,6 +2450,11 @@ ROUTING: dict[str, tuple[str, str]] = {
     "totvs_invoice_360":                        ("aggregators", "invoice_360"),
     "totvs_sales_today_summary":                ("aggregators", "sales_today_summary"),
     "totvs_new_customers_today":                ("aggregators", "new_customers_today"),
+    "totvs_sales_by_representative":            ("aggregators", "sales_by_representative"),
+    "totvs_sales_by_channel":                   ("aggregators", "sales_by_channel"),
+    "totvs_overdue_financial_summary":          ("aggregators", "overdue_financial_summary"),
+    "totvs_cash_flow_forecast":                 ("aggregators", "cash_flow_forecast"),
+    "totvs_product_stock_by_kind_summary":      ("aggregators", "product_stock_by_kind_summary"),
     "totvs_open_purchase_orders":               ("aggregators", "open_purchase_orders"),
     "totvs_open_production_orders":             ("aggregators", "open_production_orders"),
     "totvs_analytics_call":                     ("analytics", "call_endpoint"),
@@ -2458,7 +2511,7 @@ async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[types.T
 
 
 async def main() -> None:
-    logger.info(f"TOTVS Moda MCP Server v3.7.6 — {len(TOOLS)} tools | {len(get_modules())} módulos")
+    logger.info(f"TOTVS Moda MCP Server v3.8.0 — {len(TOOLS)} tools | {len(get_modules())} módulos")
     try:
         await context_cache.load_context(get_client())
     except Exception as e:
@@ -2468,7 +2521,7 @@ async def main() -> None:
             read_stream, write_stream,
             InitializationOptions(
                 server_name="totvs-moda-mcp",
-                server_version="3.7.6",
+                server_version="3.8.0",
                 capabilities=server.get_capabilities(
                     notification_options=NotificationOptions(),
                     experimental_capabilities={},

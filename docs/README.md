@@ -33,7 +33,7 @@ Ultima validacao local documentada:
 
 ```powershell
 python -m pytest -q
-# 204 passed
+# 209 passed
 ```
 
 ## Importante

@@ -48,7 +48,7 @@ Exemplos reais do que funciona hoje:
 - Harness de endpoints: `251/251` caminhos mapeados na matriz derivada
 - Núcleo não-Analytics: `190/190`
 - Analytics/painéis: `61/61` via gateway opcional, desabilitado por padrão
-- Suite local: `204` testes
+- Suite local: `209` testes
 
 | Módulo | Principais operações |
 |---|---|
@@ -63,7 +63,7 @@ Exemplos reais do que funciona hoje:
 | **Produção** | Ordens de produção, consumo de matéria-prima |
 | **Logística** | Movimentações de material, lotes |
 | **Geral** | Operações, condições de pagamento, classificações, CEP, cidades |
-| **Painéis rápidos** | Dashboard do dia, visões 360, estoque disponível, pedidos/OPs em aberto |
+| **Painéis rápidos** | Dashboard do dia, visões 360, estoque disponível, vendas por canal/representante, fluxo de caixa, pedidos/OPs em aberto |
 | **Analytics / painéis** | Gateway opcional para endpoints de Analytics, habilitado apenas por ambiente |
 | **Inteligência de uso** | Análise de padrões, sequências, horários de pico, sugestões de otimização |
 
@@ -286,6 +286,11 @@ Tools que combinam múltiplas chamadas à API em uma única resposta:
 | `totvs_daily_dashboard` | Vendas + contas a receber + a pagar do dia |
 | `totvs_customer_360` | Visão completa do cliente com histórico e flag recompra |
 | `totvs_stock_available` | Produtos com estoque disponível, já filtrado |
+| `totvs_sales_by_channel` | Vendas por canal/origem em um período |
+| `totvs_sales_by_representative` | Vendas por representante/vendedor |
+| `totvs_cash_flow_forecast` | Contas a receber, a pagar e saldo líquido previsto por dia |
+| `totvs_overdue_financial_summary` | Títulos em atraso no receber e no pagar |
+| `totvs_product_stock_by_kind_summary` | Estoque por produto acabado, matéria-prima e material a granel |
 
 ### Analytics
 
@@ -323,7 +328,7 @@ pip install -e ".[dev]"
 PYTHONPATH=. pytest tests/ -v
 ```
 
-204 testes cobrindo contratos de endpoints, agregadores, defaults, campos, carregamento de ambiente e cliente HTTP.
+209 testes cobrindo contratos de endpoints, agregadores, defaults, campos, carregamento de ambiente e cliente HTTP.
 
 ---
 
@@ -359,7 +364,7 @@ totvs-moda-mcp/
 │   ├── _defaults.py       # Injeção automática de branchCode
 │   ├── _fields.py         # Filtro de campos na resposta
 │   └── _value_types.py    # Resolução de tipos de valor
-├── tests/                 # 204 testes (pytest + respx)
+├── tests/                 # 209 testes (pytest + respx)
 └── docs/
     ├── API_ENDPOINT_MATRIX.md  # Matriz derivada de endpoints
     ├── AGENT_ENDPOINT_HARNESS.md

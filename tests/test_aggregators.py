@@ -49,6 +49,10 @@ def _body(route):
     return json.loads(route.calls.last.request.content)
 
 
+def _json_request(request):
+    return json.loads(request.content)
+
+
 # ── get_products_sold ───────────────────────────────────────────────────────
 
 @pytest.mark.asyncio
@@ -112,6 +116,138 @@ async def test_get_products_sold_respects_topN(client):
 
     assert len(result["topProducts"]) == 3
     assert result["topProducts"][0]["productCode"] == 20
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_sales_by_representative_groups_orders(client):
+    _mock_token()
+    route = respx.post(f"{TOTVS_BASE}/api/totvsmoda/sales-order/v2/orders/search").mock(
+        return_value=Response(200, json={"items": [
+            {"orderCode": 1, "representativeCode": 10, "representativeName": "Ana", "statusOrder": "InProgress", "totalAmountOrder": 100},
+            {"orderCode": 2, "representativeCode": 10, "representativeName": "Ana", "statusOrder": "Blocked", "totalAmountOrder": 50},
+            {"orderCode": 3, "representativeCode": 20, "representativeName": "Bruno", "statusOrder": "InProgress", "totalAmountOrder": 200},
+        ]})
+    )
+
+    tools = AggregatorTools(client)
+    result = await tools.sales_by_representative({"startDate": "2026-05-01", "endDate": "2026-05-27"})
+
+    assert result["totalOrders"] == 3
+    assert result["representatives"][0]["representativeCode"] == 20
+    ana = next(item for item in result["representatives"] if item["representativeCode"] == 10)
+    assert ana["orderCount"] == 2
+    assert ana["totalValue"] == 150
+    assert ana["blockedValue"] == 50
+    body = _body(route)
+    assert body["filter"]["branchCodeList"] == [1]
+    assert body["filter"]["startOrderDate"] == "2026-05-01"
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_sales_by_channel_groups_auto_from_integration_code(client):
+    _mock_token()
+    respx.post(f"{TOTVS_BASE}/api/totvsmoda/sales-order/v2/orders/search").mock(
+        return_value=Response(200, json={"items": [
+            {"orderCode": 1, "integrationCode": "SHP-100", "statusOrder": "InProgress", "totalAmountOrder": 100},
+            {"orderCode": 2, "integrationCode": "SHP-101", "statusOrder": "Blocked", "totalAmountOrder": 50},
+            {"orderCode": 3, "operationCode": 7, "statusOrder": "InProgress", "totalAmountOrder": 200},
+        ]})
+    )
+
+    tools = AggregatorTools(client)
+    result = await tools.sales_by_channel({"startDate": "2026-05-01", "endDate": "2026-05-27"})
+
+    channels = {item["channel"]: item for item in result["channels"]}
+    assert channels["SHP"]["orderCount"] == 2
+    assert channels["SHP"]["blockedValue"] == 50
+    assert channels["Operacao 7"]["totalValue"] == 200
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_overdue_financial_summary_aggregates_receivable_and_payable(client):
+    _mock_token()
+    ar_route = respx.post(f"{TOTVS_BASE}/api/totvsmoda/accounts-receivable/v2/documents/search").mock(
+        return_value=Response(200, json={"items": [
+            {"customerCode": 1, "customerName": "Cliente A", "receivableCode": 100, "expiredDate": "2026-05-20", "installmentValue": 1000, "paidValue": 200},
+            {"customerCode": 1, "customerName": "Cliente A", "receivableCode": 101, "expiredDate": "2026-05-21", "balanceValue": 300},
+        ]})
+    )
+    ap_route = respx.post(f"{TOTVS_BASE}/api/totvsmoda/accounts-payable/v2/duplicates/search").mock(
+        return_value=Response(200, json={"items": [
+            {"supplierCode": 5, "supplierName": "Fornecedor X", "duplicateCode": 77, "expiredDate": "2026-05-22", "duplicateValue": 400},
+        ]})
+    )
+
+    tools = AggregatorTools(client)
+    result = await tools.overdue_financial_summary({"asOfDate": "2026-05-27", "startDate": "2026-05-01"})
+
+    assert result["receivable"]["totalOverdue"] == 1100
+    assert result["payable"]["totalOverdue"] == 400
+    assert result["netOverduePosition"] == 700
+    assert result["receivable"]["topCustomers"][0]["amount"] == 1100
+    assert _body(ar_route)["filter"]["hasOpenInvoices"] is True
+    assert _body(ap_route)["filter"]["status"] == "Normal"
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_cash_flow_forecast_groups_by_due_date(client):
+    _mock_token()
+    respx.post(f"{TOTVS_BASE}/api/totvsmoda/accounts-receivable/v2/documents/search").mock(
+        return_value=Response(200, json={"items": [
+            {"expiredDate": "2026-05-27", "installmentValue": 1000},
+            {"expiredDate": "2026-05-28", "balanceValue": 500},
+        ]})
+    )
+    respx.post(f"{TOTVS_BASE}/api/totvsmoda/accounts-payable/v2/duplicates/search").mock(
+        return_value=Response(200, json={"items": [
+            {"expiredDate": "2026-05-27", "duplicateValue": 300},
+            {"expiredDate": "2026-05-29", "balanceValue": 200},
+        ]})
+    )
+
+    tools = AggregatorTools(client)
+    result = await tools.cash_flow_forecast({"startDate": "2026-05-27", "days": 3})
+
+    assert result["totals"] == {"receivable": 1500.0, "payable": 500.0, "net": 1000.0}
+    assert result["daily"][0] == {"date": "2026-05-27", "receivable": 1000.0, "payable": 300.0, "net": 700.0}
+    assert result["daily"][2]["payable"] == 200.0
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_product_stock_by_kind_summary_queries_finished_and_raw(client):
+    _mock_token()
+
+    def handler(request):
+        body = _json_request(request)
+        branch_info = body["filter"]["branchInfo"]
+        if branch_info.get("isFinishedProduct"):
+            items = [{"productCode": 1, "productName": "PA", "balances": [{"stock": 5}]}]
+        elif branch_info.get("isRawMaterial"):
+            items = [{"productCode": 2, "productName": "MP", "balances": [{"stock": 8}]}]
+        else:
+            items = []
+        return Response(200, json={"items": items})
+
+    route = respx.post(f"{TOTVS_BASE}/api/totvsmoda/product/v2/balances/search").mock(side_effect=handler)
+
+    tools = AggregatorTools(client)
+    result = await tools.product_stock_by_kind_summary({
+        "branchCode": 1,
+        "productKindList": ["finished", "raw_material"],
+        "pageSize": 100,
+        "topN": 1,
+    })
+
+    assert len(result["summaries"]) == 2
+    by_kind = {item["productKind"]: item for item in result["summaries"]}
+    assert by_kind["finished"]["totalUnits"] == 5
+    assert by_kind["raw_material"]["topProducts"][0]["productName"] == "MP"
+    assert route.call_count == 2
 
 
 @pytest.mark.asyncio

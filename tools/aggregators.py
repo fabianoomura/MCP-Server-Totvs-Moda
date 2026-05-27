@@ -1017,6 +1017,372 @@ class AggregatorTools:
         }
         return result
 
+    async def sales_by_representative(self, args: dict[str, Any]) -> Any:
+        """Sales grouped by representative for executive/commercial analysis."""
+        args = inject_branch_defaults(args)
+        start = args["startDate"]
+        end = args["endDate"]
+        branches = args.get("branchCodeList", [1])
+        top_n = int(args.get("topN", 20))
+        page_size = int(args.get("pageSize", 500))
+
+        cache_key = {"fn": "sales_by_representative", "start": start, "end": end, "branches": branches, "topN": top_n}
+        cached = cache.get("sales_by_representative", cache_key, cache.SALES)
+        if cached is not None:
+            return cached
+
+        resp = await self.client.post(f"{BASE_SALES}/orders/search", {
+            "filter": {"branchCodeList": branches, "startOrderDate": start, "endOrderDate": end},
+            "page": 1,
+            "pageSize": page_size,
+        })
+        orders = self._items(resp)
+        groups: dict[str, dict[str, Any]] = defaultdict(lambda: {
+            "representativeCode": None,
+            "representativeName": "Sem representante",
+            "orderCount": 0,
+            "totalValue": 0.0,
+            "blockedValue": 0.0,
+            "averageTicket": 0.0,
+        })
+        total = 0.0
+        for order in orders:
+            value = float(order.get("totalAmountOrder", order.get("totalValue", 0)) or 0)
+            total += value
+            code = order.get("representativeCode") or order.get("sellerCode") or order.get("commissionedCode")
+            name = order.get("representativeName") or order.get("sellerName") or order.get("commissionedName")
+            key = str(code) if code is not None else "none"
+            group = groups[key]
+            group["representativeCode"] = code
+            if name:
+                group["representativeName"] = name
+            group["orderCount"] += 1
+            group["totalValue"] += value
+            if str(order.get("statusOrder", "")).lower() == "blocked":
+                group["blockedValue"] += value
+
+        ranking = list(groups.values())
+        for group in ranking:
+            group["averageTicket"] = group["totalValue"] / group["orderCount"] if group["orderCount"] else 0.0
+        ranking.sort(key=lambda x: x["totalValue"], reverse=True)
+        result = {
+            "period": {"startDate": start, "endDate": end},
+            "branchCodeList": branches,
+            "totalOrders": len(orders),
+            "totalValue": total,
+            "representatives": ranking[:top_n],
+        }
+        cache.put("sales_by_representative", cache_key, result)
+        return result
+
+    async def sales_by_channel(self, args: dict[str, Any]) -> Any:
+        """Sales grouped by channel-like order fields such as integrationCode or operation."""
+        args = inject_branch_defaults(args)
+        start = args["startDate"]
+        end = args["endDate"]
+        branches = args.get("branchCodeList", [1])
+        top_n = int(args.get("topN", 20))
+        page_size = int(args.get("pageSize", 500))
+        channel_field = args.get("channelField", "auto")
+
+        cache_key = {
+            "fn": "sales_by_channel",
+            "start": start,
+            "end": end,
+            "branches": branches,
+            "topN": top_n,
+            "channelField": channel_field,
+        }
+        cached = cache.get("sales_by_channel", cache_key, cache.SALES)
+        if cached is not None:
+            return cached
+
+        resp = await self.client.post(f"{BASE_SALES}/orders/search", {
+            "filter": {"branchCodeList": branches, "startOrderDate": start, "endOrderDate": end},
+            "page": 1,
+            "pageSize": page_size,
+        })
+        orders = self._items(resp)
+
+        def _channel(order: dict[str, Any]) -> str:
+            if channel_field != "auto":
+                return str(order.get(channel_field) or "Nao informado")
+            integration = str(order.get("integrationCode") or "").strip()
+            if integration:
+                return integration.split("-")[0] if "-" in integration else integration
+            if order.get("operationName"):
+                return str(order["operationName"])
+            if order.get("operationCode") is not None:
+                return f"Operacao {order['operationCode']}"
+            return "Nao informado"
+
+        groups: dict[str, dict[str, Any]] = defaultdict(lambda: {
+            "channel": "",
+            "orderCount": 0,
+            "totalValue": 0.0,
+            "blockedValue": 0.0,
+            "averageTicket": 0.0,
+        })
+        total = 0.0
+        for order in orders:
+            value = float(order.get("totalAmountOrder", order.get("totalValue", 0)) or 0)
+            total += value
+            channel = _channel(order)
+            group = groups[channel]
+            group["channel"] = channel
+            group["orderCount"] += 1
+            group["totalValue"] += value
+            if str(order.get("statusOrder", "")).lower() == "blocked":
+                group["blockedValue"] += value
+
+        ranking = list(groups.values())
+        for group in ranking:
+            group["averageTicket"] = group["totalValue"] / group["orderCount"] if group["orderCount"] else 0.0
+        ranking.sort(key=lambda x: x["totalValue"], reverse=True)
+        result = {
+            "period": {"startDate": start, "endDate": end},
+            "branchCodeList": branches,
+            "channelField": channel_field,
+            "totalOrders": len(orders),
+            "totalValue": total,
+            "channels": ranking[:top_n],
+        }
+        cache.put("sales_by_channel", cache_key, result)
+        return result
+
+    async def overdue_financial_summary(self, args: dict[str, Any]) -> Any:
+        """Overdue accounts receivable and payable summary for financial managers."""
+        args = inject_branch_defaults(args)
+        as_of = args.get("asOfDate") or date.today().isoformat()
+        branches = args.get("branchCodeList", [1])
+        top_n = int(args.get("topN", 20))
+        page_size = int(args.get("pageSize", 500))
+        start_date = args.get("startDate", "2000-01-01")
+
+        cache_key = {"fn": "overdue_financial_summary", "asOf": as_of, "start": start_date, "branches": branches, "topN": top_n}
+        cached = cache.get("overdue_financial", cache_key, cache.FINANCIAL)
+        if cached is not None:
+            return cached
+
+        receivable_task = self.client.post(f"{BASE_AR}/documents/search", {
+            "filter": {
+                "branchCodeList": branches,
+                "startExpiredDate": start_date,
+                "endExpiredDate": as_of,
+                "statusList": [1],
+                "hasOpenInvoices": True,
+            },
+            "page": 1,
+            "pageSize": page_size,
+            "order": "-expiredDate",
+        })
+        payable_task = self.client.post(f"{BASE_AP}/duplicates/search", {
+            "filter": {
+                "branchCodeList": branches,
+                "startExpiredDate": start_date,
+                "endExpiredDate": as_of,
+                "status": "Normal",
+            },
+            "page": 1,
+            "pageSize": page_size,
+            "order": "-expiredDate",
+        })
+        receivable_resp, payable_resp = await asyncio.gather(
+            self._safe(receivable_task),
+            self._safe(payable_task),
+        )
+
+        def _amount(item: dict[str, Any], gross_keys: tuple[str, ...]) -> float:
+            if item.get("balanceValue") is not None:
+                return float(item.get("balanceValue") or 0)
+            gross = next((item.get(key) for key in gross_keys if item.get(key) is not None), 0)
+            paid = float(item.get("paidValue", item.get("settledValue", 0)) or 0)
+            return max(float(gross or 0) - paid, 0.0)
+
+        receivables = []
+        by_customer: dict[str, dict[str, Any]] = defaultdict(lambda: {"customerCode": None, "customerName": "", "count": 0, "amount": 0.0})
+        for item in self._items(receivable_resp):
+            amount = _amount(item, ("installmentValue", "documentValue"))
+            if amount <= 0:
+                continue
+            customer_code = item.get("customerCode")
+            customer_name = item.get("customerName") or ""
+            key = str(customer_code) if customer_code is not None else customer_name or "Nao informado"
+            by_customer[key]["customerCode"] = customer_code
+            by_customer[key]["customerName"] = customer_name
+            by_customer[key]["count"] += 1
+            by_customer[key]["amount"] += amount
+            receivables.append({
+                "customerCode": customer_code,
+                "customerName": customer_name,
+                "receivableCode": item.get("receivableCode") or item.get("documentCode"),
+                "dueDate": (item.get("expiredDate") or item.get("dueDate") or "")[:10],
+                "amount": amount,
+            })
+
+        payables = []
+        by_supplier: dict[str, dict[str, Any]] = defaultdict(lambda: {"supplierCode": None, "supplierName": "", "count": 0, "amount": 0.0})
+        for item in self._items(payable_resp):
+            amount = _amount(item, ("duplicateValue", "documentValue"))
+            if amount <= 0:
+                continue
+            supplier_code = item.get("supplierCode")
+            supplier_name = item.get("supplierName") or item.get("name") or ""
+            key = str(supplier_code) if supplier_code is not None else supplier_name or "Nao informado"
+            by_supplier[key]["supplierCode"] = supplier_code
+            by_supplier[key]["supplierName"] = supplier_name
+            by_supplier[key]["count"] += 1
+            by_supplier[key]["amount"] += amount
+            payables.append({
+                "supplierCode": supplier_code,
+                "supplierName": supplier_name,
+                "duplicateCode": item.get("duplicateCode") or item.get("documentCode"),
+                "dueDate": (item.get("expiredDate") or item.get("dueDate") or "")[:10],
+                "amount": amount,
+            })
+
+        receivables.sort(key=lambda x: x["amount"], reverse=True)
+        payables.sort(key=lambda x: x["amount"], reverse=True)
+        result = {
+            "asOfDate": as_of,
+            "branchCodeList": branches,
+            "receivable": {
+                "count": len(receivables),
+                "totalOverdue": sum(item["amount"] for item in receivables),
+                "topDocuments": receivables[:top_n],
+                "topCustomers": sorted(by_customer.values(), key=lambda x: x["amount"], reverse=True)[:top_n],
+            },
+            "payable": {
+                "count": len(payables),
+                "totalOverdue": sum(item["amount"] for item in payables),
+                "topDocuments": payables[:top_n],
+                "topSuppliers": sorted(by_supplier.values(), key=lambda x: x["amount"], reverse=True)[:top_n],
+            },
+        }
+        result["netOverduePosition"] = result["receivable"]["totalOverdue"] - result["payable"]["totalOverdue"]
+        cache.put("overdue_financial", cache_key, result)
+        return result
+
+    async def cash_flow_forecast(self, args: dict[str, Any]) -> Any:
+        """Receivable/payable forecast grouped by due date."""
+        args = inject_branch_defaults(args)
+        start = args.get("startDate") or date.today().isoformat()
+        days = int(args.get("days", 7))
+        end = args.get("endDate") or (date.fromisoformat(start[:10]) + timedelta(days=days - 1)).isoformat()
+        branches = args.get("branchCodeList", [1])
+        page_size = int(args.get("pageSize", 500))
+
+        cache_key = {"fn": "cash_flow_forecast", "start": start, "end": end, "branches": branches}
+        cached = cache.get("cash_flow", cache_key, cache.FINANCIAL)
+        if cached is not None:
+            return cached
+
+        receivable_task = self.client.post(f"{BASE_AR}/documents/search", {
+            "filter": {
+                "branchCodeList": branches,
+                "startExpiredDate": start,
+                "endExpiredDate": end,
+                "statusList": [1],
+                "hasOpenInvoices": True,
+            },
+            "page": 1,
+            "pageSize": page_size,
+        })
+        payable_task = self.client.post(f"{BASE_AP}/duplicates/search", {
+            "filter": {
+                "branchCodeList": branches,
+                "startExpiredDate": start,
+                "endExpiredDate": end,
+                "status": "Normal",
+            },
+            "page": 1,
+            "pageSize": page_size,
+        })
+        receivable_resp, payable_resp = await asyncio.gather(self._safe(receivable_task), self._safe(payable_task))
+        by_day: dict[str, dict[str, Any]] = defaultdict(lambda: {"date": "", "receivable": 0.0, "payable": 0.0, "net": 0.0})
+
+        for item in self._items(receivable_resp):
+            day = (item.get("expiredDate") or item.get("dueDate") or "")[:10]
+            if not day:
+                continue
+            value = float(item.get("balanceValue", item.get("installmentValue", item.get("documentValue", 0))) or 0)
+            by_day[day]["date"] = day
+            by_day[day]["receivable"] += value
+
+        for item in self._items(payable_resp):
+            day = (item.get("expiredDate") or item.get("dueDate") or "")[:10]
+            if not day:
+                continue
+            value = float(item.get("balanceValue", item.get("duplicateValue", item.get("documentValue", 0))) or 0)
+            by_day[day]["date"] = day
+            by_day[day]["payable"] += value
+
+        daily = []
+        cursor = date.fromisoformat(start[:10])
+        end_date = date.fromisoformat(end[:10])
+        while cursor <= end_date:
+            key = cursor.isoformat()
+            row = by_day[key]
+            row["date"] = key
+            row["net"] = row["receivable"] - row["payable"]
+            daily.append(row)
+            cursor += timedelta(days=1)
+
+        result = {
+            "period": {"startDate": start, "endDate": end, "days": len(daily)},
+            "branchCodeList": branches,
+            "totals": {
+                "receivable": sum(row["receivable"] for row in daily),
+                "payable": sum(row["payable"] for row in daily),
+                "net": sum(row["net"] for row in daily),
+            },
+            "daily": daily,
+        }
+        cache.put("cash_flow", cache_key, result)
+        return result
+
+    async def product_stock_by_kind_summary(self, args: dict[str, Any]) -> Any:
+        """Stock summary split into finished goods, raw materials and bulk materials."""
+        args = inject_branch_defaults(args)
+        branch = args.get("branchCode", 1)
+        min_stock = args.get("minStock", 1)
+        top_n = int(args.get("topN", 10))
+        kinds = args.get("productKindList") or ["finished", "raw_material", "bulk"]
+
+        cache_key = {"fn": "product_stock_by_kind_summary", "branch": branch, "minStock": min_stock, "topN": top_n, "kinds": kinds}
+        cached = cache.get("stock_by_kind", cache_key, cache.STOCK)
+        if cached is not None:
+            return cached
+
+        async def _one(kind: str) -> dict[str, Any]:
+            result = await self.stock_available({
+                **args,
+                "branchCode": branch,
+                "productKind": kind,
+                "minStock": min_stock,
+            })
+            products = sorted(result.get("products", []), key=lambda x: x.get("stock", 0), reverse=True)
+            return {
+                "productKind": kind,
+                "totalSkus": result.get("totalSkus", 0),
+                "totalUnits": result.get("totalUnits", 0),
+                "pageStats": result.get("pageStats"),
+                "topProducts": products[:top_n],
+            }
+
+        summaries = await asyncio.gather(*(self._safe(_one(kind)) for kind in kinds))
+        result = {
+            "branchCode": branch,
+            "minStock": min_stock,
+            "summaries": summaries,
+            "cachePolicy": {
+                "stockSeconds": cache.STOCK,
+                "note": "Saldos usam cache curto; ficha/composicao deve usar cache mais longo quando consultada por produto.",
+            },
+        }
+        cache.put("stock_by_kind", cache_key, result)
+        return result
+
     async def _fetch_all_pages(
         self,
         path: str,

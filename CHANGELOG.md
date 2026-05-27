@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.8.0] - 2026-05-27
+
+### Added
+- Executive/commercial aggregators: `totvs_sales_by_representative` and `totvs_sales_by_channel`.
+- Financial manager aggregators: `totvs_overdue_financial_summary` and `totvs_cash_flow_forecast`.
+- Production/PCP stock aggregator: `totvs_product_stock_by_kind_summary` for finished goods, raw materials and bulk materials.
+
+### Tests
+- Added contract tests for the new aggregator tools; suite now has 209 tests.
+
 ## [3.7.6] - 2026-05-27
 
 ### Changed
