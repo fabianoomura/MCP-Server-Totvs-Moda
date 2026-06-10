@@ -151,6 +151,12 @@ Evite expor credenciais diretamente no `mcp.json`. Use referências ao ambiente 
 "TOTVS_PASSWORD": "${env:TOTVS_PASSWORD}"
 ```
 
+### Política de validação
+
+Consultas de leitura podem ser executadas diretamente, sem confirmação adicional.
+
+Operações que criam, alteram, cancelam, baixam, estornam, removem ou excluem dados devem pedir confirmação explícita antes da execução. Isso vale especialmente para pedidos, clientes, produtos, títulos financeiros, notas fiscais, vouchers, preços, custos e movimentações.
+
 ---
 
 ## Como funciona internamente

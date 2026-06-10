@@ -9,6 +9,7 @@ from typing import Any
 from totvs_client import TotvsClient
 from tools._fields import apply_fields
 from tools._defaults import inject_branch_defaults
+import response_cache as cache
 
 logger = logging.getLogger("totvs-moda-mcp.fiscal")
 BASE = "/api/totvsmoda/fiscal/v2"
@@ -54,7 +55,11 @@ class FiscalTools:
         if args.get("order"):
             body["order"] = args["order"]
 
+        cached = cache.get("fiscal_invoices", body, cache.FINANCIAL)
+        if cached is not None:
+            return apply_fields(cached, args)
         result = await self.client.post(f"{BASE}/invoices/search", body)
+        cache.put("fiscal_invoices", body, result)
         return apply_fields(result, args)
 
     async def get_xml_content(self, args: dict[str, Any]) -> Any:

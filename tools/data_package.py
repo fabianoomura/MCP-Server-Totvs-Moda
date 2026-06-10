@@ -7,6 +7,7 @@ Gerenciamento de pacotes de dados (importação/exportação).
 import logging
 from typing import Any
 from totvs_client import TotvsClient
+from tools._fields import apply_fields
 
 logger = logging.getLogger("totvs-moda-mcp.data-package")
 BASE = "/api/totvsmoda/data-package/v2"
@@ -41,15 +42,18 @@ class DataPackageTools:
         ):
             if args.get(field) is not None:
                 params[field] = args[field]
-        return await self.client.get(f"{BASE}/input-packages", params=params or None)
+        result = await self.client.get(f"{BASE}/input-packages", params=params or None)
+        return apply_fields(result, args)
 
     async def get_package(self, args: dict[str, Any]) -> Any:
         """GET /packages/{packageId} — Dados de um pacote de dados."""
-        return await self.client.get(f"{BASE}/packages/{args['packageId']}")
+        result = await self.client.get(f"{BASE}/packages/{args['packageId']}")
+        return apply_fields(result, args)
 
     async def get_package_content(self, args: dict[str, Any]) -> Any:
         """GET /content-packages/{packageId} — Conteúdo de um pacote de dados."""
-        return await self.client.get(f"{BASE}/content-packages/{args['packageId']}")
+        result = await self.client.get(f"{BASE}/content-packages/{args['packageId']}")
+        return apply_fields(result, args)
 
     async def list_output_packages(self, args: dict[str, Any]) -> Any:
         """GET /output-packages — Lista pacotes de exportação de dados (Target obrigatório)."""
@@ -62,7 +66,8 @@ class DataPackageTools:
         ):
             if args.get(field) is not None:
                 params[field] = args[field]
-        return await self.client.get(f"{BASE}/output-packages", params=params)
+        result = await self.client.get(f"{BASE}/output-packages", params=params)
+        return apply_fields(result, args)
 
     async def receive_output_package(self, args: dict[str, Any]) -> Any:
         """POST /output-packages/receive — ⚠️ Marca pacote de exportação como recebido."""

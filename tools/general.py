@@ -9,6 +9,7 @@ from typing import Any
 from totvs_client import TotvsClient
 from tools._defaults import inject_branch_defaults
 from tools._fields import apply_fields
+import response_cache as cache
 
 logger = logging.getLogger("totvs-moda-mcp.general")
 BASE = "/api/totvsmoda/general/v2"
@@ -30,17 +31,28 @@ class GeneralTools:
 
     async def get_payment_conditions(self, args: dict[str, Any]) -> Any:
         """GET /payment-conditions — Condições de pagamento disponíveis."""
-        params = {k: v for k, v in args.items() if v is not None}
-        return await self.client.get(f"{BASE}/payment-conditions", params=params or None)
+        params = {k: v for k, v in args.items() if v is not None and k != "fields"}
+        cached = cache.get("payment_cond", params, cache.REFERENCE)
+        if cached is not None:
+            return apply_fields(cached, args)
+        result = await self.client.get(f"{BASE}/payment-conditions", params=params or None)
+        cache.put("payment_cond", params, result)
+        return apply_fields(result, args)
 
     async def get_operations(self, args: dict[str, Any]) -> Any:
         """GET /operations — Operações disponíveis."""
-        params = {k: v for k, v in args.items() if v is not None}
-        return await self.client.get(f"{BASE}/operations", params=params or None)
+        params = {k: v for k, v in args.items() if v is not None and k != "fields"}
+        cached = cache.get("operations", params, cache.REFERENCE)
+        if cached is not None:
+            return apply_fields(cached, args)
+        result = await self.client.get(f"{BASE}/operations", params=params or None)
+        cache.put("operations", params, result)
+        return apply_fields(result, args)
 
     async def get_payment_plans(self, args: dict[str, Any]) -> Any:
         """GET /payment-plans — Planos de pagamento ativos."""
-        return await self.client.get(f"{BASE}/payment-plans")
+        result = await self.client.get(f"{BASE}/payment-plans")
+        return apply_fields(result, args)
 
     async def simulate_payment_plan(self, args: dict[str, Any]) -> Any:
         """POST /payment-plan-simulate — Simula cálculo de plano de pagamento."""
@@ -51,17 +63,20 @@ class GeneralTools:
     async def search_devolutions(self, args: dict[str, Any]) -> Any:
         """GET /devolutions/search — Dados de devolução por estágio."""
         args = inject_branch_defaults(args)
-        params = {k: v for k, v in args.items() if v is not None}
-        return await self.client.get(f"{BASE}/devolutions/search", params=params or None)
+        params = {k: v for k, v in args.items() if v is not None and k != "fields"}
+        result = await self.client.get(f"{BASE}/devolutions/search", params=params or None)
+        return apply_fields(result, args)
 
     async def get_transactions(self, args: dict[str, Any]) -> Any:
         """GET /transactions — Dados de uma transação."""
-        params = {k: v for k, v in args.items() if v is not None}
-        return await self.client.get(f"{BASE}/transactions", params=params or None)
+        params = {k: v for k, v in args.items() if v is not None and k != "fields"}
+        result = await self.client.get(f"{BASE}/transactions", params=params or None)
+        return apply_fields(result, args)
 
     async def get_classifications(self, args: dict[str, Any]) -> Any:
         """GET /classifications — Classificações disponíveis."""
-        return await self.client.get(f"{BASE}/classifications")
+        result = await self.client.get(f"{BASE}/classifications")
+        return apply_fields(result, args)
 
     async def search_transactions(self, args: dict[str, Any]) -> Any:
         """GET /transactions/search - lista transacoes por filial, cliente, data e alteracao."""

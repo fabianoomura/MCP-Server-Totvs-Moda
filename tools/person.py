@@ -9,6 +9,7 @@ from typing import Any
 from totvs_client import TotvsClient
 from tools._fields import apply_fields
 from tools._defaults import inject_branch_defaults
+import response_cache as cache
 
 logger = logging.getLogger("totvs-moda-mcp.person")
 BASE = "/api/totvsmoda/person/v2"
@@ -43,12 +44,22 @@ class PersonTools:
 
     async def search_individuals(self, args: dict[str, Any]) -> Any:
         """POST /individuals/search — Dados de pessoa física."""
-        result = await self.client.post(f"{BASE}/individuals/search", _search_body(args))
+        body = _search_body(args)
+        cached = cache.get("person_pf", body, cache.CATALOG)
+        if cached is not None:
+            return apply_fields(cached, args)
+        result = await self.client.post(f"{BASE}/individuals/search", body)
+        cache.put("person_pf", body, result)
         return apply_fields(result, args)
 
     async def search_legal_entities(self, args: dict[str, Any]) -> Any:
         """POST /legal-entities/search — Dados de pessoa jurídica."""
-        result = await self.client.post(f"{BASE}/legal-entities/search", _search_body(args))
+        body = _search_body(args)
+        cached = cache.get("person_pj", body, cache.CATALOG)
+        if cached is not None:
+            return apply_fields(cached, args)
+        result = await self.client.post(f"{BASE}/legal-entities/search", body)
+        cache.put("person_pj", body, result)
         return apply_fields(result, args)
 
     async def get_branch(self, args: dict[str, Any]) -> Any:

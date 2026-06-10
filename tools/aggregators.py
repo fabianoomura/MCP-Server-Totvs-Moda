@@ -20,6 +20,8 @@ from collections import defaultdict
 from datetime import datetime, date, timedelta
 from typing import Any
 
+from tools._fields import apply_fields
+
 from totvs_client import TotvsClient
 from tools._defaults import (
     get_default_cost_codes,
@@ -73,6 +75,103 @@ class AggregatorTools:
                 if isinstance(resp.get(key), list):
                     return len(resp[key])
         return 0
+
+    # ── Compact helpers for 360 methods ──────────────────────────────────
+    @staticmethod
+    def _compact_balance_item(item: dict[str, Any]) -> dict[str, Any]:
+        """Extract essential fields from a ProductBalanceModel record."""
+        balances = item.get("balances", [])
+        return {
+            "productCode": item.get("productCode"),
+            "productSku": item.get("productSku"),
+            "colorCode": item.get("colorCode"),
+            "sizeName": item.get("sizeName"),
+            "balances": [
+                {"stockCode": b.get("stockCode"), "stock": b.get("stock"),
+                 "salesOrder": b.get("salesOrder")}
+                for b in balances
+            ] if balances else [],
+        }
+
+    @staticmethod
+    def _compact_price_item(item: dict[str, Any]) -> dict[str, Any]:
+        """Extract essential fields from a ProductPriceModel record."""
+        prices = item.get("prices", [])
+        return {
+            "productCode": item.get("productCode"),
+            "productSku": item.get("productSku"),
+            "colorCode": item.get("colorCode"),
+            "sizeName": item.get("sizeName"),
+            "prices": [
+                {"priceCode": p.get("priceCode"), "priceName": p.get("priceName"),
+                 "price": p.get("price"), "promotionalPrice": p.get("promotionalPrice")}
+                for p in prices
+            ] if prices else [],
+        }
+
+    @staticmethod
+    def _compact_cost_item(item: dict[str, Any]) -> dict[str, Any]:
+        """Extract essential fields from a ProductCostModel record."""
+        costs = item.get("costs", [])
+        return {
+            "productCode": item.get("productCode"),
+            "productSku": item.get("productSku"),
+            "colorCode": item.get("colorCode"),
+            "sizeName": item.get("sizeName"),
+            "costs": [
+                {"costCode": c.get("costCode"), "costName": c.get("costName"),
+                 "cost": c.get("cost")}
+                for c in costs
+            ] if costs else [],
+        }
+
+    @staticmethod
+    def _compact_response(resp: Any, compact_fn) -> Any:
+        """Apply a compact function to items[] inside a paginated response."""
+        if not isinstance(resp, dict) or "error" in resp:
+            return resp
+        items = resp.get("items")
+        if isinstance(items, list):
+            return {
+                "totalItems": resp.get("totalItems", resp.get("count", len(items))),
+                "items": [compact_fn(i) for i in items],
+            }
+        return resp
+
+    @staticmethod
+    def _compact_order(order: dict[str, Any]) -> dict[str, Any]:
+        """Extract essential fields from an order record."""
+        items = order.get("items", [])
+        compact_items = [
+            {"productCode": i.get("productCode"), "productSku": i.get("productSku"),
+             "name": i.get("name"), "quantity": i.get("quantity"),
+             "price": i.get("price"), "totalValue": i.get("totalValue")}
+            for i in items
+        ] if items else []
+        return {
+            "orderCode": order.get("orderCode"),
+            "branchCode": order.get("branchCode"),
+            "orderDate": order.get("orderDate"),
+            "customerCode": order.get("customerCode"),
+            "customerName": order.get("customerName"),
+            "statusOrder": order.get("statusOrder"),
+            "totalAmountOrder": order.get("totalAmountOrder"),
+            "paymentConditionCode": order.get("paymentConditionCode"),
+            "representativeCode": order.get("representativeCode"),
+            "items": compact_items,
+        }
+
+    @staticmethod
+    def _compact_invoice_product(item: dict[str, Any]) -> dict[str, Any]:
+        """Extract essential fields from a fiscal invoice product record."""
+        return {
+            "productCode": item.get("productCode"),
+            "productName": item.get("productName") or item.get("name"),
+            "productSku": item.get("productSku"),
+            "quantity": item.get("quantity"),
+            "unitValue": item.get("unitValue"),
+            "totalValue": item.get("totalValue"),
+        }
 
     async def get_products_sold(self, args: dict[str, Any]) -> Any:
         """Agrega vendas de produtos em um período.
@@ -780,6 +879,7 @@ class AggregatorTools:
         balance_items = self._items(balances)
         cost_items = self._items(costs)
         price_items = self._items(prices)
+        compact = args.get("compact", True)
         result = {
             "productCode": code,
             "branchCode": branch,
@@ -791,14 +891,14 @@ class AggregatorTools:
                 "compositionItems": len(self._items(compositions)),
                 "consumptionItems": len(self._items(consumption)),
             },
-            "balances": balances,
-            "prices": prices,
-            "costs": costs,
+            "balances": self._compact_response(balances, self._compact_balance_item) if compact else balances,
+            "prices": self._compact_response(prices, self._compact_price_item) if compact else prices,
+            "costs": self._compact_response(costs, self._compact_cost_item) if compact else costs,
             "compositions": compositions,
             "consumptionSheet": consumption,
         }
         cache.put("product360_full", cache_key, result)
-        return result
+        return apply_fields(result, args)
 
     async def raw_material_360(self, args: dict[str, Any]) -> Any:
         """Raw material overview plus consumption-sheet usage."""
@@ -853,11 +953,19 @@ class AggregatorTools:
             self._safe(self.client.get(f"{BASE_SALES}/invoices", params=params)),
             self._safe(self.client.get(f"{BASE_SALES}/pending-items", params=params)),
         )
+        compact = args.get("compact", True)
+        order_data = order_resp
+        if compact and isinstance(order_resp, dict):
+            raw_items = order_resp.get("items", [])
+            order_data = {
+                "totalItems": len(raw_items),
+                "items": [self._compact_order(o) for o in raw_items],
+            }
         result = {
             "orderCode": order_code,
             "branchCode": branch,
             "found": True,
-            "order": order_resp,
+            "order": order_data,
             "invoices": invoices,
             "pendingItems": pending,
             "summary": {
@@ -866,7 +974,7 @@ class AggregatorTools:
             },
         }
         cache.put("order360_full", cache_key, result)
-        return result
+        return apply_fields(result, args)
 
     async def invoice_360(self, args: dict[str, Any]) -> Any:
         """Fiscal invoice overview: invoice header and products."""
@@ -898,18 +1006,22 @@ class AggregatorTools:
             "pageSize": args.get("productPageSize", 100),
         })
         invoice, products = await asyncio.gather(self._safe(invoice_task), self._safe(products_task))
+        compact = args.get("compact", True)
+        products_data = products
+        if compact:
+            products_data = self._compact_response(products, self._compact_invoice_product)
         result = {
             "invoiceCode": invoice_code,
             "invoiceSequence": invoice_sequence,
             "invoice": invoice,
-            "products": products,
+            "products": products_data,
             "summary": {
                 "invoiceCount": len(self._items(invoice)),
                 "productCount": len(self._items(products)),
             },
         }
         cache.put("invoice360_full", cache_key, result)
-        return result
+        return apply_fields(result, args)
 
     async def sales_today_summary(self, args: dict[str, Any]) -> Any:
         """Fast sales summary for one date."""

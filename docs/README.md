@@ -33,9 +33,13 @@ Ultima validacao local documentada:
 
 ```powershell
 python -m pytest -q
-# 209 passed
+# 210 passed
 ```
+
+Observacao: ao atualizar estes docs em 2026-06-03, a suite nao foi executada porque o ambiente local ativo nao tinha `pytest_asyncio` e a `.venv` apontava para um Python inexistente. A contagem acima reflete o estado documentado mais recente do projeto.
 
 ## Importante
 
 O projeto e open source e nao deve carregar regra especifica de uma empresa no codigo principal. Parametros e defaults operacionais devem vir de contexto, `.env` ou configuracao, nao hardcoded.
+
+Arquivos como `01_ajustes_pontuais.md` e `02_evolucao_projeto.md` sao notas locais/privadas de estrategia e manutencao. Nao publique esses arquivos no repositorio publico.

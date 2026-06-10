@@ -47,9 +47,15 @@ Risk levels:
 - `write`: requires explicit implementation care and should be clearly marked in the MCP tool description.
 - `destructive`: cancel, remove, delete, movement, or similar operations. Do not test against the real API without explicit approval and a known safe target.
 
+Execution policy:
+
+- Read-only tools may run without extra user validation.
+- Create, update, cancel, settle, reverse, remove, or delete operations must ask for explicit user confirmation before execution.
+- Financial, fiscal, and destructive writes must summarize the target record and intended change before asking for confirmation.
+
 ## Current Coverage
 
-As of 2026-05-24:
+As of 2026-06-03:
 
 - Total endpoints: 251
 - Mapped endpoints: 251

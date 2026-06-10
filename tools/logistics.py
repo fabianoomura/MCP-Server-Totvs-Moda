@@ -13,6 +13,7 @@ import logging
 from typing import Any
 from totvs_client import TotvsClient
 from tools._defaults import inject_branch_defaults
+from tools._fields import apply_fields
 
 logger = logging.getLogger("totvs-moda-mcp.logistics")
 BASE = "/api/totvsmoda/logistics/v2"
@@ -42,7 +43,8 @@ class LogisticsTools:
         }
         if args.get("order"):
             body["order"] = args["order"]
-        return await self.client.post(f"{BASE}/product-storages/search", body)
+        result = await self.client.post(f"{BASE}/product-storages/search", body)
+        return apply_fields(result, args)
 
     async def upsert_product_packaging(self, args: dict[str, Any]) -> Any:
         """POST /product-packagings - manutencao de produto em embalagem."""

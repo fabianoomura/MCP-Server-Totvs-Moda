@@ -80,7 +80,30 @@ async def update_xxx(self, args: dict[str, Any]) -> Any:
 
 ---
 
-### 2.1. Padrao de upsert TOTVS
+### 2.1. Política de validação por risco
+
+Consultas de leitura não precisam pedir validação adicional ao usuário. Tools `GET`, buscas `search`, dashboards, agregadores e visões 360 podem executar direto, desde que não alterem estado no TOTVS.
+
+Operações que criam, alteram, cancelam, baixam, estornam, removem ou excluem dados devem pedir confirmação explícita antes da execução. A confirmação deve resumir a ação, o alvo e os principais parâmetros:
+
+```text
+Ação: alterar status do pedido
+Pedido: 12345
+Filial: 1
+Novo status: cancelado
+Confirmar execução?
+```
+
+Regras:
+
+- Read-only: pode executar direto.
+- Create/update/delete/cancel: exige confirmação explícita.
+- Financeiro, fiscal e operações destrutivas: confirmação obrigatória e descrição de risco clara.
+- Smoke tests em API real continuam proibidos para writes/destructive sem alvo seguro e aprovação explícita.
+
+---
+
+### 2.2. Padrao de upsert TOTVS
 
 Alguns endpoints da TOTVS se dividem em **incluir** e **alterar**. Nesses casos, o MCP nao deve deixar o agente escolher no escuro.
 
@@ -151,6 +174,7 @@ types.Tool(
 - Redirecionar pra tools melhores quando aplicável
 - Mencionar `fields=[...]` em tools de busca
 - Avisar sobre escrita com `⚠️ ESCRITA — ...` no início
+- Em tools de escrita, dizer que a operação exige confirmação explícita do usuário antes de executar
 - Documentar enums e valores aceitos
 
 ---

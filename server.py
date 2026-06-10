@@ -71,6 +71,32 @@ def _truthy_env(name: str) -> bool:
     return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "sim"}
 
 
+def _max_response_items() -> int:
+    """Max items[] length before truncation. 0 = unlimited."""
+    val = os.environ.get("TOTVS_MAX_RESPONSE_ITEMS", "").strip()
+    return int(val) if val else 500
+
+
+def _truncate_response(result: Any) -> Any:
+    """Truncate items[] in responses that exceed the configured limit.
+
+    Adds _truncated=True and _totalItems so the LLM knows data was cut.
+    Preserves pagination metadata (totalHits, page, pageSize, hasNext).
+    """
+    limit = _max_response_items()
+    if limit <= 0 or not isinstance(result, dict):
+        return result
+    items = result.get("items")
+    if not isinstance(items, list) or len(items) <= limit:
+        return result
+    total = len(items)
+    truncated = dict(result)
+    truncated["items"] = items[:limit]
+    truncated["_truncated"] = True
+    truncated["_totalItems"] = total
+    return truncated
+
+
 def _load_dotenv_once() -> None:
     """Load a local .env file without adding a runtime dependency.
 
@@ -297,7 +323,7 @@ TOOLS: list[types.Tool] = [
             "integrationCodeList":{"type":"array","items":{"type":"string"},"description":"Códigos de integração ex: SHP-1234"},
             "customerCpfCnpjList":{"type":"array","items":{"type":"string"},"description":"CPF/CNPJ dos clientes"},
             "customerCodeList":{"type":"array","items":{"type":"integer"}},
-            "orderStatusList":{"type":"array","items":{"type":"string","enum":["InProgress","BillingReleased","PartiallyAnswered","Attended","Blocked","Canceled","InComposition","InAnalysis"]},"description":"Situação do pedido: InProgress, BillingReleased, PartiallyAnswered, Attended, Blocked, Canceled, InComposition, InAnalysis"},
+            "orderStatusList":{"type":"array","items":{"type":"string","enum":["InProgress","BillingReleased","PartiallyAnswered","Attended","Blocked","Canceled","InComposition","InAnalysis"]},"description":"Situação do pedido: 1=InProgress(Em andamento), 2=BillingReleased(Liberado faturamento), 3=PartiallyAnswered(Parcialmente atendido), 4=Attended(Atendido), 5=Blocked(Bloqueado), 6=Canceled(Cancelado), 7=InComposition(Em composição), 8=InAnalysis(Em análise)"},
             "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos das filiais"},
             "operationCodeList":{"type":"array","items":{"type":"integer"}},
             "representativeCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos dos representantes"},
@@ -1480,7 +1506,7 @@ TOOLS: list[types.Tool] = [
             "invoiceCodeList":{"type":"array","items":{"type":"integer"}},
             "operationType":{"type":"string","enum":["All","Input","Output"],"description":"Tipo de operação: All, Input(Entrada), Output(Saída)"},
             "origin":{"type":"string","enum":["All","Own","ThirdParty"],"description":"Origem: All, Own(Emissão própria), ThirdParty(Emissão de terceiro)"},
-            "invoiceStatusList":{"type":"array","items":{"type":"string","enum":["Canceled","Denied","Issued","Normal","Deleted"]}},
+            "invoiceStatusList":{"type":"array","items":{"type":"string","enum":["Canceled","Denied","Issued","Normal","Deleted"]},"description":"Situação da NF: Normal, Issued(Emitida), Canceled(Cancelada), Denied(Denegada), Deleted(Excluída)"},
             "personCodeList":{"type":"array","items":{"type":"integer"}},
             "operationCodeList":{"type":"array","items":{"type":"integer"}},
             "documentTypeCodeList":{"type":"array","items":{"type":"integer"}},
@@ -1664,9 +1690,9 @@ TOOLS: list[types.Tool] = [
             "endArrivalDate":{"type":"string","description":"Data chegada final"},
             "startChangeDate":{"type":"string","description":"Data alteração inicial"},
             "endChangeDate":{"type":"string","description":"Data alteração final"},
-            "inclusionTypeList":{"type":"array","items":{"type":"integer"},"description":"Tipo de inclusão: 1=Manual, 2=Automatic, 3=ViaCashier, 4=Payroll, 5=OwnCheckExchange, 6=CostsApportionment, 7=RevenueApportionment, 9=Conversion, 11-14 entre empresas"},
-            "status":{"type":"string","enum":["Grouped","Canceled","Retorned","CommissionSettled","Normal","Broken"],"description":"Status: Grouped, Canceled, Retorned, CommissionSettled, Normal, Broken"},
-            "documentTypeList":{"type":"array","items":{"type":"integer"},"description":"Tipo de documento: 1=Duplicate, 2=InvoicePrint/Boleto, 3=Commission, 4=Guide, 6=Voucher, 7=Invoice, 12=BankDeposit, 16=TedDoc, 30=GiftCheck, 50=OutherTitle"},
+            "inclusionTypeList":{"type":"array","items":{"type":"integer"},"description":"Tipo de inclusão: 1=Manual, 2=Automática(NF), 3=Via caixa, 4=Folha pgto, 5=Troca cheque próprio, 6=Rateio despesas, 7=Rateio receitas, 9=Conversão, 11-14=Entre empresas"},
+            "status":{"type":"string","enum":["Normal","Canceled","Grouped","Retorned","CommissionSettled","Broken"],"description":"Situação: Normal(N), Canceled(C=Cancelada), Grouped(A=Agrupada), Retorned(D=Devolvida), CommissionSettled(L=Liquidada comissão), Broken(Q=Quebrada)"},
+            "documentTypeList":{"type":"array","items":{"type":"integer"},"description":"Tipo documento: 1=Duplicata, 2=Boleto, 3=Comissão, 4=Guia(doc), 5=Financiamento, 6=Vale, 7=NF, 8=Nota desconto, 9=Taxa admin, 10=Juros financiamento, 11=Bonificação, 12=Depósito, 13=Compror, 14=Vendor, 15=Recibo, 16=TED/DOC, 17=Empréstimo, 18=Conhecimento frete, 19=Pró-labore, 20=Adiantamento, 21=DARF Normal, 22=GPS, 25=FGTS, 27=GNRE, 30=Cheque presente, 31=Fatura terceiro, 50=Outro título"},
             "order":{"type":"string","description":"Ordenação suportada: productCode, maxChangeFilterDate. Use - para desc."},
             "page":{"type":"integer","default":1},
             "pageSize":{"type":"integer","default":100,"description":"Máximo 100 no Swagger"},
@@ -1697,9 +1723,9 @@ TOOLS: list[types.Tool] = [
                 "issueDate":{"type":"string","description":"Data de emissão (ISO 8601)"},
                 "dueDate":{"type":"string","description":"Data de vencimento"},
                 "arrivalDate":{"type":"string","description":"Data de chegada"},
-                "document":{"type":"integer","description":"Tipo documento: 1=Duplicata, 2=NotaFiscal, 7=Fatura, 15=Recibo..."},
+                "document":{"type":"integer","description":"Tipo documento: 1=Duplicata, 2=Boleto, 3=Comissão, 4=Guia, 5=Financiamento, 6=Vale, 7=NF, 15=Recibo, 16=TED/DOC, 17=Empréstimo, 18=Conhecimento frete, 20=Adiantamento, 50=Outro título"},
                 "prevision":{"type":"integer","description":"Tipo previsão: 1=Previsto, 2=Real, 3=Consignação"},
-                "stage":{"type":"integer","description":"Estágio: 1=NF não conferida, 2=Liberado pagamento, 5=NF aceita, 20=Pagto banco, 90=Encerrado"},
+                "stage":{"type":"integer","description":"Estágio: 1=Título não conferido, 2=Liberado para pagamento, 3=Cheque autorizado, 4=Cheque emitido, 5=Título aceito, 10=Endossado, 20=Pagamento em banco, 30=Reservado, 40=Pagamento automático, 70=Com restrição, 90=Liquidado"},
                 "duplicateValue":{"type":"number","description":"Valor da parcela"},
                 "expenses":{"type":"array","description":"Lista de despesas","items":{"type":"object","properties":{
                     "expenseCode":{"type":"integer"},"costCenterCode":{"type":"integer"},"proratedPercentage":{"type":"number"}
@@ -2084,7 +2110,9 @@ TOOLS: list[types.Tool] = [
             "priceCodeList":{"type":"array","items":{"type":"integer"},"description":"Tabelas de preço (default do contexto inicial)"},
             "costCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos de custo (default do contexto inicial)"},
             "stockCodeList":{"type":"array","items":{"type":"integer"},"description":"Estoques (default do contexto inicial)"},
-            "pageSize":{"type":"integer","description":"Itens por seção (default 100)"}
+            "pageSize":{"type":"integer","description":"Itens por seção (default 100)"},
+            "compact":{"type":"boolean","description":"Compactar saldos/preços/custos para campos essenciais (default true). Use false para resposta bruta completa."},
+            "fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar. Reduz tokens."}
         }}),
 
     types.Tool(name="totvs_raw_material_360", description="Visão 360 de matéria-prima em 1 chamada: dados de produto, estoque, custos e usos em ficha de consumo. Use para 'sobre a matéria-prima X'.",
@@ -2095,7 +2123,9 @@ TOOLS: list[types.Tool] = [
             "branchCode":{"type":"integer","description":"Filial (default 1)"},
             "costCodeList":{"type":"array","items":{"type":"integer"},"description":"Códigos de custo (default do contexto inicial)"},
             "stockCodeList":{"type":"array","items":{"type":"integer"},"description":"Estoques (default do contexto inicial)"},
-            "pageSize":{"type":"integer","description":"Itens por seção (default 100)"}
+            "pageSize":{"type":"integer","description":"Itens por seção (default 100)"},
+            "compact":{"type":"boolean","description":"Compactar saldos/preços/custos (default true)"},
+            "fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar."}
         }}),
 
     types.Tool(name="totvs_order_360", description="Visão 360 do pedido em 1 chamada: cabeçalho/itens, notas vinculadas e itens pendentes. Use para 'dados do pedido X'.",
@@ -2103,7 +2133,9 @@ TOOLS: list[types.Tool] = [
             "orderCode":{"type":"integer","description":"Código do pedido"},
             "branchCode":{"type":"integer","description":"Filial, se souber"},
             "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Filiais para localizar o pedido"},
-            "expand":{"type":"string","description":"Expand do pedido (default items)"}
+            "expand":{"type":"string","description":"Expand do pedido (default items)"},
+            "compact":{"type":"boolean","description":"Compactar pedido para campos essenciais (default true)"},
+            "fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar."}
         },"required":["orderCode"]}),
 
     types.Tool(name="totvs_invoice_360", description="Visão 360 da NF em 1 chamada: cabeçalho fiscal e produtos da nota em paralelo. Use para 'dados da nf X'.",
@@ -2112,7 +2144,9 @@ TOOLS: list[types.Tool] = [
             "invoiceSequence":{"type":"integer","description":"Sequencial interno da NF"},
             "branchCodeList":{"type":"array","items":{"type":"integer"},"description":"Filiais (default do contexto)"},
             "pageSize":{"type":"integer","description":"Itens no cabeçalho (default 20)"},
-            "productPageSize":{"type":"integer","description":"Produtos da NF (default 100)"}
+            "productPageSize":{"type":"integer","description":"Produtos da NF (default 100)"},
+            "compact":{"type":"boolean","description":"Compactar produtos para campos essenciais (default true)"},
+            "fields":{"type":"array","items":{"type":"string"},"description":"Lista opcional de campos a retornar."}
         }}),
 
     types.Tool(name="totvs_sales_today_summary", description="Resumo rápido de vendas de uma data em 1 chamada: total de pedidos, valor total, status e ranking/lista de pedidos. PRIMEIRA OPÇÃO para 'vendas de hoje', 'vendas de hj', 'o que vendi hoje', 'traga as vendas de hoje', 'quanto vendi' e resumo de vendas.",
@@ -2489,7 +2523,7 @@ async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[types.T
     if name == "totvs_get_usage_insights":
         days = arguments.get("days", 30)
         result = usage_analyzer.analyze(days)
-        return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False, indent=2))]
+        return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
 
     route = ROUTING.get(name)
     if not route:
@@ -2500,9 +2534,10 @@ async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[types.T
 
     try:
         result = await getattr(module, method_name)(arguments)
+        result = _truncate_response(result)
         duration = (time.time() - t0) * 1000
         usage_tracker.track(name, arguments, duration_ms=duration)
-        return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False, indent=2))]
+        return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
     except Exception as exc:
         duration = (time.time() - t0) * 1000
         usage_tracker.track(name, arguments, duration_ms=duration)

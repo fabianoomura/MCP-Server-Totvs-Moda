@@ -100,7 +100,8 @@ class SalesOrderTools:
                 "invoiceStatusType",
             ),
         )
-        return await self.client.get(f"{BASE}/invoices", params=params)
+        result = await self.client.get(f"{BASE}/invoices", params=params)
+        return apply_fields(result, args)
 
     async def get_pending_items(self, args: dict[str, Any]) -> Any:
         """
@@ -112,7 +113,8 @@ class SalesOrderTools:
             args,
             ("branchCode", "orderCode", "orderId", "maxChangeFilterDate"),
         )
-        return await self.client.get(f"{BASE}/pending-items", params=params)
+        result = await self.client.get(f"{BASE}/pending-items", params=params)
+        return apply_fields(result, args)
 
     async def get_discount_types(self, args: dict[str, Any]) -> Any:
         """
@@ -149,7 +151,8 @@ class SalesOrderTools:
                 "expand",
             ),
         )
-        return await self.client.get(f"{BASE}/billing-suggestions", params=params)
+        result = await self.client.get(f"{BASE}/billing-suggestions", params=params)
+        return apply_fields(result, args)
 
     async def get_classifications(self, args: dict[str, Any]) -> Any:
         """
@@ -160,7 +163,8 @@ class SalesOrderTools:
             args,
             ("startChangeDate", "endChangeDate", "typeCodeList", "page", "pageSize"),
         )
-        return await self.client.get(f"{BASE}/classifications", params=params or None)
+        result = await self.client.get(f"{BASE}/classifications", params=params or None)
+        return apply_fields(result, args)
 
     async def get_changed_batch_items(self, args: dict[str, Any]) -> Any:
         """GET /changed-batch-items — Itens de lote associados a pedidos atualizados."""
@@ -169,7 +173,8 @@ class SalesOrderTools:
             args,
             ("branchCode", "orderCode", "batchCode", "startDate", "endDate"),
         )
-        return await self.client.get(f"{BASE}/changed-batch-items", params=params)
+        result = await self.client.get(f"{BASE}/changed-batch-items", params=params)
+        return apply_fields(result, args)
 
     # ------------------------------------------------------------------ #
     # WRITE operations                                                     #
@@ -264,7 +269,8 @@ class SalesOrderTools:
             args,
             ("status", "startChangeDate", "endChangeDate", "order", "page", "pageSize"),
         )
-        return await self.client.get(f"{BASE}/batch-items", params=params or None)
+        result = await self.client.get(f"{BASE}/batch-items", params=params or None)
+        return apply_fields(result, args)
 
     def _pascal_params(self, args: dict[str, Any], fields: tuple[str, ...]) -> dict[str, Any]:
         """Map lower camelCase tool args to TOTVS PascalCase query params."""
