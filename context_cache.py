@@ -18,7 +18,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from totvs_client import TotvsClient
@@ -52,7 +52,7 @@ async def load_context(client: TotvsClient) -> dict[str, Any]:
     """
     global CACHE
     CACHE = {
-        "loadedAt": datetime.utcnow().isoformat() + "Z",
+        "loadedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "branches": [],
         "operations": [],
         "priceTypes": [],
@@ -154,7 +154,7 @@ async def _load_price_and_cost_types(client: TotvsClient) -> None:
     """
     try:
         # Etapa 1: pegar produtos com vendas recentes
-        end_date = datetime.utcnow().date()
+        end_date = datetime.now(timezone.utc).date()
         start_date = end_date - timedelta(days=30)
 
         branches = CACHE.get("branches") or [1]

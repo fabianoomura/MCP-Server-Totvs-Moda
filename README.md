@@ -48,7 +48,7 @@ Exemplos reais do que funciona hoje:
 - Harness de endpoints: `251/251` caminhos mapeados na matriz derivada
 - Núcleo não-Analytics: `190/190`
 - Analytics/painéis: `61/61` via gateway opcional, desabilitado por padrão
-- Suite local: `210` testes
+- Suite local: `222` testes
 
 | Módulo | Principais operações |
 |---|---|
@@ -130,6 +130,9 @@ TOTVS_BRANCH_CODES=1
 | `TOTVS_USERNAME` | sim | Usuário TOTVS |
 | `TOTVS_PASSWORD` | sim | Senha TOTVS |
 | `TOTVS_BRANCH_CODES` | — | Filiais separadas por vírgula (default: `1`) |
+| `TOTVS_PROFILE` | — | Perfil de exposição de tools: `completo`, `leitura`, `vendedor`, `financeiro`, `gestor` |
+| `TOTVS_TOOLS_EXTRA` | — | Tools extras adicionadas ao perfil, separadas por vírgula |
+| `TOTVS_TOOLS_EXCLUDE` | — | Tools removidas do perfil, separadas por vírgula |
 | `TOTVS_CACHE_TTL` | — | Override global de TTL do cache em segundos |
 | `TOTVS_CACHE_ENABLED` | — | `false` para desativar o cache de respostas |
 | `TOTVS_USAGE_ENABLED` | — | `false` para desativar o rastreamento de uso |
@@ -142,6 +145,26 @@ TOTVS_BRANCH_CODES=1
 | `TOTVS_DEFAULT_PRICE_CODES` | — | Tabelas de preço padrão, ex: `1` |
 | `TOTVS_DEFAULT_COST_CODES` | — | Tipos de custo padrão, ex: `1,2,3` |
 | `TOTVS_DEFAULT_STOCK_CODES` | — | Tipos de saldo padrão, ex: `1` |
+
+### Perfis de tools
+
+Use `TOTVS_PROFILE` para reduzir as tools expostas ao cliente MCP:
+
+| Perfil | Uso |
+|---|---|
+| `completo` | Expõe todas as tools disponíveis |
+| `leitura` | Oculta as tools anotadas como escrita |
+| `vendedor` | Consultas de produto, estoque, preço, pedido, cliente e aggregators comerciais |
+| `financeiro` | Contas a receber/pagar, fiscal, voucher e aggregators financeiros |
+| `gestor` | Leituras e aggregators completos, sem writes anotadas |
+
+Exemplo:
+
+```env
+TOTVS_PROFILE=vendedor
+TOTVS_TOOLS_EXTRA=totvs_create_voucher
+TOTVS_TOOLS_EXCLUDE=totvs_search_fiscal_invoices
+```
 
 ### Segurança
 
@@ -334,7 +357,7 @@ pip install -e ".[dev]"
 PYTHONPATH=. pytest tests/ -v
 ```
 
-210 testes cobrindo contratos de endpoints, agregadores, defaults, campos, carregamento de ambiente e cliente HTTP.
+222 testes cobrindo contratos de endpoints, agregadores, defaults, campos, perfis de tools, invalidação de cache, carregamento de ambiente e cliente HTTP.
 
 ---
 
@@ -370,7 +393,7 @@ totvs-moda-mcp/
 │   ├── _defaults.py       # Injeção automática de branchCode
 │   ├── _fields.py         # Filtro de campos na resposta
 │   └── _value_types.py    # Resolução de tipos de valor
-├── tests/                 # 210 testes (pytest + respx)
+├── tests/                 # 222 testes (pytest + respx)
 └── docs/
     ├── API_ENDPOINT_MATRIX.md  # Matriz derivada de endpoints
     ├── AGENT_ENDPOINT_HARNESS.md

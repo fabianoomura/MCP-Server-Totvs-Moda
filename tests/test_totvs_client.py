@@ -1,6 +1,8 @@
 """
 Tests for totvs_client.py — the core HTTP layer.
 """
+import asyncio
+
 import pytest
 import respx
 from httpx import Response, TimeoutException
@@ -42,6 +44,25 @@ async def test_token_is_cached_across_calls(client):
     respx.get(f"{TOTVS_BASE}/api/totvsmoda/b").mock(return_value=Response(200, json={}))
     await client.get("/api/totvsmoda/a")
     await client.get("/api/totvsmoda/b")
+    assert token.call_count == 1
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_concurrent_expired_token_refreshes_once(client):
+    token = _mock_token()
+    respx.get(f"{TOTVS_BASE}/api/totvsmoda/concurrent").mock(
+        return_value=Response(200, json={"ok": True})
+    )
+
+    client._access_token = "expired-token"
+    client._token_expires_at = 0.0
+
+    results = await asyncio.gather(
+        *(client.get("/api/totvsmoda/concurrent") for _ in range(5))
+    )
+
+    assert results == [{"ok": True}] * 5
     assert token.call_count == 1
 
 

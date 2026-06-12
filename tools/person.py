@@ -42,6 +42,16 @@ class PersonTools:
     def __init__(self, client: TotvsClient) -> None:
         self.client = client
 
+    def _invalidate_after_write(self) -> None:
+        for prefix in (
+            "person_pf",
+            "person_pj",
+            "customer360",
+            "dashboard",
+            "new_customers_today",
+        ):
+            cache.invalidate(prefix)
+
     async def search_individuals(self, args: dict[str, Any]) -> Any:
         """POST /individuals/search — Dados de pessoa física."""
         body = _search_body(args)
@@ -94,7 +104,9 @@ class PersonTools:
     async def remove_classification_relationship(self, args: dict[str, Any]) -> Any:
         """POST /classification-relationship/remove - remove vinculo de classificacao de pessoa."""
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/classification-relationship/remove", body)
+        result = await self.client.post(f"{BASE}/classification-relationship/remove", body)
+        self._invalidate_after_write()
+        return result
 
     async def get_email_types(self, args: dict[str, Any]) -> Any:
         """GET /email-types — Tipos de e-mail disponíveis."""
@@ -118,22 +130,30 @@ class PersonTools:
     async def create_or_update_individual_customer(self, args: dict[str, Any]) -> Any:
         """POST /individual-customers — ⚠️ Criar ou alterar cliente PF."""
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/individual-customers", body)
+        result = await self.client.post(f"{BASE}/individual-customers", body)
+        self._invalidate_after_write()
+        return result
 
     async def create_or_update_legal_customer(self, args: dict[str, Any]) -> Any:
         """POST /legal-customers — ⚠️ Criar ou alterar cliente PJ."""
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/legal-customers", body)
+        result = await self.client.post(f"{BASE}/legal-customers", body)
+        self._invalidate_after_write()
+        return result
 
     async def consume_bonus(self, args: dict[str, Any]) -> Any:
         """POST /bonus-consume — ⚠️ Consumir bônus desconto de cliente."""
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/bonus-consume", body)
+        result = await self.client.post(f"{BASE}/bonus-consume", body)
+        self._invalidate_after_write()
+        return result
 
     async def create_message(self, args: dict[str, Any]) -> Any:
         """POST /messages — ⚠️ Incluir mensagem para pessoa."""
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/messages", body)
+        result = await self.client.post(f"{BASE}/messages", body)
+        self._invalidate_after_write()
+        return result
 
     async def relate_customer_representatives(self, args: dict[str, Any]) -> Any:
         """POST /customer-representatives - Relaciona clientes a representante."""
@@ -142,9 +162,13 @@ class PersonTools:
         if not (args.get("customerCodeList") or args.get("customerCpfCnpjList")):
             raise ValueError("Informe customerCodeList OU customerCpfCnpjList")
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/customer-representatives", body)
+        result = await self.client.post(f"{BASE}/customer-representatives", body)
+        self._invalidate_after_write()
+        return result
 
     async def change_message(self, args: dict[str, Any]) -> Any:
         """PUT /messages/change - Altera mensagem de pessoa."""
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.put(f"{BASE}/messages/change", body)
+        result = await self.client.put(f"{BASE}/messages/change", body)
+        self._invalidate_after_write()
+        return result

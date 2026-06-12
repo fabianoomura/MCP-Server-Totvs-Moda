@@ -77,6 +77,7 @@ class TotvsClient:
 
         self._access_token: str | None = None
         self._token_expires_at: float = 0.0
+        self._token_lock = asyncio.Lock()
 
         # TLS verification: enabled by default.
         # Set TOTVS_TLS_VERIFY=false only if the server uses a self-signed
@@ -99,33 +100,37 @@ class TotvsClient:
         if self._access_token and time.time() < self._token_expires_at - 30:
             return self._access_token
 
-        logger.info("Acquiring TOTVS access token...")
-        url = f"{self.base_url}{TOKEN_PATH}"
+        async with self._token_lock:
+            if self._access_token and time.time() < self._token_expires_at - 30:
+                return self._access_token
 
-        data = {
-            "grant_type": "password",
-            "client_id": self.client_id,
-            "client_secret": self.client_secret,
-            "username": self.username,
-            "password": self.password,
-            "scope": "openid",
-        }
+            logger.info("Acquiring TOTVS access token...")
+            url = f"{self.base_url}{TOKEN_PATH}"
 
-        response = await self._http.post(url, data=data)
+            data = {
+                "grant_type": "password",
+                "client_id": self.client_id,
+                "client_secret": self.client_secret,
+                "username": self.username,
+                "password": self.password,
+                "scope": "openid",
+            }
 
-        if response.status_code != 200:
-            raise TotvsAuthError(
-                f"Falha na autenticação TOTVS (HTTP {response.status_code}): "
-                f"{response.text}"
-            )
+            response = await self._http.post(url, data=data)
 
-        token_data = response.json()
-        self._access_token = token_data["access_token"]
-        expires_in = token_data.get("expires_in", 3600)
-        self._token_expires_at = time.time() + expires_in
+            if response.status_code != 200:
+                raise TotvsAuthError(
+                    f"Falha na autenticacao TOTVS (HTTP {response.status_code}): "
+                    f"{response.text}"
+                )
 
-        logger.info(f"Token adquirido. Expira em {expires_in}s.")
-        return self._access_token
+            token_data = response.json()
+            self._access_token = token_data["access_token"]
+            expires_in = token_data.get("expires_in", 3600)
+            self._token_expires_at = time.time() + expires_in
+
+            logger.info(f"Token adquirido. Expira em {expires_in}s.")
+            return self._access_token
 
     async def _headers(self) -> dict[str, str]:
         token = await self._ensure_token()

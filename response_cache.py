@@ -49,7 +49,7 @@ def _global_ttl() -> int | None:
 
 def _make_key(prefix: str, params: Any) -> str:
     raw = json.dumps(params, sort_keys=True, default=str)
-    h = hashlib.md5(raw.encode()).hexdigest()[:12]
+    h = hashlib.md5(raw.encode(), usedforsecurity=False).hexdigest()[:12]
     return f"{prefix}:{h}"
 
 

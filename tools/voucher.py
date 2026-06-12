@@ -8,6 +8,7 @@ from typing import Any
 from totvs_client import TotvsClient
 from tools._fields import apply_fields
 from tools._defaults import inject_branch_defaults
+import response_cache as cache
 
 logger = logging.getLogger("totvs-moda-mcp.voucher")
 BASE = "/api/totvsmoda/voucher/v2"
@@ -16,6 +17,16 @@ BASE = "/api/totvsmoda/voucher/v2"
 class VoucherTools:
     def __init__(self, client: TotvsClient) -> None:
         self.client = client
+
+    def _invalidate_after_write(self) -> None:
+        for prefix in (
+            "receivable",
+            "dashboard",
+            "customer360",
+            "overdue_financial",
+            "cash_flow",
+        ):
+            cache.invalidate(prefix)
 
     async def search_voucher(self, args: dict[str, Any]) -> Any:
         """GET /search — Lista vouchers por filtro (query params)."""
@@ -31,16 +42,22 @@ class VoucherTools:
         """POST /create — ⚠️ Inclui voucher."""
         args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/create", body)
+        result = await self.client.post(f"{BASE}/create", body)
+        self._invalidate_after_write()
+        return result
 
     async def update_voucher(self, args: dict[str, Any]) -> Any:
         """POST /update — ⚠️ Altera voucher."""
         args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/update", body)
+        result = await self.client.post(f"{BASE}/update", body)
+        self._invalidate_after_write()
+        return result
 
     async def create_customer_vouchers(self, args: dict[str, Any]) -> Any:
         """POST /customer/create — ⚠️ Cria vouchers para lista de clientes."""
         args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/customer/create", body)
+        result = await self.client.post(f"{BASE}/customer/create", body)
+        self._invalidate_after_write()
+        return result

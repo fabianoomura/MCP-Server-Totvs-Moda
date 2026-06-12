@@ -13,7 +13,7 @@ import json
 import logging
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -40,7 +40,7 @@ def track(tool_name: str, params: dict[str, Any], duration_ms: float | None = No
     safe_params = _sanitize_params(params)
 
     entry = {
-        "ts": datetime.utcnow().isoformat() + "Z",
+        "ts": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "tool": tool_name,
         "params": safe_params,
     }

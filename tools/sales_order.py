@@ -22,6 +22,20 @@ class SalesOrderTools:
     def __init__(self, client: TotvsClient) -> None:
         self.client = client
 
+    def _invalidate_after_write(self) -> None:
+        for prefix in (
+            "orders",
+            "dashboard",
+            "customer360",
+            "stock",
+            "product360_full",
+            "order360_full",
+            "sales_today_summary",
+            "sales_by_representative",
+            "sales_by_channel",
+        ):
+            cache.invalidate(prefix)
+
     # ------------------------------------------------------------------ #
     # READ operations                                                      #
     # ------------------------------------------------------------------ #
@@ -186,7 +200,9 @@ class SalesOrderTools:
         Cria um novo pedido de venda B2C.
         """
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/b2c-orders", body)
+        result = await self.client.post(f"{BASE}/b2c-orders", body)
+        self._invalidate_after_write()
+        return result
 
     async def cancel_order(self, args: dict[str, Any]) -> Any:
         """
@@ -199,7 +215,9 @@ class SalesOrderTools:
             "orderCode": args["orderCode"],
             "reasonCancellationCode": args["reasonCancellationCode"],
         }
-        return await self.client.post(f"{BASE}/orders/cancel", body)
+        result = await self.client.post(f"{BASE}/orders/cancel", body)
+        self._invalidate_after_write()
+        return result
 
     async def change_order_status(self, args: dict[str, Any]) -> Any:
         """POST /orders/change-status — Altera a situação do pedido."""
@@ -211,14 +229,18 @@ class SalesOrderTools:
         body = {k: v for k, v in args.items() if v is not None and k != "newStatus"}
         body["statusOrder"] = status
         body.pop("newStatus", None)
-        return await self.client.post(f"{BASE}/orders/change-status", body)
+        result = await self.client.post(f"{BASE}/orders/change-status", body)
+        self._invalidate_after_write()
+        return result
 
     async def add_order_items(self, args: dict[str, Any]) -> Any:
         """POST /items — ⚠️ Adiciona itens a pedido existente."""
         if not args.get("items"):
             raise ValueError("'items' é obrigatório")
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/items", body)
+        result = await self.client.post(f"{BASE}/items", body)
+        self._invalidate_after_write()
+        return result
 
     async def remove_order_item(self, args: dict[str, Any]) -> Any:
         """DELETE /items — ⚠️ Remove item de pedido (query params PascalCase)."""
@@ -229,39 +251,53 @@ class SalesOrderTools:
         ):
             if args.get(field) is not None:
                 params[param] = args[field]
-        return await self.client.delete(f"{BASE}/items", params=params)
+        result = await self.client.delete(f"{BASE}/items", params=params)
+        self._invalidate_after_write()
+        return result
 
     async def cancel_order_items(self, args: dict[str, Any]) -> Any:
         """POST /cancel-items — ⚠️ Cancela quantidades de itens."""
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/cancel-items", body)
+        result = await self.client.post(f"{BASE}/cancel-items", body)
+        self._invalidate_after_write()
+        return result
 
     async def change_order_item_quantity(self, args: dict[str, Any]) -> Any:
         """POST /quantity-items — ⚠️ Altera quantidade de itens."""
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/quantity-items", body)
+        result = await self.client.post(f"{BASE}/quantity-items", body)
+        self._invalidate_after_write()
+        return result
 
     async def update_order_items_additional(self, args: dict[str, Any]) -> Any:
         """POST /additional-items — ⚠️ Altera dados adicionais de itens."""
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/additional-items", body)
+        result = await self.client.post(f"{BASE}/additional-items", body)
+        self._invalidate_after_write()
+        return result
 
     async def add_order_observation(self, args: dict[str, Any]) -> Any:
         """POST /observations-order — ⚠️ Adiciona observação ao pedido."""
         if not args.get("observation"):
             raise ValueError("'observation' é obrigatório")
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/observations-order", body)
+        result = await self.client.post(f"{BASE}/observations-order", body)
+        self._invalidate_after_write()
+        return result
 
     async def update_order_shipping(self, args: dict[str, Any]) -> Any:
         """POST /shipping-order — ⚠️ Altera dados de transporte do pedido."""
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/shipping-order", body)
+        result = await self.client.post(f"{BASE}/shipping-order", body)
+        self._invalidate_after_write()
+        return result
 
     async def update_order_additional(self, args: dict[str, Any]) -> Any:
         """POST /additional-order — ⚠️ Altera dados adicionais do pedido."""
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/additional-order", body)
+        result = await self.client.post(f"{BASE}/additional-order", body)
+        self._invalidate_after_write()
+        return result
 
     async def search_batch_items(self, args: dict[str, Any]) -> Any:
         """GET /batch-items — Lista lotes de itens (query params PascalCase)."""
@@ -279,22 +315,30 @@ class SalesOrderTools:
     async def create_order_relationship_counts(self, args: dict[str, Any]) -> Any:
         """POST /relationship-counts — ⚠️ Cria contagens de relacionamento de pedido."""
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/relationship-counts", body)
+        result = await self.client.post(f"{BASE}/relationship-counts", body)
+        self._invalidate_after_write()
+        return result
 
     async def create_pdv_transaction(self, args: dict[str, Any]) -> Any:
         """POST /pdv-transactions - grava dados de transacao PDV."""
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/pdv-transactions", body)
+        result = await self.client.post(f"{BASE}/pdv-transactions", body)
+        self._invalidate_after_write()
+        return result
 
     async def create_relationship_batch_items(self, args: dict[str, Any]) -> Any:
         """POST /relationship-batch-items - relaciona item de lote ao item do pedido."""
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/relationship-batch-items", body)
+        result = await self.client.post(f"{BASE}/relationship-batch-items", body)
+        self._invalidate_after_write()
+        return result
 
     async def suggest_batch_items_by_nuance(self, args: dict[str, Any]) -> Any:
         """POST /suggest-batch-items-nuance - sugere e grava lote por nuance de cor."""
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/suggest-batch-items-nuance", body)
+        result = await self.client.post(f"{BASE}/suggest-batch-items-nuance", body)
+        self._invalidate_after_write()
+        return result
 
     async def update_order_header(self, args: dict[str, Any]) -> Any:
         """
@@ -303,7 +347,9 @@ class SalesOrderTools:
         """
         args = inject_branch_defaults(args)
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/header", body)
+        result = await self.client.post(f"{BASE}/header", body)
+        self._invalidate_after_write()
+        return result
 
     async def update_order_items_price(self, args: dict[str, Any]) -> Any:
         """
@@ -316,4 +362,6 @@ class SalesOrderTools:
             "orderCode": args["orderCode"],
             "items": args["items"],
         }
-        return await self.client.post(f"{BASE}/price-items", body)
+        result = await self.client.post(f"{BASE}/price-items", body)
+        self._invalidate_after_write()
+        return result

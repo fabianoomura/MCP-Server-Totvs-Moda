@@ -28,6 +28,16 @@ class ProductTools:
     def __init__(self, client: TotvsClient) -> None:
         self.client = client
 
+    def _invalidate_after_write(self) -> None:
+        for prefix in (
+            "balances",
+            "stock",
+            "product360_full",
+            "stock_by_kind",
+            "open_production_orders",
+        ):
+            cache.invalidate(prefix)
+
     # ── READ ──────────────────────────────────────────────────────────────
 
     async def search_products(self, args: dict[str, Any]) -> Any:
@@ -363,14 +373,18 @@ class ProductTools:
 
         Faz upsert: tenta UPDATE; se NotFound, faz CREATE.
         """
-        return await self._upsert_product_value(args, value_type="Price")
+        result = await self._upsert_product_value(args, value_type="Price")
+        self._invalidate_after_write()
+        return result
 
     async def update_product_cost(self, args: dict[str, Any]) -> Any:
         """POST /values/update — ⚠️ Atualiza CUSTO. valueType='Cost' injetado.
 
         Faz upsert: tenta UPDATE; se NotFound, faz CREATE.
         """
-        return await self._upsert_product_value(args, value_type="Cost")
+        result = await self._upsert_product_value(args, value_type="Cost")
+        self._invalidate_after_write()
+        return result
 
     async def _upsert_product_value(self, args: dict[str, Any], value_type: str) -> Any:
         """Helper interno para upsert de Price ou Cost.
@@ -413,7 +427,9 @@ class ProductTools:
     async def update_promotion_price(self, args: dict[str, Any]) -> Any:
         """POST /promotion-values/update — ⚠️ Altera preço de promoção."""
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/promotion-values/update", body)
+        result = await self.client.post(f"{BASE}/promotion-values/update", body)
+        self._invalidate_after_write()
+        return result
 
     async def update_product_data(self, args: dict[str, Any]) -> Any:
         """⚠️ Atualiza dados de produto (peso, NCM, CST, etc).
@@ -434,9 +450,9 @@ class ProductTools:
                        "barCodeList", "groupCode", "referenceCode"}
             body = {k: v for k, v in args.items()
                     if k not in excluded and v is not None}
-            return await self.client.put(
-                f"{BASE}/products/{code}/{branch}", body
-            )
+            result = await self.client.put(f"{BASE}/products/{code}/{branch}", body)
+            self._invalidate_after_write()
+            return result
 
         # Modo batch
         filter_keys = {"productCodeList", "barCodeList",
@@ -460,7 +476,9 @@ class ProductTools:
             )
 
         body = {"filter": flt, **payload}
-        return await self.client.put(f"{BASE}/data", body)
+        result = await self.client.put(f"{BASE}/data", body)
+        self._invalidate_after_write()
+        return result
 
     async def update_product_simple(self, args: dict[str, Any]) -> Any:
         """PUT /products/{code}/{branchCode} — ⚠️ Update unitário simples.
@@ -477,7 +495,9 @@ class ProductTools:
         body = {k: v for k, v in args.items()
                 if k not in excluded and v is not None}
 
-        return await self.client.put(f"{BASE}/products/{code}/{branch}", body)
+        result = await self.client.put(f"{BASE}/products/{code}/{branch}", body)
+        self._invalidate_after_write()
+        return result
 
     async def update_product_branch_info_batch(self, args: dict[str, Any]) -> Any:
         """PUT /branch-info/{branchCode} — ⚠️ Atualização em lote por filial."""
@@ -505,42 +525,58 @@ class ProductTools:
             )
 
         body = {"filter": flt, **payload}
-        return await self.client.put(f"{BASE}/branch-info/{branch}", body)
+        result = await self.client.put(f"{BASE}/branch-info/{branch}", body)
+        self._invalidate_after_write()
+        return result
 
     async def create_barcode(self, args: dict[str, Any]) -> Any:
         """POST /barcodes — ⚠️ Inclui código de barras."""
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/barcodes", body)
+        result = await self.client.post(f"{BASE}/barcodes", body)
+        self._invalidate_after_write()
+        return result
 
     async def update_barcode(self, args: dict[str, Any]) -> Any:
         """POST /barcodes/update — ⚠️ Altera código de barras existente. NEW in v2.3."""
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/barcodes/update", body)
+        result = await self.client.post(f"{BASE}/barcodes/update", body)
+        self._invalidate_after_write()
+        return result
 
     async def create_batch(self, args: dict[str, Any]) -> Any:
         """POST /batch/create — ⚠️ Inclui lote e item de lote."""
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/batch/create", body)
+        result = await self.client.post(f"{BASE}/batch/create", body)
+        self._invalidate_after_write()
+        return result
 
     async def update_batch_info(self, args: dict[str, Any]) -> Any:
         """PUT /batch-info - altera dados de item de lote."""
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.put(f"{BASE}/batch-info", body)
+        result = await self.client.put(f"{BASE}/batch-info", body)
+        self._invalidate_after_write()
+        return result
 
     async def create_batch_preferential_sales_order(self, args: dict[str, Any]) -> Any:
         """POST /batch-preferentialsalesorder - vincula item de lote a pedido preferencial."""
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/batch-preferentialsalesorder", body)
+        result = await self.client.post(f"{BASE}/batch-preferentialsalesorder", body)
+        self._invalidate_after_write()
+        return result
 
     async def upsert_color(self, args: dict[str, Any]) -> Any:
         """POST /colors - inclui ou altera cor."""
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/colors", body)
+        result = await self.client.post(f"{BASE}/colors", body)
+        self._invalidate_after_write()
+        return result
 
     async def create_grid(self, args: dict[str, Any]) -> Any:
         """POST /grids - inclui grade."""
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/grids", body)
+        result = await self.client.post(f"{BASE}/grids", body)
+        self._invalidate_after_write()
+        return result
 
     async def create_reference(self, args: dict[str, Any]) -> Any:
         """POST /references — ⚠️ Inclui nova referência de produto. NEW in v2.3.
@@ -549,7 +585,9 @@ class ProductTools:
         referenceCode, description, categoryCode, colorCode, grid, etc.
         """
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/references", body)
+        result = await self.client.post(f"{BASE}/references", body)
+        self._invalidate_after_write()
+        return result
 
     async def create_classification_type(self, args: dict[str, Any]) -> Any:
         """POST /classifications — ⚠️ Cria tipo de classificação de produto. NEW in v2.3.
@@ -558,7 +596,9 @@ class ProductTools:
         criar um novo TIPO de classificação (agrupador), não vincular produtos.
         """
         body = {k: v for k, v in args.items() if v is not None}
-        return await self.client.post(f"{BASE}/classifications", body)
+        result = await self.client.post(f"{BASE}/classifications", body)
+        self._invalidate_after_write()
+        return result
 
     async def create_classification_relationship(self, args: dict[str, Any]) -> Any:
         """POST /classification-relationship/create — ⚠️ Vincula classificações a produtos.
@@ -577,10 +617,12 @@ class ProductTools:
         all_codes = list(args["productCodeList"])
 
         try:
-            return await self.client.post(
+            result = await self.client.post(
                 f"{BASE}/classification-relationship/create",
                 {"products": build_products(all_codes)},
             )
+            self._invalidate_after_write()
+            return result
         except TotvsApiError as create_err:
             if not create_err.has_code("AlreadyExist"):
                 raise
@@ -595,6 +637,7 @@ class ProductTools:
                     f"{BASE}/classification-relationship/update",
                     {"products": build_products(all_codes)},
                 )
+                self._invalidate_after_write()
                 return {
                     "operation": "updated",
                     "result": result,
@@ -621,6 +664,7 @@ class ProductTools:
                 "created": len(new_codes),
                 "updated": len(already_codes),
             }
+            self._invalidate_after_write()
             return results
 
     async def create_product_value(self, args: dict[str, Any]) -> Any:
@@ -634,4 +678,6 @@ class ProductTools:
         if args.get("valueType") is not None:
             value_item["valueType"] = args["valueType"]
         body = {"products": [{"productCode": args["productCode"], "values": [value_item]}]}
-        return await self.client.post(f"{BASE}/values/create", body)
+        result = await self.client.post(f"{BASE}/values/create", body)
+        self._invalidate_after_write()
+        return result

@@ -1,5 +1,5 @@
 """
-TOTVS Moda MCP Server v3.8.3
+TOTVS Moda MCP Server v3.9.0
 =============================
 MCP server para API V2 do TOTVS Moda.
 15 módulos | 200+ tools | OAuth2 ROPC
@@ -2494,10 +2494,113 @@ ROUTING: dict[str, tuple[str, str]] = {
     "totvs_analytics_call":                     ("analytics", "call_endpoint"),
 }
 
+SPECIAL_TOOL_NAMES = {
+    "totvs_get_instructions",
+    "totvs_get_context",
+    "totvs_get_usage_insights",
+}
+
+VENDOR_PROFILE_TOOLS = {
+    "totvs_search_orders",
+    "totvs_get_order_invoices",
+    "totvs_get_pending_items",
+    "totvs_get_billing_suggestions",
+    "totvs_get_order_classifications",
+    "totvs_get_discount_types",
+    "totvs_search_batch_items",
+    "totvs_get_changed_batch_items",
+    "totvs_search_products",
+    "totvs_get_product",
+    "totvs_search_product_balances",
+    "totvs_search_product_prices",
+    "totvs_search_price_tables",
+    "totvs_search_product_references",
+    "totvs_get_product_grid",
+    "totvs_search_product_colors",
+    "totvs_search_product_batch",
+    "totvs_search_product_codes",
+    "totvs_search_product_costs",
+    "totvs_get_product_category",
+    "totvs_get_product_classifications",
+    "totvs_get_measurement_units",
+    "totvs_search_individual_customers",
+    "totvs_search_legal_customers",
+    "totvs_get_customer_bonus_balance",
+    "totvs_get_person_statistics",
+    "totvs_search_representatives",
+    "totvs_sales_today_summary",
+    "totvs_customer_360",
+    "totvs_product_360",
+    "totvs_stock_available",
+    "totvs_order_360",
+    "totvs_sales_by_representative",
+    "totvs_sales_by_channel",
+    "totvs_top_customers",
+}
+
+FINANCIAL_PROFILE_MODULES = {
+    "accounts_receivable",
+    "account_payable",
+    "fiscal",
+}
+
+FINANCIAL_PROFILE_EXTRA_TOOLS = {
+    "totvs_customer_360",
+    "totvs_daily_dashboard",
+    "totvs_invoice_360",
+    "totvs_overdue_financial_summary",
+    "totvs_cash_flow_forecast",
+    "totvs_search_voucher",
+}
+
+
+def _tool_names_from_env(name: str) -> set[str]:
+    raw = os.environ.get(name, "")
+    return {item.strip() for item in raw.split(",") if item.strip()}
+
+
+def _write_tool_names() -> set[str]:
+    return {tool.name for tool in TOOLS if getattr(tool, "annotations", None)}
+
+
+def _profile_tool_names() -> set[str]:
+    all_tool_names = {tool.name for tool in TOOLS}
+    profile = os.environ.get("TOTVS_PROFILE", "completo").strip().lower() or "completo"
+
+    if profile == "leitura":
+        names = all_tool_names - _write_tool_names()
+    elif profile == "vendedor":
+        names = set(VENDOR_PROFILE_TOOLS) & all_tool_names
+    elif profile == "financeiro":
+        names = {
+            name
+            for name, (module_key, _method_name) in ROUTING.items()
+            if module_key in FINANCIAL_PROFILE_MODULES
+        }
+        names |= FINANCIAL_PROFILE_EXTRA_TOOLS & all_tool_names
+    elif profile == "gestor":
+        names = all_tool_names - _write_tool_names()
+    else:
+        names = set(all_tool_names)
+
+    names |= _tool_names_from_env("TOTVS_TOOLS_EXTRA") & all_tool_names
+    names -= _tool_names_from_env("TOTVS_TOOLS_EXCLUDE")
+    names |= SPECIAL_TOOL_NAMES & all_tool_names
+    return names
+
+
+def _enabled_tools() -> list[types.Tool]:
+    enabled_names = _profile_tool_names()
+    return [tool for tool in TOOLS if tool.name in enabled_names]
+
+
+def _tool_enabled(name: str) -> bool:
+    return name in _profile_tool_names()
+
 
 @server.list_tools()
 async def handle_list_tools() -> list[types.Tool]:
-    return TOOLS
+    return _enabled_tools()
 
 
 @server.call_tool()
@@ -2525,6 +2628,17 @@ async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[types.T
         result = usage_analyzer.analyze(days)
         return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
 
+    if name in {tool.name for tool in TOOLS} and not _tool_enabled(name):
+        return [
+            types.TextContent(
+                type="text",
+                text=json.dumps(
+                    {"error": f"Tool '{name}' não habilitada no perfil atual."},
+                    ensure_ascii=False,
+                ),
+            )
+        ]
+
     route = ROUTING.get(name)
     if not route:
         return [types.TextContent(type="text", text=json.dumps({"error": f"Tool '{name}' não encontrada."}))]
@@ -2546,7 +2660,7 @@ async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[types.T
 
 
 async def main() -> None:
-    logger.info(f"TOTVS Moda MCP Server v3.8.3 — {len(TOOLS)} tools | {len(get_modules())} módulos")
+    logger.info(f"TOTVS Moda MCP Server v3.9.0 — {len(TOOLS)} tools | {len(get_modules())} módulos")
     try:
         await context_cache.load_context(get_client())
     except Exception as e:
@@ -2556,7 +2670,7 @@ async def main() -> None:
             read_stream, write_stream,
             InitializationOptions(
                 server_name="totvs-moda-mcp",
-                server_version="3.8.3",
+                server_version="3.9.0",
                 capabilities=server.get_capabilities(
                     notification_options=NotificationOptions(),
                     experimental_capabilities={},

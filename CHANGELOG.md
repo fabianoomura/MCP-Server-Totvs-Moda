@@ -1,5 +1,27 @@
 # Changelog
 
+## [3.9.0] - 2026-06-12
+
+### Added
+- Tool exposure profiles via `TOTVS_PROFILE`: `completo`, `leitura`, `vendedor`, `financeiro` and `gestor`.
+- `TOTVS_TOOLS_EXTRA` and `TOTVS_TOOLS_EXCLUDE` to tune individual tools over any profile.
+- Defense-in-depth profile enforcement in `handle_call_tool`, not only in tool listing.
+- Regression tests for profile filtering, cache invalidation and TOOLS/ROUTING parity.
+- `dev` optional dependency group with pytest, pytest-asyncio and respx.
+- v3.9 progress document in `docs/AVANCOS_v3.9.md`.
+
+### Fixed
+- Added double-checked `asyncio.Lock` around OAuth token refresh to avoid concurrent token storms.
+- Invalidated response cache after successful write operations in sales order, product, person and voucher tools.
+- Replaced deprecated `datetime.utcnow()` usage with timezone-aware UTC timestamps.
+- Marked MD5 cache-key hashing as non-security usage with `usedforsecurity=False`.
+- Aligned `.env.example` Analytics default with the server behavior (`false` unless explicitly enabled).
+
+### Tests
+- Suite now has 222 tests.
+- Verified with `pytest tests/ -q`.
+- Verified with `pytest tests/ -q -W error::DeprecationWarning`.
+
 ## [3.8.3] - 2026-05-27
 
 ### Fixed
