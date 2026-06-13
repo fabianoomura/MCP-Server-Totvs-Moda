@@ -63,3 +63,155 @@ class LogisticsTools:
         args = _with_branch_code(args)
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/product-packagings/subtract-quantity", body)
+
+
+# ------------------------------------------------------------------------
+# Tool definitions (schemas) — imported by server.py
+# ------------------------------------------------------------------------
+
+import mcp.types as types
+
+TOOLS: list[types.Tool] = [
+    types.Tool(
+        name="totvs_search_product_storage",
+        description="Consulta armazenagem fisica/localizacao logistica de produtos.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Filial unica; alternativa a branchCodeList"
+                },
+                "branchCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "productCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "referenceCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "barCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "addressCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "order": {
+                    "type": "string"
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_upsert_product_packaging",
+        description="⚠️ ESCRITA — Manutencao de produto em embalagem logistica.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "packagingNumber": {
+                    "type": "integer"
+                },
+                "productCode": {
+                    "type": "integer"
+                },
+                "quantity": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "branchCode",
+                "packagingNumber",
+                "productCode",
+                "quantity"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_add_product_packaging_quantity",
+        description="⚠️ ESCRITA — Adiciona quantidade de produto a uma embalagem logistica.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "packagingNumber": {
+                    "type": "integer"
+                },
+                "productCode": {
+                    "type": "integer"
+                },
+                "quantity": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "branchCode",
+                "packagingNumber",
+                "productCode",
+                "quantity"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_subtract_product_packaging_quantity",
+        description="⚠️ ESCRITA — Subtrai quantidade de produto de uma embalagem logistica.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "packagingNumber": {
+                    "type": "integer"
+                },
+                "productCode": {
+                    "type": "integer"
+                },
+                "quantity": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "branchCode",
+                "packagingNumber",
+                "productCode",
+                "quantity"
+            ]
+        },
+    ),
+]
+
+ROUTES: dict[str, str] = {
+    "totvs_search_product_storage": "search_product_storage",
+    "totvs_upsert_product_packaging": "upsert_product_packaging",
+    "totvs_add_product_packaging_quantity": "add_product_packaging",
+    "totvs_subtract_product_packaging_quantity": "subtract_product_packaging",
+}

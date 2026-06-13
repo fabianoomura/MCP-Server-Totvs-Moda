@@ -61,3 +61,134 @@ class VoucherTools:
         result = await self.client.post(f"{BASE}/customer/create", body)
         self._invalidate_after_write()
         return result
+
+
+# ------------------------------------------------------------------------
+# Tool definitions (schemas) — imported by server.py
+# ------------------------------------------------------------------------
+
+import mcp.types as types
+
+WRITE_TOOL_ANNOTATIONS: dict[str, bool] = {
+    "destructiveHint": True,
+    "idempotentHint": False,
+    "readOnlyHint": False,
+    "openWorldHint": True,
+}
+
+TOOLS: list[types.Tool] = [
+    types.Tool(
+        name="totvs_search_voucher",
+        description="Consulta vouchers/cupons. Use fields para reduzir tokens.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "voucherCode": {
+                    "type": "string"
+                },
+                "customerCode": {
+                    "type": "integer"
+                },
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Código da filial"
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_create_voucher",
+        description="⚠️ ESCRITA — Cria voucher/cupom.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Código da filial"
+                },
+                "value": {
+                    "type": "number"
+                },
+                "expirationDate": {
+                    "type": "string"
+                },
+                "customerCode": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "branchCode",
+                "value"
+            ]
+        },
+        annotations=WRITE_TOOL_ANNOTATIONS,
+    ),
+    types.Tool(
+        name="totvs_update_voucher",
+        description="⚠️ Altera dados de um voucher existente.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "voucherCode": {
+                    "type": "integer"
+                },
+                "value": {
+                    "type": "number"
+                },
+                "expirationDate": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "branchCode",
+                "voucherCode"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_create_customer_vouchers",
+        description="⚠️ Cria vouchers em lote para uma lista de clientes.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "customerCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "value": {
+                    "type": "number"
+                },
+                "expirationDate": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "branchCode",
+                "customerCodeList",
+                "value"
+            ]
+        },
+    ),
+]
+
+ROUTES: dict[str, str] = {
+    "totvs_search_voucher": "search_voucher",
+    "totvs_create_voucher": "create_voucher",
+    "totvs_update_voucher": "update_voucher",
+    "totvs_create_customer_vouchers": "create_customer_vouchers",
+}

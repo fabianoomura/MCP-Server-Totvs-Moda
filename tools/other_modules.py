@@ -125,3 +125,309 @@ class ProductionOrderTools:
         """POST /materials/movement — ⚠️ Movimentação de matéria prima."""
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{self.BASE}/materials/movement", body)
+
+
+# ------------------------------------------------------------------------
+# Tool definitions (schemas) — imported by server.py
+# ------------------------------------------------------------------------
+
+import mcp.types as types
+
+MANAGEMENT_TOOLS: list[types.Tool] = [
+    types.Tool(
+        name="totvs_get_users",
+        description="Lista usuários do TOTVS Moda.",
+        inputSchema={
+            "type": "object",
+            "properties": {}
+        },
+    ),
+    types.Tool(
+        name="totvs_get_global_parameters",
+        description="Parâmetros corporativos do TOTVS por código.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "parameterCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Códigos dos parâmetros (obrigatório)"
+                }
+            },
+            "required": [
+                "parameterCodeList"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_get_branch_parameters",
+        description="Parâmetros de filial por código.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Códigos das filiais (obrigatório)"
+                },
+                "parameterCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Códigos dos parâmetros (obrigatório)"
+                }
+            },
+            "required": [
+                "branchCodeList",
+                "parameterCodeList"
+            ]
+        },
+    ),
+]
+
+MANAGEMENT_ROUTES: dict[str, str] = {
+    "totvs_get_users": "get_users",
+    "totvs_get_global_parameters": "get_global_parameters",
+    "totvs_get_branch_parameters": "get_branch_parameters",
+}
+
+
+# ------------------------------------------------------------------------
+# Tool definitions (schemas) — imported by server.py
+# ------------------------------------------------------------------------
+
+import mcp.types as types
+
+GLOBAL_TOOLS: list[types.Tool] = [
+    types.Tool(
+        name="totvs_get_cep",
+        description="Endereço completo pelo CEP.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "cep": {
+                    "type": "string",
+                    "description": "Somente dígitos ex: 86020040"
+                }
+            },
+            "required": [
+                "cep"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_get_countries",
+        description="Lista de países disponíveis.",
+        inputSchema={
+            "type": "object",
+            "properties": {}
+        },
+    ),
+    types.Tool(
+        name="totvs_get_states",
+        description="Lista de estados/UFs.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "countryCode": {
+                    "type": "string"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_get_cities",
+        description="Lista de cidades.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "stateCode": {
+                    "type": "string"
+                },
+                "countryCode": {
+                    "type": "string"
+                }
+            }
+        },
+    ),
+]
+
+GLOBAL_ROUTES: dict[str, str] = {
+    "totvs_get_cep": "get_cep",
+    "totvs_get_countries": "get_countries",
+    "totvs_get_states": "get_states",
+    "totvs_get_cities": "get_cities",
+}
+
+
+# ------------------------------------------------------------------------
+# Tool definitions (schemas) — imported by server.py
+# ------------------------------------------------------------------------
+
+import mcp.types as types
+
+PRODUCTION_ORDER_TOOLS: list[types.Tool] = [
+    types.Tool(
+        name="totvs_search_production_orders",
+        description=(
+            "Ordens de produção por filtro. Use expand para carregar grupos como items, materials, locations e productionNotes. Use fields para reduzir tokens."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Código da filial"
+                },
+                "branchCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Lista de empresas"
+                },
+                "change": {
+                    "type": "object",
+                    "description": "Filtro oficial por alteração: {startDate,endDate}. Quando informado, use branchCodeList."
+                },
+                "cycleCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Lista de ciclos"
+                },
+                "orderCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Lista de ordens de produção"
+                },
+                "statusList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Status: 5=Bloqueada, 10=Aguardando liberação, 20=Em andamento, 30=Finalizada, 40=Cancelada"
+                },
+                "placeCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Lista de locais da OP"
+                },
+                "materialClassificationList": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    },
+                    "description": "Classificações de matéria-prima: [{typeCode, classificationCodeList}]"
+                },
+                "startDate": {
+                    "type": "string",
+                    "description": "Alias legado para change.startDate"
+                },
+                "endDate": {
+                    "type": "string",
+                    "description": "Alias legado para change.endDate"
+                },
+                "expand": {
+                    "type": "string",
+                    "description": "Expansões suportadas: observations,classifications,references,locations,programmings,items,materials,relationships,relationshipItems,productionNotes,productFinishedQuantitiesTypes,orderFinishedQuantitiesTypes"
+                },
+                "order": {
+                    "type": "string",
+                    "description": "Ordenação suportada: branchCode, cycleCode, orderCode, maxChangeFilterDate. Use - para desc."
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100,
+                    "description": "Máximo 500 no Swagger"
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_get_pending_material_consumption",
+        description="Fichas de consumo de matéria-prima pendentes em ordens de produção.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "orderCode": {
+                    "type": "integer"
+                },
+                "startDate": {
+                    "type": "string"
+                },
+                "endDate": {
+                    "type": "string"
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_create_material_movement",
+        description="⚠️ Movimentação de matéria-prima em ordem de produção.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "orderCode": {
+                    "type": "integer"
+                },
+                "movementDate": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                }
+            },
+            "required": [
+                "branchCode",
+                "orderCode",
+                "movementDate",
+                "items"
+            ]
+        },
+    ),
+]
+
+PRODUCTION_ORDER_ROUTES: dict[str, str] = {
+    "totvs_search_production_orders": "search_production_orders",
+    "totvs_get_pending_material_consumption": "get_pending_material_consumption",
+    "totvs_create_material_movement": "create_material_movement",
+}

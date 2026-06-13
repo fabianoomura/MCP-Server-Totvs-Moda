@@ -681,3 +681,1745 @@ class ProductTools:
         result = await self.client.post(f"{BASE}/values/create", body)
         self._invalidate_after_write()
         return result
+
+
+# ------------------------------------------------------------------------
+# Tool definitions (schemas) — imported by server.py
+# ------------------------------------------------------------------------
+
+import mcp.types as types
+
+WRITE_TOOL_ANNOTATIONS: dict[str, bool] = {
+    "destructiveHint": True,
+    "idempotentHint": False,
+    "readOnlyHint": False,
+    "openWorldHint": True,
+}
+
+TOOLS: list[types.Tool] = [
+    types.Tool(
+        name="totvs_search_products",
+        description=(
+            "Busca produtos por filtro. NÃO retorna preço/saldo; use tools específicas. Suporta branchInfo para produto acabado/matéria-prima e expand para dados cadastrais ricos."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Código da filial"
+                },
+                "productCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "referenceCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "productName": {
+                    "type": "string"
+                },
+                "groupCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "startProductCode": {
+                    "type": "integer"
+                },
+                "endProductCode": {
+                    "type": "integer"
+                },
+                "change": {
+                    "type": "object",
+                    "description": "ProductChangeFilterModel. Opções inProduct/inBranchInfo/inPrice/inCost/inStock etc funcionam como OU; demais filtros como E."
+                },
+                "branchInfo": {
+                    "type": "object",
+                    "description": "{branchCode,isActive,isFinishedProduct,isRawMaterial,isBulkMaterial,isOwnProduction}"
+                },
+                "classifications": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    },
+                    "description": "[{type, codeList}]"
+                },
+                "suppliers": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    },
+                    "description": "[{code, originalCode}]"
+                },
+                "manufacturers": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    },
+                    "description": "[{code}]"
+                },
+                "hasPrice": {
+                    "type": "boolean"
+                },
+                "branchPriceCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "priceCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "hasCost": {
+                    "type": "boolean"
+                },
+                "branchCostCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "costCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "hasStock": {
+                    "type": "boolean"
+                },
+                "branchStockCode": {
+                    "type": "integer"
+                },
+                "stockCode": {
+                    "type": "integer"
+                },
+                "hasWebInfo": {
+                    "type": "boolean"
+                },
+                "option": {
+                    "type": "object",
+                    "description": "ReferenceOptionModel. Default usa branchInfoCode da filial."
+                },
+                "expand": {
+                    "type": "string",
+                    "description": "barCodes,classifications,additionalFields,suppliers,manufacturers,additionalColorInformation,referenceCategories,referenceCodeSequences,webData,details,branchesProductBlocked,conservationInstructions"
+                },
+                "order": {
+                    "type": "string",
+                    "description": "productSku,referenceCode,colorCode,productSize,productCode,maxChangeFilterDate"
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 1000,
+                    "description": "Máximo 1000 no Swagger"
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_get_product",
+        description="Dados completos de um produto/pack pelo código.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Código da filial"
+                }
+            },
+            "required": [
+                "code"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_search_product_balances",
+        description=(
+            "Consulta saldos de estoque. Retorna items[] com: productCode, name, productSku, branchCode, balance (quantidade disponível), reservedBalance. Aceita filter.branchCodeList, filter.productCodeList, filter.referenceCodeList. Para alertas de estoque baixo (< threshold) use totvs_low_stock_alert. Use fields=['productCode','balance'] se quiser apenas quantidades."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Código da filial (padrão 1)"
+                },
+                "stockCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Tipos de saldo (padrão [1])"
+                },
+                "isSalesOrder": {
+                    "type": "boolean",
+                    "description": "Incluir saldo reservado em pedidos de venda"
+                },
+                "salesOrderStatusList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Status de pedido considerados quando isSalesOrder=true"
+                },
+                "isTransaction": {
+                    "type": "boolean"
+                },
+                "isProductionPlanning": {
+                    "type": "boolean"
+                },
+                "isPurchaseOrder": {
+                    "type": "boolean"
+                },
+                "isProductionOrder": {
+                    "type": "boolean"
+                },
+                "cycleProductionPlanningCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "productCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "referenceCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "branchInfo": {
+                    "type": "object",
+                    "description": "Filtro por empresa: ativo/acabado/matéria-prima/material consumo"
+                },
+                "option": {
+                    "type": "object",
+                    "description": "ProductBalanceOptionModel completo; se informado substitui balances padrão"
+                },
+                "expand": {
+                    "type": "string",
+                    "description": "locations"
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 1000,
+                    "description": "Máximo 1000 no Swagger"
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_search_product_prices",
+        description=(
+            "Consulta preços de produtos. priceCodeList é OBRIGATÓRIO. Retorna items[] com prices[]={branchCode, priceCode, priceName, price, promotionalPrice, promotionalInformation, informationOtherPromotions}. Para alterar use totvs_update_product_price_only ou totvs_update_product_cost. Use option.prices=[{branchCode, priceCodeList, isPromotionalPrice, isScheduledPrice}] pra incluir blocos de promoção/agenda. Use fields=['productCode','prices.price'] para reduzir tokens."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "productCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "referenceCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "priceCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Códigos de tabela (consulte priceTypes em totvs_get_context)"
+                },
+                "branchCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "change": {
+                    "type": "object",
+                    "description": "Filtro de alterações no período",
+                    "properties": {
+                        "startDate": {
+                            "type": "string"
+                        },
+                        "endDate": {
+                            "type": "string"
+                        },
+                        "inProduct": {
+                            "type": "boolean"
+                        },
+                        "inPrice": {
+                            "type": "boolean"
+                        },
+                        "inPromotionalPrice": {
+                            "type": "boolean"
+                        },
+                        "inScheduledPrice": {
+                            "type": "boolean"
+                        },
+                        "inDigitalPromotionPrice": {
+                            "type": "boolean"
+                        },
+                        "branchPriceCodeList": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer"
+                            }
+                        },
+                        "priceCodeList": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer"
+                            }
+                        }
+                    }
+                },
+                "option": {
+                    "type": "object",
+                    "description": "Opções de retorno",
+                    "properties": {
+                        "prices": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "branchCode": {
+                                        "type": "integer"
+                                    },
+                                    "priceCodeList": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "isPromotionalPrice": {
+                                        "type": "boolean"
+                                    },
+                                    "isScheduledPrice": {
+                                        "type": "boolean"
+                                    }
+                                }
+                            }
+                        },
+                        "digitalPromotionPrices": {
+                            "type": "object",
+                            "properties": {
+                                "branchCodeList": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "isInformationOtherDigitalPromotions": {
+                                    "type": "boolean"
+                                }
+                            }
+                        }
+                    }
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_search_price_tables",
+        description="Preços de produtos baseados em tabela de preço. branchCode e priceTableCode são obrigatórios.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Código da filial (usado como branchCodeList)"
+                },
+                "branchCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Lista de filiais (alternativa a branchCode)"
+                },
+                "priceTableCode": {
+                    "type": "integer",
+                    "description": "Código da tabela de preço"
+                },
+                "productCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "referenceCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "productName": {
+                    "type": "string"
+                },
+                "change": {
+                    "type": "object"
+                },
+                "branchInfo": {
+                    "type": "object"
+                },
+                "suppliers": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                },
+                "manufacturers": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                },
+                "classifications": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "type": {
+                                "type": "integer"
+                            },
+                            "codeList": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "description": "Filtro por classificação: [{type: 11, codeList: ['7']}]"
+                },
+                "option": {
+                    "type": "object",
+                    "description": "PriceTableOptionModel completo"
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 1000,
+                    "description": "Máximo 1000 no Swagger"
+                },
+                "order": {
+                    "type": "string",
+                    "description": "productSku,referenceCode,colorCode,productSize,productCode"
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."
+                }
+            },
+            "required": [
+                "priceTableCode"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_search_product_references",
+        description="Referências de produtos com grade, cor e composição. Use fields para reduzir tokens.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Código da filial"
+                },
+                "referenceCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_get_product_grid",
+        description="Grades (tamanhos) disponíveis no TOTVS.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Código da filial"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_search_product_colors",
+        description="Cores de produtos. Use fields para reduzir tokens.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Código da filial"
+                },
+                "colorCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_search_product_batch",
+        description="Lotes de produto. Use fields para reduzir tokens.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Código da filial"
+                },
+                "productCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_get_kardex_movement",
+        description="Movimentação kardex (entradas/saídas) de produto.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Código da filial"
+                },
+                "productCode": {
+                    "type": "integer"
+                },
+                "startDate": {
+                    "type": "string"
+                },
+                "endDate": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "branchCode",
+                "productCode"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_search_product_compositions",
+        description="Composições de produto por código/fibra. Use expand='fibers'.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "startChangeDate": {
+                    "type": "string"
+                },
+                "endChangeDate": {
+                    "type": "string"
+                },
+                "codeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "fibers": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "fiberDescription": {
+                    "type": "string"
+                },
+                "expand": {
+                    "type": "string",
+                    "description": "fibers"
+                },
+                "order": {
+                    "type": "string",
+                    "description": "code,maxChangeFilterDate"
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Lista opcional de campos a retornar."
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_get_product_additional_field_types",
+        description=(
+            "Tipos de campos adicionais de produto. Use para descobrir codigos antes de filtrar ou atualizar dados adicionais."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "startChangeDate": {
+                    "type": "string"
+                },
+                "endChangeDate": {
+                    "type": "string"
+                },
+                "codeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "order": {
+                    "type": "string",
+                    "description": "code,maxChangeFilterDate"
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_get_product_classification_types",
+        description="Tipos de classificacao de produto disponiveis. Use antes de consultar ou gravar classificacoes.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "startChangeDate": {
+                    "type": "string"
+                },
+                "endChangeDate": {
+                    "type": "string"
+                },
+                "classificationTypeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "isGroup": {
+                    "type": "boolean"
+                },
+                "order": {
+                    "type": "string",
+                    "description": "code,maxChangeFilterDate"
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_get_product_composition_group_product",
+        description=(
+            "Composicao por grupo/produto/referencia. Requer productCodeList, groupCodeList ou referenceCodeList."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "productCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "groupCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "referenceCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_get_product_composition_product",
+        description=(
+            "Composicao especifica de produto por produto/grupo/referencia. Requer productCodeList, groupCodeList ou referenceCodeList."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "productCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "groupCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "referenceCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_get_product_instruction_items",
+        description="Itens de instrucao de conservacao/manuseio de produto. Suporta expand='image,globalImage'.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "startChangeDate": {
+                    "type": "string"
+                },
+                "endChangeDate": {
+                    "type": "string"
+                },
+                "codeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "grouperCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "expand": {
+                    "type": "string",
+                    "description": "image,globalImage"
+                },
+                "order": {
+                    "type": "string",
+                    "description": "code,maxChangeFilterDate"
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_get_product_price_table_scales",
+        description="Escalas de tabela de preco por codigo de escala/tabela.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "startChangeDate": {
+                    "type": "string"
+                },
+                "endChangeDate": {
+                    "type": "string"
+                },
+                "scaleCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "priceTableCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 1000
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_get_product_grouper_configurations",
+        description="Configuracoes de agrupador de produto.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "startChangeDate": {
+                    "type": "string"
+                },
+                "endChangeDate": {
+                    "type": "string"
+                },
+                "grouperCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "order": {
+                    "type": "string",
+                    "description": "grouperCode,maxChangeFilterDate"
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_create_product_classification",
+        description=(
+            "⚠️ ESCRITA — Upsert de classificação de produto. Tenta incluir; se já existir, altera. Em lote misto separa itens novos e existentes quando a API informa ProductCode no erro."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "productCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Lista de códigos de produto"
+                },
+                "typeCode": {
+                    "type": "integer",
+                    "description": "Código do tipo de classificação (ex: 11 = web - tipo produto)"
+                },
+                "classificationCode": {
+                    "type": "string",
+                    "description": "Código da classificação (ex: '7' = shopify)"
+                },
+                "referenceId": {
+                    "type": "integer",
+                    "description": "ID da referência (padrão 0)",
+                    "default": 0
+                }
+            },
+            "required": [
+                "productCodeList",
+                "typeCode",
+                "classificationCode"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_create_product_value",
+        description=(
+            "⚠️ ESCRITA — Inclui preço ou custo de produto (quando ainda não existe). Use totvs_get_context para obter os códigos válidos."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Código da filial"
+                },
+                "productCode": {
+                    "type": "integer",
+                    "description": "Código do produto"
+                },
+                "valueCode": {
+                    "type": "integer",
+                    "description": "Código do tipo de preço ou custo"
+                },
+                "valueType": {
+                    "type": "integer",
+                    "description": "Tipo do valor conforme enum da API"
+                },
+                "value": {
+                    "type": "number",
+                    "description": "Valor"
+                }
+            },
+            "required": [
+                "branchCode",
+                "productCode",
+                "valueCode",
+                "value"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_update_product_price",
+        description=(
+            "⚠️ ESCRITA — Altera preço OU custo de produto. DEPRECATED em v3.1: prefira totvs_update_product_price_only ou totvs_update_product_cost. Esta tool ainda funciona — sem valueType assume Price; passe valueType='Cost' (ou 'C') pra custo."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "productCode": {
+                    "type": "integer"
+                },
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Padrão do .env se omitido"
+                },
+                "valueType": {
+                    "type": "string",
+                    "enum": [
+                        "Price",
+                        "Cost",
+                        "P",
+                        "C"
+                    ],
+                    "description": "Price/P = preço de venda; Cost/C = custo. Default: Price."
+                },
+                "valueCode": {
+                    "type": "integer",
+                    "description": "Código da tabela (1, 2, 3...)"
+                },
+                "value": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "productCode",
+                "valueCode",
+                "value"
+            ]
+        },
+        annotations=WRITE_TOOL_ANNOTATIONS,
+    ),
+    types.Tool(
+        name="totvs_update_product_price_only",
+        description=(
+            "⚠️ ESCRITA — Atualiza PREÇO DE VENDA do produto. valueType='Price' é injetado automaticamente. Faz upsert: tenta UPDATE; se não existe, faz CREATE. Modo simples: passe productCode + valueCode + value. Modo lote: products[]={productCode, values:[{branchCode, valueCode, value}]}. Para custo use totvs_update_product_cost."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "productCode": {
+                    "type": "integer"
+                },
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Padrão do .env se omitido"
+                },
+                "valueCode": {
+                    "type": "integer",
+                    "description": "Tabela de preço (consulte priceTypes em totvs_get_context)"
+                },
+                "value": {
+                    "type": "number"
+                },
+                "products": {
+                    "type": "array",
+                    "description": "Modo lote (alternativo)",
+                    "items": {
+                        "type": "object"
+                    }
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_update_product_cost",
+        description=(
+            "⚠️ ESCRITA — Atualiza CUSTO do produto. valueType='Cost' é injetado automaticamente. Faz upsert: tenta UPDATE; se não existe, faz CREATE. Para preço use totvs_update_product_price_only."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "productCode": {
+                    "type": "integer"
+                },
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Padrão do .env se omitido"
+                },
+                "valueCode": {
+                    "type": "integer"
+                },
+                "value": {
+                    "type": "number"
+                },
+                "products": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_update_promotion_price",
+        description="⚠️ ESCRITA — Altera preço de promoção de produto.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Código da filial"
+                },
+                "productCode": {
+                    "type": "integer"
+                },
+                "promotionPrice": {
+                    "type": "number"
+                },
+                "startDate": {
+                    "type": "string"
+                },
+                "endDate": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "branchCode",
+                "productCode",
+                "promotionPrice"
+            ]
+        },
+        annotations=WRITE_TOOL_ANNOTATIONS,
+    ),
+    types.Tool(
+        name="totvs_search_product_codes",
+        description=(
+            "Lista de produtos com filtro — retorna apenas código e dados básicos. Use fields para reduzir tokens."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "productCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "referenceCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_search_product_costs",
+        description="Custos de produtos por filtro. Use fields para reduzir tokens.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "productCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "referenceCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "costCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_get_product_category",
+        description="Categorias de produtos disponíveis.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_get_product_classifications",
+        description="Classificações de produtos e seus tipos.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_get_measurement_units",
+        description="Unidades de medida disponíveis.",
+        inputSchema={
+            "type": "object",
+            "properties": {}
+        },
+    ),
+    types.Tool(
+        name="totvs_search_omni_changed_balances",
+        description="Saldos de estoque alterados para sincronização omni-channel.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "startChangeDate": {
+                    "type": "string"
+                },
+                "endChangeDate": {
+                    "type": "string"
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_update_product_data",
+        description=(
+            "⚠️ ESCRITA — Atualiza dados gerais de produto (peso, NCM, CST, etc). Auto-roteamento: se passar productCode (1 produto) → PUT /products/{code}/{branchCode} (simples); se passar productCodeList ou groupCode → PUT /data (batch com filtros). Campos: weight, ncmCode, cstCode, cestCode, prefixEanGtin, measuredUnit, isInactive, isFinishedProduct, isRawMaterial, isBulkMaterial, isOwnProduction."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "productCode": {
+                    "type": "integer",
+                    "description": "Modo simples (1 produto)"
+                },
+                "productCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Modo batch"
+                },
+                "branchCode": {
+                    "type": "integer"
+                },
+                "barCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "groupCode": {
+                    "type": "string"
+                },
+                "referenceCode": {
+                    "type": "string"
+                },
+                "weight": {
+                    "type": "number",
+                    "description": "Peso em kg"
+                },
+                "ncmCode": {
+                    "type": "string"
+                },
+                "measuredUnit": {
+                    "type": "string"
+                },
+                "cstCode": {
+                    "type": "string"
+                },
+                "cestCode": {
+                    "type": "string"
+                },
+                "prefixEanGtin": {
+                    "type": "string"
+                },
+                "isInactive": {
+                    "type": "boolean"
+                },
+                "isFinishedProduct": {
+                    "type": "boolean"
+                },
+                "isRawMaterial": {
+                    "type": "boolean"
+                },
+                "isBulkMaterial": {
+                    "type": "boolean"
+                },
+                "isOwnProduction": {
+                    "type": "boolean"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_update_product_simple",
+        description=(
+            "⚠️ ESCRITA — Atualiza dados de UM produto específico. Endpoint validado em produção (MOOUI alterar_peso.py). Use pra: peso, NCM, CST, flags. Para múltiplos produtos use totvs_update_product_data."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "productCode": {
+                    "type": "integer"
+                },
+                "branchCode": {
+                    "type": "integer"
+                },
+                "weight": {
+                    "type": "number"
+                },
+                "ncmCode": {
+                    "type": "string"
+                },
+                "cstCode": {
+                    "type": "string"
+                },
+                "cestCode": {
+                    "type": "string"
+                },
+                "prefixEanGtin": {
+                    "type": "string"
+                },
+                "isInactive": {
+                    "type": "boolean"
+                },
+                "isFinishedProduct": {
+                    "type": "boolean"
+                },
+                "isRawMaterial": {
+                    "type": "boolean"
+                },
+                "isBulkMaterial": {
+                    "type": "boolean"
+                },
+                "isOwnProduction": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "productCode"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_update_product_branch_info_batch",
+        description=(
+            "⚠️ ESCRITA — Atualiza dados em LOTE de produtos numa filial. Endpoint PUT /branch-info/{branchCode}. Útil pra ativar/desativar muitos produtos."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "productCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "barCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "groupCode": {
+                    "type": "string"
+                },
+                "referenceCode": {
+                    "type": "string"
+                },
+                "isInactive": {
+                    "type": "boolean"
+                },
+                "isFinishedProduct": {
+                    "type": "boolean"
+                },
+                "isRawMaterial": {
+                    "type": "boolean"
+                },
+                "isBulkMaterial": {
+                    "type": "boolean"
+                },
+                "isOwnProduction": {
+                    "type": "boolean"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_create_product_barcode",
+        description="⚠️ Inclui código de barras para produto.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "productCode": {
+                    "type": "integer"
+                },
+                "barcode": {
+                    "type": "string"
+                },
+                "barcodeType": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "productCode",
+                "barcode"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_update_barcode",
+        description="⚠️ ESCRITA — Altera código de barras existente.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "productCode": {
+                    "type": "integer"
+                },
+                "oldBarcode": {
+                    "type": "string"
+                },
+                "newBarcode": {
+                    "type": "string"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_create_reference",
+        description="⚠️ ESCRITA — Cria nova referência de produto.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "referenceCode": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "categoryCode": {
+                    "type": "integer"
+                },
+                "colorCode": {
+                    "type": "integer"
+                },
+                "grid": {
+                    "type": "object"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_create_classification_type",
+        description=(
+            "⚠️ ESCRITA — Cria um novo tipo de classificação (agrupador). Diferente de GET /classifications (consulta)."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "typeCode": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "isInactive": {
+                    "type": "boolean"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_create_product_batch",
+        description="⚠️ Inclui lote e item de lote de produto.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "productCode": {
+                    "type": "integer"
+                },
+                "batchCode": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "branchCode",
+                "productCode",
+                "batchCode"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_update_product_batch_info",
+        description="⚠️ ESCRITA — Altera dados de item de lote.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "batchCode": {
+                    "type": "integer"
+                },
+                "sequence": {
+                    "type": "integer"
+                },
+                "batchItemBarCode": {
+                    "type": "string"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_create_product_batch_preferential_sales_order",
+        description="⚠️ ESCRITA — Cadastra relacionamento de item de lote com pedido de venda preferencial.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "batchCode": {
+                    "type": "integer"
+                },
+                "sequence": {
+                    "type": "integer"
+                },
+                "batchItemBarCode": {
+                    "type": "string"
+                },
+                "orderCode": {
+                    "type": "integer"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_upsert_product_color",
+        description="⚠️ ESCRITA — Inclui ou altera dados de cor.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "isInactive": {
+                    "type": "boolean"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_create_product_grid",
+        description="⚠️ ESCRITA — Inclui dados de grade.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "gridCode": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "sizes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                }
+            }
+        },
+    ),
+]
+
+ROUTES: dict[str, str] = {
+    "totvs_search_products": "search_products",
+    "totvs_get_product": "get_product",
+    "totvs_search_product_balances": "search_balances",
+    "totvs_search_product_prices": "search_prices",
+    "totvs_search_price_tables": "search_price_tables",
+    "totvs_search_product_references": "search_references",
+    "totvs_get_product_grid": "get_grid",
+    "totvs_search_product_colors": "search_colors",
+    "totvs_search_product_batch": "search_batch",
+    "totvs_get_kardex_movement": "get_kardex_movement",
+    "totvs_search_product_compositions": "search_compositions",
+    "totvs_get_product_additional_field_types": "get_additional_field_types",
+    "totvs_get_product_classification_types": "get_classification_types",
+    "totvs_get_product_composition_group_product": "get_composition_group_product",
+    "totvs_get_product_composition_product": "get_composition_product",
+    "totvs_get_product_instruction_items": "get_instruction_items",
+    "totvs_get_product_price_table_scales": "get_price_table_scales",
+    "totvs_get_product_grouper_configurations": "get_product_grouper_configurations",
+    "totvs_create_product_classification": "create_classification_relationship",
+    "totvs_create_product_value": "create_product_value",
+    "totvs_update_product_price": "update_product_price",
+    "totvs_update_product_price_only": "update_product_price_only",
+    "totvs_update_product_cost": "update_product_cost",
+    "totvs_update_promotion_price": "update_promotion_price",
+    "totvs_search_product_codes": "search_product_codes",
+    "totvs_search_product_costs": "search_costs",
+    "totvs_get_product_category": "get_category",
+    "totvs_get_product_classifications": "get_classifications",
+    "totvs_get_measurement_units": "get_measurement_units",
+    "totvs_search_omni_changed_balances": "search_omni_changed_balances",
+    "totvs_update_product_data": "update_product_data",
+    "totvs_update_product_simple": "update_product_simple",
+    "totvs_update_product_branch_info_batch": "update_product_branch_info_batch",
+    "totvs_create_product_barcode": "create_barcode",
+    "totvs_update_barcode": "update_barcode",
+    "totvs_create_reference": "create_reference",
+    "totvs_create_classification_type": "create_classification_type",
+    "totvs_create_product_batch": "create_batch",
+    "totvs_update_product_batch_info": "update_batch_info",
+    "totvs_create_product_batch_preferential_sales_order": "create_batch_preferential_sales_order",
+    "totvs_upsert_product_color": "upsert_color",
+    "totvs_create_product_grid": "create_grid",
+}

@@ -1701,3 +1701,840 @@ class AggregatorTools:
         }
         cache.put("open_production_orders", cache_key, result)
         return result
+
+
+# ------------------------------------------------------------------------
+# Tool definitions (schemas) — imported by server.py
+# ------------------------------------------------------------------------
+
+import mcp.types as types
+
+TOOLS: list[types.Tool] = [
+    types.Tool(
+        name="totvs_get_products_sold",
+        description=(
+            "Agrega vendas de produtos em um período. Retorna os TOP N produtos mais vendidos já agregados por quantidade ou valor — elimina a necessidade de buscar pedidos, expandir items, e agregar manualmente. Retorna: {period, totalOrders, topProducts: [{productCode, name, totalQuantity, totalValue, orderCount}]}."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "startDate": {
+                    "type": "string",
+                    "description": "YYYY-MM-DD"
+                },
+                "endDate": {
+                    "type": "string",
+                    "description": "YYYY-MM-DD"
+                },
+                "branchCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "categoryCode": {
+                    "type": "integer"
+                },
+                "topN": {
+                    "type": "integer",
+                    "default": 10
+                },
+                "orderBy": {
+                    "type": "string",
+                    "enum": [
+                        "quantity",
+                        "value"
+                    ],
+                    "default": "quantity"
+                }
+            },
+            "required": [
+                "startDate",
+                "endDate"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_sales_summary_by_period",
+        description=(
+            "Resumo de vendas agregado por filial, status ou dia. Retorna: {period, totalValue, totalOrders, groupBy, groups: [{key, label, orderCount, totalValue}]} ordenado por totalValue desc. Use para responder 'faturamento da semana por filial', 'pedidos por status este mês', etc."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "startDate": {
+                    "type": "string"
+                },
+                "endDate": {
+                    "type": "string"
+                },
+                "groupBy": {
+                    "type": "string",
+                    "enum": [
+                        "branch",
+                        "status",
+                        "day"
+                    ],
+                    "default": "branch"
+                },
+                "branchCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "required": [
+                "startDate",
+                "endDate"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_top_customers",
+        description=(
+            "Top N clientes por faturamento em um período. Retorna: {period, customers: [{customerCode, customerName, customerCpfCnpj, orderCount, totalValue, averageOrderValue}]} ordenado por totalValue desc. Use para 'quem compra mais', análise de concentração de clientes."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "startDate": {
+                    "type": "string"
+                },
+                "endDate": {
+                    "type": "string"
+                },
+                "topN": {
+                    "type": "integer",
+                    "default": 10
+                },
+                "branchCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "required": [
+                "startDate",
+                "endDate"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_low_stock_alert",
+        description=(
+            "Produtos com saldo abaixo de um threshold em uma filial. Retorna: {threshold, branchCode, lowStockCount, products: [{productCode, name, productSku, balance}]} ordenado por balance asc. Use para alertas de reposição."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "threshold": {
+                    "type": "number",
+                    "description": "Saldo mínimo"
+                },
+                "branchCode": {
+                    "type": "integer"
+                },
+                "productCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "topN": {
+                    "type": "integer",
+                    "default": 50
+                }
+            },
+            "required": [
+                "threshold",
+                "branchCode"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_orders_by_status_summary",
+        description=(
+            "Distribuição de pedidos por status em um período. Retorna: {period, totalOrders, totalValue, byStatus: [{status, orderCount, totalValue, percentage}]} ordenado por totalValue desc. Use para ver gargalos (muitos Blocked?) e health do funil."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "startDate": {
+                    "type": "string"
+                },
+                "endDate": {
+                    "type": "string"
+                },
+                "branchCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "required": [
+                "startDate",
+                "endDate"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_daily_dashboard",
+        description=(
+            "Painel completo do dia em 1 chamada: vendas (lista + total + por status) + contas a receber + contas a pagar (aberto vs pago). Use para 'como foi o dia', 'resumo de hoje', 'vendas + financeiro do dia'. Para somente vendas de hoje prefira totvs_sales_today_summary. Retorna: {date, sales: {totalOrders, totalValue, orders[], byStatus[]}, receivable: {count, totalValue, items[]}, payable: {count, totalOpen, totalPaid, open[], paid[]}}."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string",
+                    "description": "YYYY-MM-DD (default=hoje)"
+                },
+                "branchCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_customer_360",
+        description=(
+            "Visão 360 de UM cliente em 1 chamada: dados cadastrais + histórico completo de pedidos + flag recompra + ticket médio. Use para 'dados do cliente X', 'histórico de compras do cliente X', 'é recompra?'. NÃO use para vendas gerais/de hoje. Retorna: {customer: {code, name, cpfCnpj}, orders: {count, totalValue, firstOrder, lastOrder, items[]}, isRepeatBuyer, averageTicket}."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "customerCode": {
+                    "type": "integer",
+                    "description": "Código do cliente"
+                },
+                "customerCpfCnpj": {
+                    "type": "string",
+                    "description": "CPF ou CNPJ do cliente"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_stock_available",
+        description=(
+            "Produtos com estoque disponível (saldo > 0), já filtrado. Pagina internamente e retorna apenas SKUs em estoque. Para pronta entrega comercial use productKind='finished'. Retorna: {branchCode, productKind, totalSkus, totalUnits, products: [{productCode, productName, colorName, sizeName, stock, salesOrder}]}."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Filial (default 1)"
+                },
+                "referenceCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Filtrar por referências"
+                },
+                "productCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Filtrar por códigos"
+                },
+                "productKind": {
+                    "type": "string",
+                    "enum": [
+                        "all",
+                        "finished",
+                        "raw_material",
+                        "bulk"
+                    ],
+                    "description": "Tipo de produto: all=tudo, finished=produto acabado, raw_material=matéria-prima, bulk=material de consumo. Default all; para pronta entrega use finished."
+                },
+                "onlyActive": {
+                    "type": "boolean",
+                    "description": "Filtrar produtos ativos no branchInfo. Default true quando productKind != all."
+                },
+                "minStock": {
+                    "type": "number",
+                    "description": "Saldo mínimo (default 1)"
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "description": "Itens por página interna (default 1000)"
+                },
+                "concurrency": {
+                    "type": "integer",
+                    "description": "Páginas paralelas (default 10, max 20)"
+                },
+                "maxPages": {
+                    "type": "integer",
+                    "description": "Limite de segurança de páginas (default 100)"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_product_360",
+        description=(
+            "Visão 360 do produto em 1 chamada: cadastro, saldos, preços, custos, composição e ficha de consumo em paralelo. Use para 'dados do produto X'."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "productCode": {
+                    "type": "integer",
+                    "description": "Código do produto"
+                },
+                "code": {
+                    "type": "integer",
+                    "description": "Alias de productCode"
+                },
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Filial (default 1)"
+                },
+                "priceCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Tabelas de preço (default do contexto inicial)"
+                },
+                "costCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Códigos de custo (default do contexto inicial)"
+                },
+                "stockCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Estoques (default do contexto inicial)"
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "description": "Itens por seção (default 100)"
+                },
+                "compact": {
+                    "type": "boolean",
+                    "description": "Compactar saldos/preços/custos para campos essenciais (default true). Use false para resposta bruta completa."
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Lista opcional de campos a retornar. Reduz tokens."
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_raw_material_360",
+        description=(
+            "Visão 360 de matéria-prima em 1 chamada: dados de produto, estoque, custos e usos em ficha de consumo. Use para 'sobre a matéria-prima X'."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "rawMaterialCode": {
+                    "type": "integer",
+                    "description": "Código da matéria-prima"
+                },
+                "productCode": {
+                    "type": "integer",
+                    "description": "Alias de rawMaterialCode"
+                },
+                "code": {
+                    "type": "integer",
+                    "description": "Alias de rawMaterialCode"
+                },
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Filial (default 1)"
+                },
+                "costCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Códigos de custo (default do contexto inicial)"
+                },
+                "stockCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Estoques (default do contexto inicial)"
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "description": "Itens por seção (default 100)"
+                },
+                "compact": {
+                    "type": "boolean",
+                    "description": "Compactar saldos/preços/custos (default true)"
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Lista opcional de campos a retornar."
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_order_360",
+        description=(
+            "Visão 360 do pedido em 1 chamada: cabeçalho/itens, notas vinculadas e itens pendentes. Use para 'dados do pedido X'."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "orderCode": {
+                    "type": "integer",
+                    "description": "Código do pedido"
+                },
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Filial, se souber"
+                },
+                "branchCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Filiais para localizar o pedido"
+                },
+                "expand": {
+                    "type": "string",
+                    "description": "Expand do pedido (default items)"
+                },
+                "compact": {
+                    "type": "boolean",
+                    "description": "Compactar pedido para campos essenciais (default true)"
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Lista opcional de campos a retornar."
+                }
+            },
+            "required": [
+                "orderCode"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_invoice_360",
+        description=(
+            "Visão 360 da NF em 1 chamada: cabeçalho fiscal e produtos da nota em paralelo. Use para 'dados da nf X'."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "invoiceCode": {
+                    "type": "integer",
+                    "description": "Número/código da NF"
+                },
+                "invoiceSequence": {
+                    "type": "integer",
+                    "description": "Sequencial interno da NF"
+                },
+                "branchCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Filiais (default do contexto)"
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "description": "Itens no cabeçalho (default 20)"
+                },
+                "productPageSize": {
+                    "type": "integer",
+                    "description": "Produtos da NF (default 100)"
+                },
+                "compact": {
+                    "type": "boolean",
+                    "description": "Compactar produtos para campos essenciais (default true)"
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Lista opcional de campos a retornar."
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_sales_today_summary",
+        description=(
+            "Resumo rápido de vendas de uma data em 1 chamada: total de pedidos, valor total, status e ranking/lista de pedidos. PRIMEIRA OPÇÃO para 'vendas de hoje', 'vendas de hj', 'o que vendi hoje', 'traga as vendas de hoje', 'quanto vendi' e resumo de vendas."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string",
+                    "description": "YYYY-MM-DD (default=hoje)"
+                },
+                "branchCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "topN": {
+                    "type": "integer",
+                    "description": "Pedidos no ranking (default 50)"
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "description": "Itens lidos (default 500)"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_new_customers_today",
+        description="Clientes novos em uma data por primeira compra no histórico. Use para 'algum cliente novo?'.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string",
+                    "description": "YYYY-MM-DD (default=hoje)"
+                },
+                "branchCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "lookbackStartDate": {
+                    "type": "string",
+                    "description": "Início do histórico (default 2020-01-01)"
+                },
+                "concurrency": {
+                    "type": "integer",
+                    "description": "Clientes verificados em paralelo (default 10, max 20)"
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "description": "Pedidos do dia lidos (default 500)"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_sales_by_representative",
+        description=(
+            "Resumo executivo de vendas por representante/vendedor em um periodo. Use para diretoria comercial e ranking de representantes. Retorna representatives[] com representativeCode, representativeName, orderCount, totalValue, blockedValue e averageTicket."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "startDate": {
+                    "type": "string",
+                    "description": "YYYY-MM-DD"
+                },
+                "endDate": {
+                    "type": "string",
+                    "description": "YYYY-MM-DD"
+                },
+                "branchCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "topN": {
+                    "type": "integer",
+                    "description": "Quantidade no ranking (default 20)"
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "description": "Pedidos lidos (default 500)"
+                }
+            },
+            "required": [
+                "startDate",
+                "endDate"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_sales_by_channel",
+        description=(
+            "Resumo executivo de vendas por canal em um periodo. Agrupa automaticamente por integrationCode/operacao, ou pelo campo informado em channelField. Use para comparar canais, ecommerce, loja, operacoes e origem de venda."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "startDate": {
+                    "type": "string",
+                    "description": "YYYY-MM-DD"
+                },
+                "endDate": {
+                    "type": "string",
+                    "description": "YYYY-MM-DD"
+                },
+                "branchCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "channelField": {
+                    "type": "string",
+                    "description": "Campo do pedido usado para agrupar. Default auto; exemplos: integrationCode, operationCode, operationName."
+                },
+                "topN": {
+                    "type": "integer",
+                    "description": "Quantidade no ranking (default 20)"
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "description": "Pedidos lidos (default 500)"
+                }
+            },
+            "required": [
+                "startDate",
+                "endDate"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_overdue_financial_summary",
+        description=(
+            "Titulos em atraso no contas a receber e contas a pagar. Use para gerente financeiro/diretoria: inadimplencia, maiores clientes em atraso, fornecedores vencidos e posicao liquida vencida."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "asOfDate": {
+                    "type": "string",
+                    "description": "Data limite YYYY-MM-DD (default=hoje)"
+                },
+                "startDate": {
+                    "type": "string",
+                    "description": "Inicio da busca de vencimentos (default 2000-01-01)"
+                },
+                "branchCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "topN": {
+                    "type": "integer",
+                    "description": "Quantidade nos rankings (default 20)"
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "description": "Titulos lidos por lado (default 500)"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_cash_flow_forecast",
+        description=(
+            "Fluxo de caixa previsto por vencimento: contas a receber, contas a pagar e saldo liquido por dia. Use para 'quanto tenho para receber/pagar nos proximos dias'."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "startDate": {
+                    "type": "string",
+                    "description": "Data inicial YYYY-MM-DD (default=hoje)"
+                },
+                "endDate": {
+                    "type": "string",
+                    "description": "Data final YYYY-MM-DD; se omitida usa days"
+                },
+                "days": {
+                    "type": "integer",
+                    "description": "Quantidade de dias se endDate omitida (default 7)"
+                },
+                "branchCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "description": "Titulos lidos por lado (default 500)"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_product_stock_by_kind_summary",
+        description=(
+            "Resumo de estoque por tipo: produto acabado, materia-prima e material a granel. Use para diretor, gerente de producao e PCP. Retorna total de SKUs/unidades e topProducts por tipo. Usa cache curto de saldo."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Filial (default do contexto)"
+                },
+                "productKindList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "finished",
+                            "raw_material",
+                            "bulk"
+                        ]
+                    },
+                    "description": "Tipos a consultar (default finished, raw_material, bulk)"
+                },
+                "minStock": {
+                    "type": "number",
+                    "description": "Saldo minimo (default 1)"
+                },
+                "topN": {
+                    "type": "integer",
+                    "description": "Produtos por tipo (default 10)"
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "description": "Itens por pagina interna (default 1000)"
+                },
+                "concurrency": {
+                    "type": "integer",
+                    "description": "Paginas paralelas (default 10, max 20)"
+                },
+                "maxPages": {
+                    "type": "integer",
+                    "description": "Limite de seguranca de paginas (default 100)"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_open_purchase_orders",
+        description=(
+            "Pedidos de compra em aberto em 1 chamada rápida. Pagina em paralelo, filtra status abertos e retorna totais, resumo por status, mais recentes e maiores valores. Use para 'pedidos de compra em aberto'."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Filiais (default do contexto)"
+                },
+                "openStatusList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Status TOTVS considerados abertos (default padrão [1,3,5])"
+                },
+                "topN": {
+                    "type": "integer",
+                    "description": "Quantidade nos rankings (default 20)"
+                },
+                "concurrency": {
+                    "type": "integer",
+                    "description": "Paginas paralelas (default 10, max 20)"
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "description": "Itens por pagina (default 100)"
+                },
+                "maxPages": {
+                    "type": "integer",
+                    "description": "Limite de seguranca de paginas (default 100)"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_open_production_orders",
+        description=(
+            "Ordens de produção em aberto em 1 chamada rápida. Pagina em paralelo, considera aberta quando pendingQuantity > 0 e endDate vazio, e retorna totais, status, atrasadas, recentes e maiores pendências. Use para 'ordens de produção em aberto'."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Filiais (default do contexto)"
+                },
+                "topN": {
+                    "type": "integer",
+                    "description": "Quantidade nos rankings (default 20)"
+                },
+                "concurrency": {
+                    "type": "integer",
+                    "description": "Paginas paralelas (default 10, max 20)"
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "description": "Itens por pagina (default 100)"
+                },
+                "maxPages": {
+                    "type": "integer",
+                    "description": "Limite de seguranca de paginas (default 100)"
+                },
+                "asOfDate": {
+                    "type": "string",
+                    "description": "YYYY-MM-DD para calcular atrasos (default=hoje)"
+                }
+            }
+        },
+    ),
+]
+
+ROUTES: dict[str, str] = {
+    "totvs_get_products_sold": "get_products_sold",
+    "totvs_sales_summary_by_period": "sales_summary_by_period",
+    "totvs_top_customers": "top_customers",
+    "totvs_low_stock_alert": "low_stock_alert",
+    "totvs_orders_by_status_summary": "orders_by_status_summary",
+    "totvs_daily_dashboard": "daily_dashboard",
+    "totvs_customer_360": "customer_360",
+    "totvs_stock_available": "stock_available",
+    "totvs_product_360": "product_360",
+    "totvs_raw_material_360": "raw_material_360",
+    "totvs_order_360": "order_360",
+    "totvs_invoice_360": "invoice_360",
+    "totvs_sales_today_summary": "sales_today_summary",
+    "totvs_new_customers_today": "new_customers_today",
+    "totvs_sales_by_representative": "sales_by_representative",
+    "totvs_sales_by_channel": "sales_by_channel",
+    "totvs_overdue_financial_summary": "overdue_financial_summary",
+    "totvs_cash_flow_forecast": "cash_flow_forecast",
+    "totvs_product_stock_by_kind_summary": "product_stock_by_kind_summary",
+    "totvs_open_purchase_orders": "open_purchase_orders",
+    "totvs_open_production_orders": "open_production_orders",
+}

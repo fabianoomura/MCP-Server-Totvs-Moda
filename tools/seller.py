@@ -49,3 +49,143 @@ class SellerTools:
         """GET /operational-area-state - regioes de atuacao de vendedores por estado."""
         result = await self.client.get(f"{BASE}/operational-area-state", params=_pascal_params(args) or None)
         return apply_fields(result, args)
+
+
+# ------------------------------------------------------------------------
+# Tool definitions (schemas) — imported by server.py
+# ------------------------------------------------------------------------
+
+import mcp.types as types
+
+TOOLS: list[types.Tool] = [
+    types.Tool(
+        name="totvs_search_sellers",
+        description="Lista vendedores e empresas vinculadas. Use fields para reduzir tokens.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Código da filial"
+                },
+                "sellerCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_get_seller_operational_area",
+        description="Regiões de atuação de vendedores.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "sellerCode": {
+                    "type": "integer"
+                },
+                "branchCode": {
+                    "type": "integer"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_get_seller_operational_area_state",
+        description="Regiões de atuação de vendedores por estado.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "startChangeDate": {
+                    "type": "string"
+                },
+                "endChangeDate": {
+                    "type": "string"
+                },
+                "operationalAreaCode": {
+                    "type": "integer"
+                },
+                "order": {
+                    "type": "string",
+                    "description": "operationalAreaCode,maxChangeFilterDate"
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 1000
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_get_seller_area_by_cep",
+        description="Vendedor responsável por um CEP.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "cep": {
+                    "type": "string",
+                    "description": "CEP (somente dígitos)"
+                },
+                "branchCode": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "cep"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_get_seller_area_by_city",
+        description="Vendedor responsável por uma cidade.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "cityCode": {
+                    "type": "integer"
+                },
+                "branchCode": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "cityCode"
+            ]
+        },
+    ),
+]
+
+ROUTES: dict[str, str] = {
+    "totvs_search_sellers": "search_sellers",
+    "totvs_get_seller_operational_area": "get_operational_area",
+    "totvs_get_seller_operational_area_state": "get_operational_area_state",
+    "totvs_get_seller_area_by_cep": "get_operational_area_by_cep",
+    "totvs_get_seller_area_by_city": "get_operational_area_by_city",
+}

@@ -83,3 +83,152 @@ class ImageTools:
         if args.get("order") is not None:
             params["Order"] = args["order"]
         return await self.client.delete(f"{BASE}/product-images", params=params)
+
+
+# ------------------------------------------------------------------------
+# Tool definitions (schemas) — imported by server.py
+# ------------------------------------------------------------------------
+
+import mcp.types as types
+
+TOOLS: list[types.Tool] = [
+    types.Tool(
+        name="totvs_search_product_images",
+        description="Consulta imagens de produto por filtro.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "referenceCode": {
+                    "type": "string"
+                },
+                "productCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_upload_product_image",
+        description="⚠️ Importa imagem de produto (com vínculo). Imagem deve estar em base64.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "productCode": {
+                    "type": "integer"
+                },
+                "referenceCode": {
+                    "type": "string"
+                },
+                "imageBase64": {
+                    "type": "string",
+                    "description": "Imagem em base64"
+                },
+                "branchCode": {
+                    "type": "integer"
+                },
+                "imageType": {
+                    "type": "string"
+                },
+                "order": {
+                    "type": "integer"
+                },
+                "colorCode": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "imageBase64"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_import_image_no_link",
+        description="⚠️ Importa imagem sem realizar vínculo com produto (vínculo posterior).",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "imageBase64": {
+                    "type": "string",
+                    "description": "Imagem em base64"
+                },
+                "fileName": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "imageBase64"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_upload_person_image",
+        description="⚠️ Insere imagem de uma pessoa.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "personCode": {
+                    "type": "integer"
+                },
+                "personCpfCnpj": {
+                    "type": "string"
+                },
+                "imageBase64": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "imageBase64"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_list_person_images",
+        description="Lista imagens de uma pessoa.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "personCode": {
+                    "type": "integer"
+                },
+                "personCpfCnpj": {
+                    "type": "string"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_get_person_image_base64",
+        description="Retorna imagem de pessoa em base64.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "personCode": {
+                    "type": "integer"
+                },
+                "imageId": {
+                    "type": "string"
+                }
+            }
+        },
+    ),
+]
+
+ROUTES: dict[str, str] = {
+    "totvs_search_product_images": "search_product_images",
+    "totvs_upload_product_image": "upload_product_image",
+    "totvs_import_image_no_link": "import_image_no_link",
+    "totvs_upload_person_image": "upload_person_image",
+    "totvs_list_person_images": "list_person_images",
+    "totvs_get_person_image_base64": "get_person_image_base64",
+}

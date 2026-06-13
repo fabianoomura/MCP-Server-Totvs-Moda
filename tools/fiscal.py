@@ -192,3 +192,558 @@ class FiscalTools:
     def _pascal_params(self, args: dict[str, Any], fields: tuple[str, ...]) -> dict[str, Any]:
         """Map lower camelCase tool args to TOTVS PascalCase query params."""
         return {field[:1].upper() + field[1:]: args[field] for field in fields if args.get(field) is not None}
+
+
+# ------------------------------------------------------------------------
+# Tool definitions (schemas) — imported by server.py
+# ------------------------------------------------------------------------
+
+import mcp.types as types
+
+TOOLS: list[types.Tool] = [
+    types.Tool(
+        name="totvs_search_fiscal_invoices",
+        description=(
+            "Busca NF-e por período, cliente, status ou chave de acesso. Suporta expand para itens, pagamentos e observações."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Lista de filiais (obrigatório)"
+                },
+                "invoiceSequenceList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "invoiceCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "operationType": {
+                    "type": "string",
+                    "enum": [
+                        "All",
+                        "Input",
+                        "Output"
+                    ],
+                    "description": "Tipo de operação: All, Input(Entrada), Output(Saída)"
+                },
+                "origin": {
+                    "type": "string",
+                    "enum": [
+                        "All",
+                        "Own",
+                        "ThirdParty"
+                    ],
+                    "description": "Origem: All, Own(Emissão própria), ThirdParty(Emissão de terceiro)"
+                },
+                "invoiceStatusList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "Canceled",
+                            "Denied",
+                            "Issued",
+                            "Normal",
+                            "Deleted"
+                        ]
+                    },
+                    "description": "Situação da NF: Normal, Issued(Emitida), Canceled(Cancelada), Denied(Denegada), Deleted(Excluída)"
+                },
+                "personCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "operationCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "documentTypeCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "personCpfCnpjList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "startIssueDate": {
+                    "type": "string",
+                    "description": "ISO 8601"
+                },
+                "endIssueDate": {
+                    "type": "string"
+                },
+                "serialCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "eletronicInvoiceStatusList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "Authorized",
+                            "Canceled",
+                            "Denied",
+                            "Sent",
+                            "Generated",
+                            "Rejected"
+                        ]
+                    }
+                },
+                "startChangeDate": {
+                    "type": "string"
+                },
+                "endChangeDate": {
+                    "type": "string"
+                },
+                "amountLastDays": {
+                    "type": "integer"
+                },
+                "transactionBranchCode": {
+                    "type": "integer"
+                },
+                "transactionCode": {
+                    "type": "integer"
+                },
+                "transactionDate": {
+                    "type": "string"
+                },
+                "expand": {
+                    "type": "string",
+                    "description": "shippingCompany,salesOrder,person,items,barCodes,taxes,payments,referencedInvoices,rateDifferential,relatedProductionOrder,observationNF,observationNFE,referencedTaxInvoices"
+                },
+                "order": {
+                    "type": "string",
+                    "description": "Ordenação suportada: branchCode, invoiceSequence, invoiceDate, maxChangeFilterDate. Use - para desc."
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100,
+                    "description": "Máximo 100 no Swagger"
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Lista opcional de campos a retornar. Reduz tokens. Ex: ['accessKey','invoiceCode','value']."
+                }
+            },
+            "required": [
+                "branchCodeList"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_get_nfe_xml",
+        description="XML completo de uma NF-e pela chave de acesso (44 dígitos).",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "accessKey": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "accessKey"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_get_invoice_item_detail",
+        description="Detalhe de itens de NF-e. Informe accessKey OU branchCode + invoiceDate + invoiceSequence.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "invoiceDate": {
+                    "type": "string"
+                },
+                "invoiceSequence": {
+                    "type": "integer"
+                },
+                "accessKey": {
+                    "type": "string"
+                },
+                "expand": {
+                    "type": "string"
+                },
+                "BranchCode": {
+                    "type": "integer",
+                    "description": "Alias oficial PascalCase"
+                },
+                "InvoiceDate": {
+                    "type": "string",
+                    "description": "Alias oficial PascalCase"
+                },
+                "InvoiceSequence": {
+                    "type": "integer",
+                    "description": "Alias oficial PascalCase"
+                },
+                "AccessKey": {
+                    "type": "string",
+                    "description": "Alias oficial PascalCase"
+                },
+                "Expand": {
+                    "type": "string",
+                    "description": "Alias oficial PascalCase"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_get_danfe",
+        description="DANFE em base64 (PDF) de uma NF-e a partir do XML.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "mainInvoiceXml": {
+                    "type": "string",
+                    "description": "Conteúdo XML da NF-e"
+                },
+                "nfeDocumentType": {
+                    "type": "string",
+                    "description": "Tipo de documento NF-e"
+                }
+            },
+            "required": [
+                "mainInvoiceXml"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_search_invoice_products",
+        description="Produtos de NF-e por período, produto, pessoa, chave ou operação.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Lista de filiais (obrigatório)"
+                },
+                "productCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Alias natural de ProductCodeList"
+                },
+                "ProductCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "batchBarCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Alias natural de BatchBarCodeList"
+                },
+                "BatchBarCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "invoiceCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "operationType": {
+                    "type": "string",
+                    "description": "E=Entrada, S=Saída"
+                },
+                "modality": {
+                    "type": "string"
+                },
+                "origin": {
+                    "type": "string"
+                },
+                "invoiceStatusList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "personCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "operationCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "personCpfCnpjList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "startIssueDate": {
+                    "type": "string"
+                },
+                "endIssueDate": {
+                    "type": "string"
+                },
+                "accessKeyList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Alias natural de acessKeyList"
+                },
+                "acessKeyList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "option": {
+                    "type": "object"
+                },
+                "expand": {
+                    "type": "string",
+                    "description": "batchItems"
+                },
+                "order": {
+                    "type": "string"
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."
+                }
+            },
+            "required": [
+                "branchCodeList"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_get_cost_center",
+        description="Centros de custo por período de alteração.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "startChangeDate": {
+                    "type": "string",
+                    "description": "Data inicial ISO 8601 (obrigatório)"
+                },
+                "endChangeDate": {
+                    "type": "string",
+                    "description": "Data final ISO 8601 (obrigatório)"
+                },
+                "isInactive": {
+                    "type": "boolean"
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100
+                }
+            },
+            "required": [
+                "startChangeDate",
+                "endChangeDate"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_get_digital_certificates",
+        description="Dados de certificados digitais de uma filial.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Código da filial (obrigatório)"
+                },
+                "environmentType": {
+                    "type": "string",
+                    "description": "P=Produção, H=Homologação (obrigatório)"
+                }
+            },
+            "required": [
+                "branchCode",
+                "environmentType"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_get_pending_conditional_products",
+        description="Saldo de produtos em condicional (consignação) pendentes por pessoa.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Código da filial (obrigatório)"
+                },
+                "onlyPendingItem": {
+                    "type": "boolean",
+                    "default": True,
+                    "description": "Apenas itens com saldo pendente"
+                },
+                "personCode": {
+                    "type": "integer"
+                },
+                "personCpfCnpj": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "branchCode"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_get_disabled_invoices",
+        description="NF-e inutilizadas por período e filial.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "startDate": {
+                    "type": "string",
+                    "description": "Data inicial ISO 8601 (obrigatório)"
+                },
+                "endDate": {
+                    "type": "string",
+                    "description": "Data final ISO 8601 (obrigatório)"
+                },
+                "branchCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Lista de filiais (obrigatório)"
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100
+                },
+                "order": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                }
+            },
+            "required": [
+                "startDate",
+                "endDate",
+                "branchCodeList"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_print_transaction",
+        description="Impressão de transação fiscal em PDF (base64).",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "transactionCode": {
+                    "type": "integer"
+                },
+                "transactionDate": {
+                    "type": "string"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_create_nfe_manifestation",
+        description="⚠️ Manifestação do destinatário de NF-e (ciência, confirmação, desconhecimento, não realização).",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "accessKey": {
+                    "type": "string"
+                },
+                "manifestationType": {
+                    "type": "string",
+                    "description": "Tipo de manifestação"
+                }
+            },
+            "required": [
+                "branchCode",
+                "accessKey",
+                "manifestationType"
+            ]
+        },
+    ),
+]
+
+ROUTES: dict[str, str] = {
+    "totvs_search_fiscal_invoices": "search_invoices",
+    "totvs_get_nfe_xml": "get_xml_content",
+    "totvs_get_invoice_item_detail": "get_invoice_item_detail",
+    "totvs_get_danfe": "get_danfe",
+    "totvs_search_invoice_products": "search_invoice_products",
+    "totvs_get_cost_center": "get_cost_center",
+    "totvs_get_digital_certificates": "get_digital_certificates",
+    "totvs_get_pending_conditional_products": "get_pending_conditional_products",
+    "totvs_get_disabled_invoices": "get_disabled_invoices",
+    "totvs_print_transaction": "print_transaction",
+    "totvs_create_nfe_manifestation": "create_manifestation",
+}

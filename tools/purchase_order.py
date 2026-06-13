@@ -92,3 +92,277 @@ class PurchaseOrderTools:
         """POST /quantity-items - altera quantidade solicitada dos itens."""
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/quantity-items", body)
+
+
+# ------------------------------------------------------------------------
+# Tool definitions (schemas) — imported by server.py
+# ------------------------------------------------------------------------
+
+import mcp.types as types
+
+TOOLS: list[types.Tool] = [
+    types.Tool(
+        name="totvs_search_purchase_orders",
+        description=(
+            "Pedidos de compra por filtro. Use expand='items' para carregar itens. Use fields para reduzir tokens."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Código da filial"
+                },
+                "branchCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Lista de códigos de empresa"
+                },
+                "change": {
+                    "type": "object",
+                    "description": "Filtro oficial por alteração: {startDate,endDate}. Quando informado, use branchCodeList."
+                },
+                "orderCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Códigos dos pedidos de compra"
+                },
+                "supplierOrderCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Números de pedido do fornecedor"
+                },
+                "supplierCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Códigos dos fornecedores"
+                },
+                "supplierCpfCnpjList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "CPF/CNPJ dos fornecedores"
+                },
+                "orderStatusList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Situação do pedido: 1=Em andamento, 2=Liberado baixa, 3=Parcialmente recebido, 4=Atendido, 5=Bloqueado, 6=Cancelado, 7=Distribuído, 8=Pré-pedido"
+                },
+                "statusList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Alias legado de orderStatusList"
+                },
+                "operationCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "startBasePaymentDate": {
+                    "type": "string"
+                },
+                "endBasePaymentDate": {
+                    "type": "string"
+                },
+                "startDeliveryForecastDate": {
+                    "type": "string"
+                },
+                "endDeliveryForecastDate": {
+                    "type": "string"
+                },
+                "startDeliveryDeadlineDate": {
+                    "type": "string"
+                },
+                "endDeliveryDeadlineDate": {
+                    "type": "string"
+                },
+                "productCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "startDate": {
+                    "type": "string",
+                    "description": "Alias legado para change.startDate"
+                },
+                "endDate": {
+                    "type": "string",
+                    "description": "Alias legado para change.endDate"
+                },
+                "expand": {
+                    "type": "string",
+                    "description": "Expansões suportadas pelo Swagger: items"
+                },
+                "order": {
+                    "type": "string",
+                    "description": "Ordenação suportada: branchCode, orderCode, maxChangeFilterDate. Use - para desc."
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Lista opcional de campos a retornar. Reduz tokens. Suporta notação aninhada."
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_create_purchase_order",
+        description="⚠️ Inclui pedido de compra.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "supplierCode": {
+                    "type": "integer"
+                },
+                "operationCode": {
+                    "type": "integer"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                },
+                "orderDate": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "branchCode",
+                "supplierCode",
+                "operationCode",
+                "items"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_cancel_purchase_order",
+        description="⚠️ Cancela pedido de compra.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "orderCode": {
+                    "type": "integer"
+                },
+                "reasonCancellationCode": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "branchCode",
+                "orderCode"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_change_purchase_order_status",
+        description="⚠️ Altera situação do pedido de compra.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "orderCode": {
+                    "type": "integer"
+                },
+                "newStatus": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "branchCode",
+                "orderCode",
+                "newStatus"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_link_purchase_order_batch",
+        description="⚠️ ESCRITA — Cria ou atualiza vinculo de item de lote com pedido de compra e nota fiscal.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "batchCode": {
+                    "type": "integer"
+                },
+                "sequence": {
+                    "type": "integer"
+                },
+                "batchItemBarCode": {
+                    "type": "string"
+                },
+                "orderCode": {
+                    "type": "integer"
+                },
+                "invoice": {
+                    "type": "object"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_update_purchase_order_item_quantities",
+        description="⚠️ ESCRITA — Altera quantidade solicitada dos itens de um pedido de compra.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "orderCode": {
+                    "type": "integer"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                }
+            }
+        },
+    ),
+]
+
+ROUTES: dict[str, str] = {
+    "totvs_search_purchase_orders": "search_purchase_orders",
+    "totvs_create_purchase_order": "create_purchase_order",
+    "totvs_cancel_purchase_order": "cancel_purchase_order",
+    "totvs_change_purchase_order_status": "change_purchase_order_status",
+    "totvs_link_purchase_order_batch": "link_purchase_order_batch",
+    "totvs_update_purchase_order_item_quantities": "update_purchase_order_item_quantities",
+}

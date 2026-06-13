@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.9.1] - 2026-06-13
+
+### Changed
+- Moved all 209 tool schemas from `server.py` into their respective `tools/*.py` domain modules as `TOOLS` and `ROUTES` constants.
+- `server.py` now aggregates tools from modules via imports, reduced from ~2700 lines to ~860 lines.
+- Tool order, schemas and routing remain byte-for-byte identical (verified by SHA-256 hash).
+
+### Tests
+- Added `tests/test_tools_snapshot.py` with 4 tests: tool count, name order, schema hash equivalence and duplicate detection.
+- Suite now has 224 tests.
+
 ## [3.9.0] - 2026-06-12
 
 ### Added

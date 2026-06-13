@@ -123,3 +123,319 @@ class ProductEngineeringTools:
         """POST /references - cadastra produto a partir da engenharia padrao."""
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/references", body)
+
+
+# ------------------------------------------------------------------------
+# Tool definitions (schemas) — imported by server.py
+# ------------------------------------------------------------------------
+
+import mcp.types as types
+
+TOOLS: list[types.Tool] = [
+    types.Tool(
+        name="totvs_search_consumption_sheet",
+        description=(
+            "Ficha de consumo de produto (matéria-prima + serviços). Retorna items[] com: productCode, productName, referenceCode, colorCode, size, rawMaterials[]={rawMaterialCode, rawMaterialDescription, consumptionQuantity, applicationCode, applicationDescription}, services[]={serviceCode, serviceDescription, serviceApplication, serviceAmount}. Use fields para reduzir tokens."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "productCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Lista de códigos de produto"
+                },
+                "referenceCode": {
+                    "type": "string",
+                    "description": "Código de referência do produto"
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 1000
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Lista opcional de campos a retornar. Reduz tokens."
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_search_engineering_services",
+        description=(
+            "Servicos de engenharia de produto. Requer ao menos um filtro; para consulta ampla use status=true. Use expand='dataProviders,dataLevelGroup' quando precisar de fornecedores/niveis."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "filter": {
+                    "type": "object",
+                    "description": "ServiceFilterModel completo"
+                },
+                "change": {
+                    "type": "object",
+                    "description": "{startDate,endDate}"
+                },
+                "startServiceCode": {
+                    "type": "integer"
+                },
+                "endServiceCode": {
+                    "type": "integer"
+                },
+                "serviceCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "serviceName": {
+                    "type": "string"
+                },
+                "codeTypeService": {
+                    "type": "integer"
+                },
+                "providerInfo": {
+                    "type": "object"
+                },
+                "status": {
+                    "type": "boolean"
+                },
+                "expand": {
+                    "type": "string",
+                    "description": "dataProviders,dataLevelGroup"
+                },
+                "order": {
+                    "type": "string"
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_get_engineering_operations",
+        description="Operacoes de engenharia de produto.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "startChangeDate": {
+                    "type": "string"
+                },
+                "endChangeDate": {
+                    "type": "string"
+                },
+                "operationCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "operationTypeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100
+                },
+                "order": {
+                    "type": "string"
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_search_engineering_applications",
+        description="Aplicacoes de engenharia de produto.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "startChangeDate": {
+                    "type": "string"
+                },
+                "endChangeDate": {
+                    "type": "string"
+                },
+                "applicationCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "applicationTypeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100
+                },
+                "order": {
+                    "type": "string"
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_search_engineering_default",
+        description="Estrutura base de engenharia por produto/grupo/referencia.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "startChangeDate": {
+                    "type": "string"
+                },
+                "endChangeDate": {
+                    "type": "string"
+                },
+                "rawMaterialColorBranchCodes": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "productCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "groupCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "referenceCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_get_engineering_configurations",
+        description="Configuracoes de engenharia por classificacao de produto.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "purposeType": {
+                    "type": "integer"
+                },
+                "classificationCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "classificationType": {
+                    "type": "integer"
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_create_engineering_references",
+        description="⚠️ ESCRITA — Cadastra produto a partir da engenharia padrão.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "references": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                }
+            }
+        },
+    ),
+]
+
+ROUTES: dict[str, str] = {
+    "totvs_search_consumption_sheet": "search_consumption_sheet",
+    "totvs_search_engineering_services": "search_services",
+    "totvs_get_engineering_operations": "get_operations",
+    "totvs_search_engineering_applications": "search_applications",
+    "totvs_search_engineering_default": "search_engineering_default",
+    "totvs_get_engineering_configurations": "get_engineering_configurations",
+    "totvs_create_engineering_references": "create_references_from_engineering",
+}

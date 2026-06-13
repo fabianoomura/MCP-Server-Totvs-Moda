@@ -100,3 +100,532 @@ class MaterialRequestTools:
         """POST /items/movement - movimenta/baixa itens da solicitacao."""
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{BASE}/items/movement", body)
+
+
+# ------------------------------------------------------------------------
+# Tool definitions (schemas) — imported by server.py
+# ------------------------------------------------------------------------
+
+import mcp.types as types
+
+TOOLS: list[types.Tool] = [
+    types.Tool(
+        name="totvs_search_material_requests",
+        description=(
+            "Consulta requisicoes/solicitacoes de material. Use expand='items,classifications,observations'. Status: 0=Pendente, 1=Liberada, 2=Nao liberada, 3=Aprovada, 4=Atendida, 5=Nao atendida, 6=Cancelada."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Filial unica; alternativa a branchCodeList"
+                },
+                "branchCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Obrigatorio no Swagger; default vem do contexto quando omitido"
+                },
+                "change": {
+                    "type": "object",
+                    "description": "{startDate,endDate}"
+                },
+                "startRequestDate": {
+                    "type": "string"
+                },
+                "endRequestDate": {
+                    "type": "string"
+                },
+                "requestCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "personList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Pessoa responsavel"
+                },
+                "costCenterList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "productList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "Produtos/materiais nos itens"
+                },
+                "buyerList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "purposeCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "statusTypeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "0=Pendente,1=Liberada,2=Nao liberada,3=Aprovada,4=Atendida,5=Nao atendida,6=Cancelada"
+                },
+                "operationCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "classifications": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "classificationTypeCode": {
+                                "type": "integer"
+                            },
+                            "classificationCode": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "expand": {
+                    "type": "string",
+                    "description": "items,classifications,observations"
+                },
+                "order": {
+                    "type": "string",
+                    "description": "branchCode,requestDate,requestCode,maxChangeFilterDate. Use - para desc."
+                },
+                "page": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "default": 100,
+                    "description": "Maximo 500 no Swagger"
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_create_material_request",
+        description=(
+            "⚠️ ESCRITA — Cria uma solicitacao de material no TOTVS. Use somente quando o usuario confirmar filial, finalidade, solicitante e itens."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer",
+                    "description": "Empresa. Campo Empresa do CMCFM006."
+                },
+                "requestDate": {
+                    "type": "string",
+                    "description": "Data de emissao da solicitacao, formato YYYY-MM-DD."
+                },
+                "purposeCode": {
+                    "type": "integer",
+                    "description": "Finalidade da solicitacao."
+                },
+                "requester": {
+                    "type": "integer",
+                    "description": "Solicitante."
+                },
+                "costCenter": {
+                    "type": "integer",
+                    "description": "Centro de custo da capa."
+                },
+                "bridgeCode": {
+                    "type": "string",
+                    "description": "Codigo de integracao externo."
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "sequence": {
+                                "type": "integer"
+                            },
+                            "productCode": {
+                                "type": "integer"
+                            },
+                            "requestQuantity": {
+                                "type": "number"
+                            },
+                            "costCenter": {
+                                "type": "integer"
+                            },
+                            "expense": {
+                                "type": "integer"
+                            },
+                            "cost": {
+                                "type": "number"
+                            }
+                        },
+                        "required": [
+                            "sequence"
+                        ]
+                    }
+                },
+                "observations": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "observation": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "required": [
+                "branchCode",
+                "purposeCode",
+                "requester"
+            ]
+        },
+    ),
+    types.Tool(
+        name="totvs_add_material_request_items",
+        description="⚠️ ESCRITA — Inclui itens em uma solicitacao de material existente.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "requestDate": {
+                    "type": "string"
+                },
+                "requestCode": {
+                    "type": "integer"
+                },
+                "integrationCode": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "sequence": {
+                                "type": "integer"
+                            },
+                            "productCode": {
+                                "type": "integer"
+                            },
+                            "requestQuantity": {
+                                "type": "number"
+                            },
+                            "costCenter": {
+                                "type": "integer"
+                            },
+                            "expense": {
+                                "type": "integer"
+                            },
+                            "cost": {
+                                "type": "number"
+                            }
+                        },
+                        "required": [
+                            "sequence"
+                        ]
+                    }
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_modify_material_request_header",
+        description="⚠️ ESCRITA — Altera a capa de uma solicitacao de material.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "requestDate": {
+                    "type": "string"
+                },
+                "requestCode": {
+                    "type": "integer"
+                },
+                "integrationCode": {
+                    "type": "string"
+                },
+                "purposeCode": {
+                    "type": "integer"
+                },
+                "costCenter": {
+                    "type": "integer"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_modify_material_request_items",
+        description="⚠️ ESCRITA — Altera itens de uma solicitacao de material existente.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "requestDate": {
+                    "type": "string"
+                },
+                "requestCode": {
+                    "type": "integer"
+                },
+                "integrationCode": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "sequence": {
+                                "type": "integer"
+                            },
+                            "productCode": {
+                                "type": "integer"
+                            },
+                            "requestQuantity": {
+                                "type": "number"
+                            },
+                            "costCenter": {
+                                "type": "integer"
+                            },
+                            "expense": {
+                                "type": "integer"
+                            },
+                            "cost": {
+                                "type": "number"
+                            }
+                        },
+                        "required": [
+                            "sequence"
+                        ]
+                    }
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_remove_material_request_items",
+        description="⚠️ ESCRITA/DESTRUTIVA — Remove itens de uma solicitacao de material existente.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "requestDate": {
+                    "type": "string"
+                },
+                "requestCode": {
+                    "type": "integer"
+                },
+                "integrationCode": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "sequence": {
+                                "type": "integer"
+                            }
+                        },
+                        "required": [
+                            "sequence"
+                        ]
+                    }
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_cancel_material_request_items",
+        description="⚠️ ESCRITA/DESTRUTIVA — Cancela quantidade de itens de uma solicitacao de material.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "requestDate": {
+                    "type": "string"
+                },
+                "requestCode": {
+                    "type": "integer"
+                },
+                "integrationCode": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "sequence": {
+                                "type": "integer"
+                            },
+                            "cancelQuantity": {
+                                "type": "number"
+                            },
+                            "reason": {
+                                "type": "integer"
+                            },
+                            "descriptions": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "description": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "required": [
+                            "sequence"
+                        ]
+                    }
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_approve_material_request",
+        description="⚠️ ESCRITA — Aprova ou reprova solicitacao de material.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "requestDate": {
+                    "type": "string"
+                },
+                "requestCode": {
+                    "type": "integer"
+                },
+                "approverUser": {
+                    "type": "integer"
+                },
+                "approved": {
+                    "type": "boolean"
+                },
+                "reportDescription": {
+                    "type": "string"
+                },
+                "reasonCode": {
+                    "type": "integer"
+                }
+            }
+        },
+    ),
+    types.Tool(
+        name="totvs_move_material_request_items",
+        description="⚠️ ESCRITA/DESTRUTIVA — Movimenta/baixa itens de solicitacao de material. Pode afetar estoque.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {
+                    "type": "integer"
+                },
+                "requestDate": {
+                    "type": "string"
+                },
+                "requestCode": {
+                    "type": "integer"
+                },
+                "integrationCode": {
+                    "type": "string"
+                },
+                "operationCode": {
+                    "type": "integer"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "sequence": {
+                                "type": "integer"
+                            },
+                            "movementQuantity": {
+                                "type": "number"
+                            },
+                            "batchItems": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "required": [
+                            "sequence",
+                            "movementQuantity"
+                        ]
+                    }
+                },
+                "descriptions": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "description": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "required": [
+                "operationCode",
+                "items"
+            ]
+        },
+    ),
+]
+
+ROUTES: dict[str, str] = {
+    "totvs_search_material_requests": "search_material_requests",
+    "totvs_create_material_request": "create_material_request",
+    "totvs_add_material_request_items": "add_items",
+    "totvs_modify_material_request_header": "modify_header",
+    "totvs_modify_material_request_items": "modify_items",
+    "totvs_remove_material_request_items": "remove_items",
+    "totvs_cancel_material_request_items": "cancel_items",
+    "totvs_approve_material_request": "approve",
+    "totvs_move_material_request_items": "move_items",
+}
