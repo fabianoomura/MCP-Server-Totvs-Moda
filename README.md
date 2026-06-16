@@ -357,7 +357,7 @@ pip install -e ".[dev]"
 PYTHONPATH=. pytest tests/ -v
 ```
 
-222 testes cobrindo contratos de endpoints, agregadores, defaults, campos, perfis de tools, invalidação de cache, carregamento de ambiente e cliente HTTP.
+224 testes cobrindo contratos de endpoints, agregadores, defaults, campos, perfis de tools, invalidação de cache, carregamento de ambiente e cliente HTTP.
 
 ---
 
@@ -393,7 +393,7 @@ totvs-moda-mcp/
 │   ├── _defaults.py       # Injeção automática de branchCode
 │   ├── _fields.py         # Filtro de campos na resposta
 │   └── _value_types.py    # Resolução de tipos de valor
-├── tests/                 # 222 testes (pytest + respx)
+├── tests/                 # 224 testes (pytest + respx)
 └── docs/
     ├── API_ENDPOINT_MATRIX.md  # Matriz derivada de endpoints
     ├── AGENT_ENDPOINT_HARNESS.md
