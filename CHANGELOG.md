@@ -1,5 +1,22 @@
 # Changelog
 
+## [3.10.0] - 2026-06-16
+
+### Added
+- Connect-time server instructions: `_build_connect_instructions()` is wired into
+  `InitializationOptions.instructions`, so MCP clients receive a lean usage guide
+  (fundamental rules, write-confirmation policy, preference for composite tools,
+  how to start) at the `initialize` handshake — no tool call needed. The full guide
+  remains on-demand via `totvs_get_instructions`.
+
+### Changed
+- Removed superseded status/roadmap/improvement docs (`PROJECT_STATE`, `START`,
+  `ROADMAP`, `AVANCOS_v3.9`, `MELHORIAS_v3.9`) and obsolete/private notes
+  (`MIGRATION_v3.0`, `01_ajustes_pontuais`, `02_evolucao_projeto`).
+- `docs/README.md` rewritten to point to `CHANGELOG`/git for current state instead
+  of stale status docs.
+- README documented test count bumped 222 -> 224.
+
 ## [3.9.1] - 2026-06-13
 
 ### Changed
