@@ -397,6 +397,7 @@ totvs-moda-mcp/
 └── docs/
     ├── API_ENDPOINT_MATRIX.md  # Matriz derivada de endpoints
     ├── AGENT_ENDPOINT_HARNESS.md
+    ├── FIELDS.md         # Glossário de campos (nomes que confundem)
     └── PATTERNS.md        # Padrões obrigatórios de código
 ```
 

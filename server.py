@@ -259,7 +259,7 @@ Se uma informação não estiver disponível via tools, informe ao usuário em v
 - `totvs_create_or_update_legal_customer` — cadastra/atualiza PJ
 
 ### Financeiro (contas a receber)
-- `totvs_search_receivable_documents` — títulos a receber com filtros por vencimento
+- `totvs_search_receivable_documents` — títulos a receber com filtros por vencimento. Use `withStatusFlags=true` para separar venda x recebimento (`billingSide`) e ver aberto x recebido sem somar em dobro
 - `totvs_get_bank_slip` — boleto bancário
 - `totvs_get_payment_link` — link de pagamento
 - `totvs_search_customer_financial_balance` — saldo financeiro do cliente
@@ -267,7 +267,7 @@ Se uma informação não estiver disponível via tools, informe ao usuário em v
 ### Fiscal
 - `totvs_search_fiscal_invoices` — NF-e emitidas
 - `totvs_get_nfe_xml` — XML da NF-e
-- `totvs_get_danfe` — DANFE em PDF
+- `totvs_get_danfe` — DANFE em PDF: salva o arquivo na pasta de saída (`TOTVS_OUTPUT_DIR`, default Downloads) e retorna o caminho; `returnBase64=true` para o base64 cru
 
 ### Estoque / Logística
 - `totvs_low_stock_alert` — produtos abaixo de saldo mínimo
@@ -305,6 +305,12 @@ Se uma informação não estiver disponível via tools, informe ao usuário em v
 - **PREFIRA `totvs_open_production_orders`** para ordens de produção em aberto
 - Para agregar vendas por produto use `totvs_get_products_sold` (não busque pedidos e some manualmente)
 - Para ranking de clientes use `totvs_top_customers` (não busque pedidos e some manualmente)
+
+## Convenções importantes (v3.11+)
+- **Datas de "dia"**: para "vence hoje", "emitidas hoje" etc., pode passar a MESMA data em início e fim (ou só uma data) — a tool expande para o dia inteiro automaticamente (não precisa montar `00:00:00`/`23:59:59`).
+- **Arquivos grandes (DANFE/imagem)**: `totvs_get_danfe` e `totvs_search_product_images` salvam o arquivo na pasta de saída (`TOTVS_OUTPUT_DIR`, default Downloads) e retornam o caminho, em vez do base64 (que estoura o limite de tokens). Use `returnBase64=true` se precisar do conteúdo cru.
+- **Contas a receber sem somar em dobro**: a busca retorna o lado VENDA (a receber, `billingType` 1/2) e o lado RECEBIMENTO (caixa, 3/4) — não some os dois. Passe `withStatusFlags=true` para receber `billingSide`, `isOpen`/`isSettled`/`openValue` e o `receivableSummary {open, settled, receiptSide}`.
+- **Campos (`fields=`)**: se um nome não existir na resposta, vem um aviso em `_fieldsWarning`. Nomes que costumam confundir (ex.: `totalValue` x `value`, status da NF em `eletronic.electronicInvoiceStatus`, valor de item em `netValue`) estão documentados em `docs/FIELDS.md`.
 """
 
 
@@ -333,7 +339,12 @@ def _build_connect_instructions() -> str:
         "`totvs_daily_dashboard`, `totvs_customer_360`, `totvs_product_360`, "
         "`totvs_order_360`, `totvs_invoice_360`, `totvs_sales_today_summary`, "
         "`totvs_stock_available`.\n"
-        "4. Use `fields=[...]` nas buscas para reduzir tokens e datas em ISO 8601.\n\n"
+        "4. Use `fields=[...]` nas buscas para reduzir tokens e datas em ISO 8601.\n"
+        "5. Convenções v3.11: filtros de \"dia\" aceitam uma data única (ex.: vence hoje); "
+        "`totvs_get_danfe` e `totvs_search_product_images` salvam arquivo (pasta de saída, "
+        "default Downloads) e retornam o caminho (`returnBase64=true` para o cru); em contas "
+        "a receber use `withStatusFlags=true` para separar venda x recebimento e não somar em "
+        "dobro. Campos que confundem em `docs/FIELDS.md`.\n\n"
         "## Como começar\n"
         "1. Chame `totvs_get_context` para descobrir filiais, tabelas de preço/custo "
         "e operações desta empresa (os códigos variam por empresa — não chute).\n"
