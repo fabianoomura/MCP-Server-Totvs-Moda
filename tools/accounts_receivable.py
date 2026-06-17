@@ -122,45 +122,61 @@ class AccountsReceivableTools:
         cache.put("receivable", body, result)
         return self._finalize_receivable(result, args)
 
-    @staticmethod
-    def _classify_receivable_items(result: Any) -> tuple[Any, dict | None]:
-        """Tag each document with isOpen/isSettled/openValue and total them.
+    # billingType separa o lado VENDA (faturamento) do lado RECEBIMENTO (caixa).
+    # Somar os dois lados juntos duplica o valor. Semântica da própria API:
+    # 1=Venda à vista, 2=Venda a prazo, 3=Recebimento à vista, 4=Recebimento a prazo.
+    _RECEIPT_BILLING_TYPES = {3, 4}
 
-        A document is "settled" when it has a settlementDate or a paidValue > 0;
-        otherwise it is "open". Returns a NEW result (no mutation of the cached
-        object) plus an open-vs-settled summary.
+    @classmethod
+    def _classify_receivable_items(cls, result: Any) -> tuple[Any, dict | None]:
+        """Tag each document with billingSide/isOpen/isSettled/openValue.
 
-        Note: this intentionally does NOT deduplicate the invoice/receipt pairs
-        the API returns — that rule is company-specific and not safe to assume.
-        It only classifies and totals, which already prevents the "soma dobrada"
-        mistake by keeping open and settled apart.
+        Separates the VENDA side (the receivable, billingType 1/2) from the
+        RECEBIMENTO side (the cash-in document, billingType 3/4). Only the venda
+        side is "a receber"; the receipt side is reported apart so the two are
+        never summed together (which is what doubled the totals).
+
+        A venda-side document is "settled" when it has a settlementDate or a
+        paidValue > 0; otherwise it is "open". Returns a NEW result (no mutation
+        of the cached object) plus a summary.
         """
         if not isinstance(result, dict) or not isinstance(result.get("items"), list):
             return result, None
         new_items = []
-        open_count = settled_count = 0
-        open_value = settled_value = 0.0
+        open_count = settled_count = receipt_count = 0
+        open_value = settled_value = receipt_value = 0.0
         for it in result["items"]:
             if not isinstance(it, dict):
                 new_items.append(it)
                 continue
             inst = it.get("installmentValue") or 0
             paid = it.get("paidValue") or 0
-            settled = bool(it.get("settlementDate")) or (paid is not None and paid > 0)
             nit = dict(it)
-            nit["isSettled"] = bool(settled)
-            nit["isOpen"] = not settled
-            nit["openValue"] = 0.0 if settled else round(max(inst - paid, 0), 2)
-            new_items.append(nit)
-            if settled:
-                settled_count += 1
-                settled_value += paid or inst
+            if it.get("billingType") in cls._RECEIPT_BILLING_TYPES:
+                # Lado caixa: não é "a receber", não soma com a venda.
+                nit["billingSide"] = "recebimento"
+                nit["isOpen"] = False
+                nit["isSettled"] = True
+                nit["openValue"] = 0.0
+                receipt_count += 1
+                receipt_value += paid or inst
             else:
-                open_count += 1
-                open_value += inst
+                settled = bool(it.get("settlementDate")) or (paid is not None and paid > 0)
+                nit["billingSide"] = "venda"
+                nit["isSettled"] = bool(settled)
+                nit["isOpen"] = not settled
+                nit["openValue"] = 0.0 if settled else round(max(inst - paid, 0), 2)
+                if settled:
+                    settled_count += 1
+                    settled_value += paid or inst
+                else:
+                    open_count += 1
+                    open_value += inst
+            new_items.append(nit)
         summary = {
             "open": {"count": open_count, "value": round(open_value, 2)},
             "settled": {"count": settled_count, "value": round(settled_value, 2)},
+            "receiptSide": {"count": receipt_count, "value": round(receipt_value, 2)},
         }
         return {**result, "items": new_items}, summary
 
@@ -472,7 +488,7 @@ TOOLS: list[types.Tool] = [
                 },
                 "withStatusFlags": {
                     "type": "boolean",
-                    "description": "Se true, marca cada documento com isOpen/isSettled/openValue e adiciona receivableSummary com totais em aberto x recebido (evita somar valores duplicados)."
+                    "description": "Se true, marca cada documento com billingSide (venda x recebimento), isOpen/isSettled/openValue e adiciona receivableSummary {open, settled, receiptSide}. Separa o lado venda (a receber) do lado caixa pelo billingType, evitando somar valores duplicados."
                 },
                 "receivableCodeList": {
                     "type": "array",

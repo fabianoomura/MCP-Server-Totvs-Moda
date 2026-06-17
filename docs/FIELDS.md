@@ -46,9 +46,17 @@ Os valores **por item** só vêm com `expand=items`, e usam nomes próprios:
 | Vencimento | `expiredDate` |
 | Data de liquidação | `settlementDate` (nulo = em aberto) |
 | Situação | `status` (1=Normal, 2=Devolvido, 3=Cancelado, 4=Quebrado) |
+| Lado (venda x caixa) | `billingType` (1/2 = venda, 3/4 = recebimento) |
 | Portador | `bearerName` / `bearerCode` |
 
-> Em aberto ≈ `paidValue == 0` e `settlementDate == null`.
+> **Não some venda + recebimento.** A busca retorna dois lados: o título da
+> **venda** (`billingType` 1/2 — é o "a receber") e o **recebimento** de caixa
+> (`billingType` 3/4 — a entrada do dinheiro). Somar os dois duplica o valor.
+> Em aberto ≈ lado venda com `settlementDate == null` e `paidValue == 0`.
+>
+> Passe `withStatusFlags=true` para a tool já marcar `billingSide`,
+> `isOpen`/`isSettled`/`openValue` e devolver `receivableSummary`
+> `{open, settled, receiptSide}` com os lados separados.
 
 ---
 
