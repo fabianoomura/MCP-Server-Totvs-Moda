@@ -4,6 +4,7 @@ from typing import Any
 from totvs_client import TotvsClient
 from tools._fields import apply_fields
 from tools._defaults import inject_branch_defaults
+from tools._dates import normalize_day_ranges
 
 logger = logging.getLogger("totvs-moda-mcp.purchase-order")
 BASE = "/api/totvsmoda/purchase-order/v2"
@@ -16,6 +17,7 @@ class PurchaseOrderTools:
     async def search_purchase_orders(self, args: dict[str, Any]) -> Any:
         """POST /search — Consulta pedidos de compra."""
         args = inject_branch_defaults(args)
+        args = normalize_day_ranges(args)
         flt: dict[str, Any] = {}
         # API espera branchCodeList (array)
         if args.get("branchCodeList"):

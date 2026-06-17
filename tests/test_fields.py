@@ -2,7 +2,7 @@
 Tests for tools._fields — the field projection utility.
 """
 import pytest
-from tools._fields import pick_fields, apply_fields
+from tools._fields import pick_fields, apply_fields, unknown_fields
 
 
 def test_empty_fields_returns_data_unchanged():
@@ -107,3 +107,41 @@ def test_items_is_not_corrupted_when_empty():
     data = {"items": [], "totalHits": 0}
     result = pick_fields(data, ["anything"])
     assert result == {"items": [], "totalHits": 0}
+
+
+# ── field-name validation (roadmap #1) ───────────────────────────────────────
+
+def test_unknown_fields_detected():
+    data = {"items": [{"orderCode": 1, "totalValue": 100}]}
+    assert unknown_fields(data, ["orderCode", "value"]) == ["value"]
+
+
+def test_unknown_fields_empty_items_undecidable():
+    data = {"items": [], "count": 0}
+    assert unknown_fields(data, ["whatever"]) == []
+
+
+def test_unknown_fields_nested():
+    data = {"items": [{"items": [{"netValue": 10}]}]}
+    assert unknown_fields(data, ["items.netValue"]) == []
+    assert unknown_fields(data, ["items.unitValue"]) == ["items.unitValue"]
+
+
+def test_apply_fields_adds_warning_for_unknown():
+    data = {"items": [{"a": 1}]}
+    out = apply_fields(data, {"fields": ["a", "b"]})
+    assert out["items"][0] == {"a": 1}
+    assert "_fieldsWarning" in out
+    assert "b" in out["_fieldsWarning"]
+
+
+def test_apply_fields_no_warning_when_all_valid():
+    data = {"items": [{"a": 1, "b": 2}]}
+    out = apply_fields(data, {"fields": ["a"]})
+    assert "_fieldsWarning" not in out
+
+
+def test_apply_fields_no_warning_on_empty_items():
+    data = {"items": [], "count": 0}
+    out = apply_fields(data, {"fields": ["anything"]})
+    assert "_fieldsWarning" not in out

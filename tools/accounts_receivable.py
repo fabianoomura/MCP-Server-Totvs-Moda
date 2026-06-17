@@ -8,6 +8,7 @@ from typing import Any
 from totvs_client import TotvsClient
 from tools._fields import apply_fields
 from tools._defaults import inject_branch_defaults
+from tools._dates import normalize_day_ranges
 import response_cache as cache
 
 logger = logging.getLogger("totvs-moda-mcp.accounts-receivable")
@@ -77,6 +78,7 @@ class AccountsReceivableTools:
     async def search_documents(self, args: dict[str, Any]) -> Any:
         """POST /documents/search — Documentos de contas a receber."""
         args = inject_branch_defaults(args)
+        args = normalize_day_ranges(args)
         flt: dict[str, Any] = {}
         for field in (
             "branchCodeList", "customerCodeList", "customerCpfCnpjList",
@@ -114,11 +116,62 @@ class AccountsReceivableTools:
 
         cached = cache.get("receivable", body, cache.FINANCIAL)
         if cached is not None:
-            return apply_fields(cached, args)
+            return self._finalize_receivable(cached, args)
 
         result = await self.client.post(f"{BASE}/documents/search", body)
         cache.put("receivable", body, result)
-        return apply_fields(result, args)
+        return self._finalize_receivable(result, args)
+
+    @staticmethod
+    def _classify_receivable_items(result: Any) -> tuple[Any, dict | None]:
+        """Tag each document with isOpen/isSettled/openValue and total them.
+
+        A document is "settled" when it has a settlementDate or a paidValue > 0;
+        otherwise it is "open". Returns a NEW result (no mutation of the cached
+        object) plus an open-vs-settled summary.
+
+        Note: this intentionally does NOT deduplicate the invoice/receipt pairs
+        the API returns — that rule is company-specific and not safe to assume.
+        It only classifies and totals, which already prevents the "soma dobrada"
+        mistake by keeping open and settled apart.
+        """
+        if not isinstance(result, dict) or not isinstance(result.get("items"), list):
+            return result, None
+        new_items = []
+        open_count = settled_count = 0
+        open_value = settled_value = 0.0
+        for it in result["items"]:
+            if not isinstance(it, dict):
+                new_items.append(it)
+                continue
+            inst = it.get("installmentValue") or 0
+            paid = it.get("paidValue") or 0
+            settled = bool(it.get("settlementDate")) or (paid is not None and paid > 0)
+            nit = dict(it)
+            nit["isSettled"] = bool(settled)
+            nit["isOpen"] = not settled
+            nit["openValue"] = 0.0 if settled else round(max(inst - paid, 0), 2)
+            new_items.append(nit)
+            if settled:
+                settled_count += 1
+                settled_value += paid or inst
+            else:
+                open_count += 1
+                open_value += inst
+        summary = {
+            "open": {"count": open_count, "value": round(open_value, 2)},
+            "settled": {"count": settled_count, "value": round(settled_value, 2)},
+        }
+        return {**result, "items": new_items}, summary
+
+    def _finalize_receivable(self, result: Any, args: dict[str, Any]) -> Any:
+        summary = None
+        if args.get("withStatusFlags"):
+            result, summary = self._classify_receivable_items(result)
+        out = apply_fields(result, args)
+        if summary is not None and isinstance(out, dict):
+            out["receivableSummary"] = summary
+        return out
 
     async def search_printed_invoices(self, args: dict[str, Any]) -> Any:
         """POST /invoices-print/search — Boletos já impressos."""
@@ -416,6 +469,10 @@ TOOLS: list[types.Tool] = [
                 "hasOpenInvoices": {
                     "type": "boolean",
                     "description": "Apenas faturas em aberto"
+                },
+                "withStatusFlags": {
+                    "type": "boolean",
+                    "description": "Se true, marca cada documento com isOpen/isSettled/openValue e adiciona receivableSummary com totais em aberto x recebido (evita somar valores duplicados)."
                 },
                 "receivableCodeList": {
                     "type": "array",

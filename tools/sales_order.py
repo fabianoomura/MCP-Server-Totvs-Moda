@@ -11,6 +11,7 @@ from typing import Any
 from totvs_client import TotvsClient
 from tools._fields import apply_fields
 from tools._defaults import inject_branch_defaults
+from tools._dates import normalize_day_ranges
 import response_cache as cache
 
 logger = logging.getLogger("totvs-moda-mcp.sales-order")
@@ -46,6 +47,7 @@ class SalesOrderTools:
         Busca pedidos de venda com filtros flexíveis.
         """
         args = inject_branch_defaults(args)
+        args = normalize_day_ranges(args)
         # Build filter object from flat args
         filter_fields = [
             "startOrderDate",

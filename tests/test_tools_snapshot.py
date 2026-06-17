@@ -254,7 +254,7 @@ def test_schema_hash_unchanged():
         ensure_ascii=False,
     )
     h = hashlib.sha256(snapshot.encode()).hexdigest()
-    assert h == "d0623b76f91d174bc19a52c190f3ddf1a7f31c93131f7e8bdb15eaf35b0236fa"
+    assert h == "e9505ef0484e33d6499fbed8a7980bee9d4cba046c1b2741b9dbfe43aba020df"
 
 
 def test_no_duplicate_tool_names():
