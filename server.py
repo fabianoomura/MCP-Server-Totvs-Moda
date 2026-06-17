@@ -1,5 +1,5 @@
 """
-TOTVS Moda MCP Server v3.9.1
+TOTVS Moda MCP Server v3.10.0
 =============================
 MCP server para API V2 do TOTVS Moda.
 15 módulos | 200+ tools | OAuth2 ROPC
@@ -306,6 +306,45 @@ Se uma informação não estiver disponível via tools, informe ao usuário em v
 - Para agregar vendas por produto use `totvs_get_products_sold` (não busque pedidos e some manualmente)
 - Para ranking de clientes use `totvs_top_customers` (não busque pedidos e some manualmente)
 """
+
+
+def _build_connect_instructions() -> str:
+    """Instruções curtas entregues ao cliente MCP no handshake de conexão.
+
+    Ao contrário de `_build_instructions()` (guia completo, sob demanda via
+    `totvs_get_instructions`), este texto é injetado automaticamente no campo
+    `instructions` do `initialize` e fica sempre visível para o LLM. Por isso
+    é deliberadamente enxuto: regras fundamentais + ponteiros para o resto.
+    """
+    return (
+        "# TOTVS Moda MCP — leia antes de usar\n\n"
+        "Servidor MCP para a API V2 do TOTVS Moda (ERP de confecção/moda). "
+        "Permite consultar e operar pedidos, produtos, clientes, financeiro, "
+        "fiscal, estoque e produção via tools.\n\n"
+        "## Regras fundamentais\n"
+        "1. TUDO no TOTVS deve passar pelas tools MCP. Não escreva scripts, não "
+        "use requests/httpx, não invente endpoints. Se algo não existe como tool, "
+        "diga isso ao usuário em vez de improvisar.\n"
+        "2. Leituras (search, get, dashboards, visões 360) podem rodar direto. "
+        "Operações de ESCRITA — criar, alterar, cancelar, baixar, estornar, "
+        "remover — exigem confirmação explícita do usuário antes de executar. "
+        "Essas tools têm `⚠️ ESCRITA` na descrição.\n"
+        "3. PREFIRA tools compostas a montar a resposta na mão: "
+        "`totvs_daily_dashboard`, `totvs_customer_360`, `totvs_product_360`, "
+        "`totvs_order_360`, `totvs_invoice_360`, `totvs_sales_today_summary`, "
+        "`totvs_stock_available`.\n"
+        "4. Use `fields=[...]` nas buscas para reduzir tokens e datas em ISO 8601.\n\n"
+        "## Como começar\n"
+        "1. Chame `totvs_get_context` para descobrir filiais, tabelas de preço/custo "
+        "e operações desta empresa (os códigos variam por empresa — não chute).\n"
+        "2. Chame `totvs_get_instructions` para o guia completo: tools por "
+        "categoria, regra de escolha para vendas, status de pedido e validação "
+        "de conexão/autenticação.\n\n"
+        "Observação: `totvs_get_context` pode vir de cache do startup e não prova "
+        "autenticação em tempo real. Se ele funcionar mas outra tool retornar "
+        "`InvalidUserPassword`, trate como configuração de ambiente do processo "
+        "MCP, não como falha da pergunta."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -835,7 +874,7 @@ async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[types.T
 
 
 async def main() -> None:
-    logger.info(f"TOTVS Moda MCP Server v3.9.1 — {len(TOOLS)} tools | {len(get_modules())} módulos")
+    logger.info(f"TOTVS Moda MCP Server v3.10.0 — {len(TOOLS)} tools | {len(get_modules())} módulos")
     try:
         await context_cache.load_context(get_client())
     except Exception as e:
@@ -845,7 +884,8 @@ async def main() -> None:
             read_stream, write_stream,
             InitializationOptions(
                 server_name="totvs-moda-mcp",
-                server_version="3.9.1",
+                server_version="3.10.0",
+                instructions=_build_connect_instructions(),
                 capabilities=server.get_capabilities(
                     notification_options=NotificationOptions(),
                     experimental_capabilities={},

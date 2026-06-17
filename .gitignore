@@ -33,6 +33,9 @@ docs/MIGRATION_v*.md
 *.zip
 tmp_image_tests/
 tmp_xml_tests/
+# Artefatos de saída (DANFE/imagem) gerados localmente em demos
+danfes/
+produtos-img/
 fixes/
 v2.2.0_package/
 v2.3.0_delivery/

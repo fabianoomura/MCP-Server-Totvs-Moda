@@ -8,6 +8,7 @@ from typing import Any
 from totvs_client import TotvsClient
 from tools._fields import apply_fields
 from tools._defaults import inject_branch_defaults
+from tools._dates import normalize_day_ranges
 import response_cache as cache
 
 logger = logging.getLogger("totvs-moda-mcp.account-payable")
@@ -21,6 +22,7 @@ class AccountPayableTools:
     async def search_duplicates(self, args: dict[str, Any]) -> Any:
         """POST /duplicates/search — Consulta de duplicatas a pagar."""
         args = inject_branch_defaults(args)
+        args = normalize_day_ranges(args)
         flt: dict[str, Any] = {
             "branchCodeList": args["branchCodeList"],
         }

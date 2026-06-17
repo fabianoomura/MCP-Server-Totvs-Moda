@@ -8,6 +8,7 @@ from typing import Any
 from totvs_client import TotvsClient
 from tools._fields import apply_fields
 from tools._defaults import inject_branch_defaults
+from tools._dates import normalize_day_ranges
 import response_cache as cache
 
 logger = logging.getLogger("totvs-moda-mcp.accounts-receivable")
@@ -77,6 +78,7 @@ class AccountsReceivableTools:
     async def search_documents(self, args: dict[str, Any]) -> Any:
         """POST /documents/search — Documentos de contas a receber."""
         args = inject_branch_defaults(args)
+        args = normalize_day_ranges(args)
         flt: dict[str, Any] = {}
         for field in (
             "branchCodeList", "customerCodeList", "customerCpfCnpjList",
@@ -114,11 +116,78 @@ class AccountsReceivableTools:
 
         cached = cache.get("receivable", body, cache.FINANCIAL)
         if cached is not None:
-            return apply_fields(cached, args)
+            return self._finalize_receivable(cached, args)
 
         result = await self.client.post(f"{BASE}/documents/search", body)
         cache.put("receivable", body, result)
-        return apply_fields(result, args)
+        return self._finalize_receivable(result, args)
+
+    # billingType separa o lado VENDA (faturamento) do lado RECEBIMENTO (caixa).
+    # Somar os dois lados juntos duplica o valor. Semântica da própria API:
+    # 1=Venda à vista, 2=Venda a prazo, 3=Recebimento à vista, 4=Recebimento a prazo.
+    _RECEIPT_BILLING_TYPES = {3, 4}
+
+    @classmethod
+    def _classify_receivable_items(cls, result: Any) -> tuple[Any, dict | None]:
+        """Tag each document with billingSide/isOpen/isSettled/openValue.
+
+        Separates the VENDA side (the receivable, billingType 1/2) from the
+        RECEBIMENTO side (the cash-in document, billingType 3/4). Only the venda
+        side is "a receber"; the receipt side is reported apart so the two are
+        never summed together (which is what doubled the totals).
+
+        A venda-side document is "settled" when it has a settlementDate or a
+        paidValue > 0; otherwise it is "open". Returns a NEW result (no mutation
+        of the cached object) plus a summary.
+        """
+        if not isinstance(result, dict) or not isinstance(result.get("items"), list):
+            return result, None
+        new_items = []
+        open_count = settled_count = receipt_count = 0
+        open_value = settled_value = receipt_value = 0.0
+        for it in result["items"]:
+            if not isinstance(it, dict):
+                new_items.append(it)
+                continue
+            inst = it.get("installmentValue") or 0
+            paid = it.get("paidValue") or 0
+            nit = dict(it)
+            if it.get("billingType") in cls._RECEIPT_BILLING_TYPES:
+                # Lado caixa: não é "a receber", não soma com a venda.
+                nit["billingSide"] = "recebimento"
+                nit["isOpen"] = False
+                nit["isSettled"] = True
+                nit["openValue"] = 0.0
+                receipt_count += 1
+                receipt_value += paid or inst
+            else:
+                settled = bool(it.get("settlementDate")) or (paid is not None and paid > 0)
+                nit["billingSide"] = "venda"
+                nit["isSettled"] = bool(settled)
+                nit["isOpen"] = not settled
+                nit["openValue"] = 0.0 if settled else round(max(inst - paid, 0), 2)
+                if settled:
+                    settled_count += 1
+                    settled_value += paid or inst
+                else:
+                    open_count += 1
+                    open_value += inst
+            new_items.append(nit)
+        summary = {
+            "open": {"count": open_count, "value": round(open_value, 2)},
+            "settled": {"count": settled_count, "value": round(settled_value, 2)},
+            "receiptSide": {"count": receipt_count, "value": round(receipt_value, 2)},
+        }
+        return {**result, "items": new_items}, summary
+
+    def _finalize_receivable(self, result: Any, args: dict[str, Any]) -> Any:
+        summary = None
+        if args.get("withStatusFlags"):
+            result, summary = self._classify_receivable_items(result)
+        out = apply_fields(result, args)
+        if summary is not None and isinstance(out, dict):
+            out["receivableSummary"] = summary
+        return out
 
     async def search_printed_invoices(self, args: dict[str, Any]) -> Any:
         """POST /invoices-print/search — Boletos já impressos."""
@@ -416,6 +485,10 @@ TOOLS: list[types.Tool] = [
                 "hasOpenInvoices": {
                     "type": "boolean",
                     "description": "Apenas faturas em aberto"
+                },
+                "withStatusFlags": {
+                    "type": "boolean",
+                    "description": "Se true, marca cada documento com billingSide (venda x recebimento), isOpen/isSettled/openValue e adiciona receivableSummary {open, settled, receiptSide}. Separa o lado venda (a receber) do lado caixa pelo billingType, evitando somar valores duplicados."
                 },
                 "receivableCodeList": {
                     "type": "array",

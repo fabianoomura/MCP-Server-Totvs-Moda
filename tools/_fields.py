@@ -107,13 +107,68 @@ def _pick_from_record(record: Any, fields: list[str]) -> Any:
     return out
 
 
+def _field_present(record: Any, path: str) -> bool:
+    """True if `path` (dot notation) resolves to an existing key in `record`."""
+    if not isinstance(record, dict):
+        return False
+    head, _, rest = path.partition(".")
+    if head not in record:
+        return False
+    if not rest:
+        return True
+    value = record[head]
+    if isinstance(value, list):
+        return any(_field_present(sub, rest) for sub in value)
+    if isinstance(value, dict):
+        return _field_present(value, rest)
+    return False
+
+
+def _records_for_validation(data: Any) -> list | None:
+    """Records to validate field names against, or None when undecidable."""
+    if not isinstance(data, dict):
+        return None
+    items = data.get("items")
+    if isinstance(items, list):
+        return items or None  # empty list -> can't tell if a field is valid
+    return [data]
+
+
+def unknown_fields(data: Any, fields: list[str]) -> list[str]:
+    """Requested field paths that match nothing in any record.
+
+    Returns [] when it can't decide (no records to compare against), so a
+    warning is only emitted when we are sure the field is absent.
+    """
+    records = _records_for_validation(data)
+    if not records:
+        return []
+    return [f for f in fields if not any(_field_present(r, f) for r in records)]
+
+
 def apply_fields(result: Any, args: dict[str, Any]) -> Any:
     """Convenience wrapper: checks args for 'fields' and applies if present.
 
     Drop-in usage in any search tool:
         result = await self.client.post(...)
         return apply_fields(result, args)
+
+    When a requested field matches nothing in the response, a non-intrusive
+    `_fieldsWarning` is attached so the caller learns the real field name
+    instead of silently getting an empty result.
     """
-    if args.get("fields"):
-        return pick_fields(result, args["fields"])
-    return result
+    fields = args.get("fields")
+    if not fields:
+        return result
+
+    filtered = pick_fields(result, fields)
+    missing = unknown_fields(result, fields)
+    if missing and isinstance(filtered, dict):
+        filtered = dict(filtered)
+        filtered["_fieldsWarning"] = (
+            "Campos não encontrados e ignorados: "
+            + ", ".join(missing)
+            + ". Confira o nome — a resposta pode usar outro (ex.: 'totalValue' "
+            "em vez de 'value', ou item usa 'netValue'/'unitNetValue')."
+        )
+    return filtered

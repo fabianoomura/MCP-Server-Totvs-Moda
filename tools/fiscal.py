@@ -9,7 +9,23 @@ from typing import Any
 from totvs_client import TotvsClient
 from tools._fields import apply_fields
 from tools._defaults import inject_branch_defaults
+from tools._output import save_base64, extract_access_key
+from tools._dates import normalize_day_ranges
 import response_cache as cache
+
+
+def _extract_danfe_base64(result: Any) -> str | None:
+    """Locate the PDF base64 string inside a danfe-search response."""
+    if not isinstance(result, dict):
+        return None
+    for key in ("danfePdfBase64", "danfeBase64", "pdfBase64", "base64", "danfe"):
+        v = result.get(key)
+        if isinstance(v, str) and len(v) > 100:
+            return v
+    for v in result.values():
+        if isinstance(v, str) and len(v) > 1000:
+            return v
+    return None
 
 logger = logging.getLogger("totvs-moda-mcp.fiscal")
 BASE = "/api/totvsmoda/fiscal/v2"
@@ -22,6 +38,7 @@ class FiscalTools:
     async def search_invoices(self, args: dict[str, Any]) -> Any:
         """POST /invoices/search — Lista NF-e por filtro geral."""
         args = inject_branch_defaults(args)
+        args = normalize_day_ranges(args)
         flt: dict[str, Any] = {
             "branchCodeList": args["branchCodeList"],
         }
@@ -77,11 +94,35 @@ class FiscalTools:
         return await self.client.get(f"{BASE}/invoices/item-detail-search", params=params or None)
 
     async def get_danfe(self, args: dict[str, Any]) -> Any:
-        """POST /danfe-search — Base64 do DANFE via XML da NF-e."""
+        """POST /danfe-search — DANFE (PDF) via XML da NF-e.
+
+        Por padrão decodifica o PDF e salva em arquivo (pasta de saída,
+        ver TOTVS_OUTPUT_DIR), retornando o caminho — o base64 cru estoura
+        o limite de tokens. Use returnBase64=true para receber o base64.
+        """
         body: dict[str, Any] = {"mainInvoiceXml": args["mainInvoiceXml"]}
         if args.get("nfeDocumentType"):
             body["nfeDocumentType"] = args["nfeDocumentType"]
-        return await self.client.post(f"{BASE}/danfe-search", body)
+        result = await self.client.post(f"{BASE}/danfe-search", body)
+
+        if args.get("returnBase64"):
+            return result
+
+        b64 = _extract_danfe_base64(result)
+        if not b64:
+            return result
+
+        key = extract_access_key(args.get("mainInvoiceXml"))
+        fname = args.get("fileName") or (f"DANFE-{key}.pdf" if key else "DANFE.pdf")
+        if not fname.lower().endswith(".pdf"):
+            fname += ".pdf"
+        saved = save_base64(b64, fname)
+        if isinstance(result, dict) and result.get("invoiceStatus"):
+            saved["invoiceStatus"] = result["invoiceStatus"]
+        saved["message"] = (
+            "DANFE salva em arquivo. Use returnBase64=true para receber o base64 cru."
+        )
+        return saved
 
     async def search_invoice_products(self, args: dict[str, Any]) -> Any:
         """POST /invoice-products/search — Produtos de NF-e por filtro geral."""
@@ -420,7 +461,7 @@ TOOLS: list[types.Tool] = [
     ),
     types.Tool(
         name="totvs_get_danfe",
-        description="DANFE em base64 (PDF) de uma NF-e a partir do XML.",
+        description="DANFE (PDF) de uma NF-e a partir do XML. Por padrão salva o PDF em arquivo (pasta de saída, ver TOTVS_OUTPUT_DIR; default Downloads) e retorna o caminho. Use returnBase64=true para receber o base64 cru.",
         inputSchema={
             "type": "object",
             "properties": {
@@ -431,6 +472,14 @@ TOOLS: list[types.Tool] = [
                 "nfeDocumentType": {
                     "type": "string",
                     "description": "Tipo de documento NF-e"
+                },
+                "fileName": {
+                    "type": "string",
+                    "description": "Nome do arquivo PDF de saída (opcional; default DANFE-<chave>.pdf)"
+                },
+                "returnBase64": {
+                    "type": "boolean",
+                    "description": "Se true, retorna o base64 cru em vez de salvar o arquivo"
                 }
             },
             "required": [

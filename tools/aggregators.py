@@ -173,6 +173,51 @@ class AggregatorTools:
             "totalValue": item.get("totalValue"),
         }
 
+    @staticmethod
+    def _invoice_value_map(invoice_resp: Any) -> dict[int, dict[str, Any]]:
+        """Map productCode -> {unitValue, totalValue} from invoice line items.
+
+        The /invoice-products/search endpoint returns null values; the real
+        per-item values live in /invoices/search?expand=items as net/gross.
+        """
+        value_map: dict[int, dict[str, Any]] = {}
+        if not isinstance(invoice_resp, dict):
+            return value_map
+        for inv in invoice_resp.get("items", []) or []:
+            if not isinstance(inv, dict):
+                continue
+            for it in inv.get("items", []) or []:
+                if not isinstance(it, dict):
+                    continue
+                pc = it.get("productCode") or it.get("code")
+                if pc is None:
+                    prods = it.get("products")
+                    if isinstance(prods, list) and prods:
+                        pc = prods[0].get("productCode")
+                try:
+                    pc = int(pc)
+                except (TypeError, ValueError):
+                    continue
+                value_map[pc] = {
+                    "unitValue": it.get("unitNetValue", it.get("unitGrossValue")),
+                    "totalValue": it.get("netValue", it.get("grossValue")),
+                }
+        return value_map
+
+    @staticmethod
+    def _strip_line_items(invoice_resp: Any) -> Any:
+        """Drop the heavy per-invoice line items from the header response."""
+        if not isinstance(invoice_resp, dict):
+            return invoice_resp
+        recs = invoice_resp.get("items")
+        if not isinstance(recs, list):
+            return invoice_resp
+        stripped = [
+            {k: v for k, v in r.items() if k != "items"} if isinstance(r, dict) else r
+            for r in recs
+        ]
+        return {**invoice_resp, "items": stripped}
+
     async def get_products_sold(self, args: dict[str, Any]) -> Any:
         """Agrega vendas de produtos em um período.
 
@@ -999,6 +1044,7 @@ class AggregatorTools:
             "filter": flt,
             "page": 1,
             "pageSize": args.get("pageSize", 20),
+            "expand": "items",
         })
         products_task = self.client.post(f"{BASE_FISCAL}/invoice-products/search", {
             "filter": flt,
@@ -1007,13 +1053,31 @@ class AggregatorTools:
         })
         invoice, products = await asyncio.gather(self._safe(invoice_task), self._safe(products_task))
         compact = args.get("compact", True)
+
+        # Per-item values come from the invoice line items (expand=items),
+        # not from /invoice-products/search (which returns nulls).
+        value_map = self._invoice_value_map(invoice)
+
         products_data = products
         if compact:
             products_data = self._compact_response(products, self._compact_invoice_product)
+        if value_map and isinstance(products_data, dict):
+            for prod in products_data.get("items", []) or []:
+                if not isinstance(prod, dict):
+                    continue
+                vals = value_map.get(prod.get("productCode"))
+                if not vals:
+                    continue
+                if prod.get("unitValue") is None:
+                    prod["unitValue"] = vals["unitValue"]
+                if prod.get("totalValue") is None:
+                    prod["totalValue"] = vals["totalValue"]
+
+        invoice_out = self._strip_line_items(invoice) if compact else invoice
         result = {
             "invoiceCode": invoice_code,
             "invoiceSequence": invoice_sequence,
-            "invoice": invoice,
+            "invoice": invoice_out,
             "products": products_data,
             "summary": {
                 "invoiceCount": len(self._items(invoice)),

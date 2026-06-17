@@ -660,6 +660,38 @@ async def test_invoice_360_collects_header_and_products(client):
 
 @pytest.mark.asyncio
 @respx.mock
+async def test_invoice_360_enriches_product_values(client):
+    """Per-item values come from invoice line items (expand=items), not from
+    /invoice-products/search which returns nulls (roadmap #5)."""
+    _mock_token()
+    respx.post(f"{TOTVS_BASE}/api/totvsmoda/fiscal/v2/invoices/search").mock(
+        return_value=Response(200, json={"items": [{
+            "invoiceCode": 144897,
+            "items": [
+                {"code": "15163", "productCode": 15163, "quantity": 1,
+                 "netValue": 567.0, "unitNetValue": 567.0},
+            ],
+        }]})
+    )
+    respx.post(f"{TOTVS_BASE}/api/totvsmoda/fiscal/v2/invoice-products/search").mock(
+        return_value=Response(200, json={"items": [
+            {"productCode": 15163, "productName": "CAPA", "quantity": 1,
+             "unitValue": None, "totalValue": None},
+        ]})
+    )
+
+    tools = AggregatorTools(client)
+    result = await tools.invoice_360({"invoiceCode": 144897, "branchCodeList": [1]})
+
+    prod = result["products"]["items"][0]
+    assert prod["unitValue"] == 567.0
+    assert prod["totalValue"] == 567.0
+    # header line items are stripped in compact mode to avoid duplication
+    assert "items" not in result["invoice"]["items"][0]
+
+
+@pytest.mark.asyncio
+@respx.mock
 async def test_sales_today_summary_groups_status(client):
     _mock_token()
     respx.post(f"{TOTVS_BASE}/api/totvsmoda/sales-order/v2/orders/search").mock(
