@@ -515,6 +515,7 @@ _TOOL_ORDER: list[str] = [
     "totvs_update_product_price",
     "totvs_update_product_price_only",
     "totvs_update_product_cost",
+    "totvs_search_promotions",
     "totvs_update_promotion_price",
     "totvs_search_product_codes",
     "totvs_search_product_costs",

@@ -424,9 +424,40 @@ class ProductTools:
             body=body,
         )
 
+    async def search_promotions(self, args: dict[str, Any]) -> Any:
+        """GET /promotion — Consulta promoções (PRDFM002) por filial/código/status/período."""
+        args = inject_branch_defaults(args)
+        if args.get("branchCode") is None and args.get("branchCodeList"):
+            args["branchCode"] = args["branchCodeList"][0]
+        query = {k: v for k, v in args.items()
+                 if k not in ("fields", "branchCodeList") and v is not None}
+        params = _pascal_params(query)
+        result = await self.client.get(f"{BASE}/promotion", params=params or None)
+        return apply_fields(result, args)
+
     async def update_promotion_price(self, args: dict[str, Any]) -> Any:
-        """POST /promotion-values/update — ⚠️ Altera preço de promoção."""
-        body = {k: v for k, v in args.items() if v is not None}
+        """POST /promotion-values/update — ⚠️ Altera o valor de promoção (PRDFM002).
+
+        Contrato real: {branchCode, promotionCode, items:[{productCode, promotionValue}]}.
+        - Modo simples: branchCode + promotionCode + productCode + promotionValue
+        - Modo lote: branchCode + promotionCode + items[]
+        Aceita `promotionPrice` como alias de `promotionValue` (compat).
+        """
+        args = inject_branch_defaults(args)
+        branch = args.get("branchCode")
+        if branch is None and args.get("branchCodeList"):
+            branch = args["branchCodeList"][0]
+        items = args.get("items")
+        if not items and args.get("productCode") is not None:
+            value = args.get("promotionValue")
+            if value is None:
+                value = args.get("promotionPrice")
+            items = [{"productCode": args["productCode"], "promotionValue": value}]
+        body = {
+            "branchCode": branch,
+            "promotionCode": args.get("promotionCode"),
+            "items": items or [],
+        }
         result = await self.client.post(f"{BASE}/promotion-values/update", body)
         self._invalidate_after_write()
         return result
@@ -1844,8 +1875,30 @@ TOOLS: list[types.Tool] = [
         },
     ),
     types.Tool(
+        name="totvs_search_promotions",
+        description="Consulta promoções de produto (PRDFM002) por filial, código, classificação, situação (Open/Blocked/Closed) e período. branchCode é obrigatório. Use para descobrir o promotionCode e os itens (produto + valor de promoção) antes de alterar com totvs_update_promotion_price.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {"type": "integer", "description": "Código da empresa (obrigatório)"},
+                "promotionCode": {"type": "integer", "description": "Código da promoção"},
+                "classificationTypeCode": {"type": "integer", "description": "Tipo de classificação do produto vinculado"},
+                "classificationCode": {"type": "string", "description": "Classificação do produto vinculado"},
+                "status": {"type": "string", "enum": ["Open", "Blocked", "Closed"], "description": "Situação da promoção"},
+                "startDate": {"type": "string", "description": "Início do período da promoção"},
+                "endDate": {"type": "string", "description": "Fim do período da promoção"},
+                "startChangeDate": {"type": "string"},
+                "endChangeDate": {"type": "string"},
+                "page": {"type": "integer", "default": 1},
+                "pageSize": {"type": "integer", "default": 500},
+                "fields": {"type": "array", "items": {"type": "string"}}
+            },
+            "required": ["branchCode"]
+        },
+    ),
+    types.Tool(
         name="totvs_update_promotion_price",
-        description="⚠️ ESCRITA — Altera preço de promoção de produto.",
+        description="⚠️ ESCRITA — Altera o valor de promoção de produto (PRDFM002). Contrato: branchCode + promotionCode + items[]={productCode, promotionValue}. Modo simples: branchCode + promotionCode + productCode + promotionValue. Descubra o promotionCode com totvs_search_promotions. Para retirar o desconto, ajuste o promotionValue (ex.: igual ao preço normal).",
         inputSchema={
             "type": "object",
             "properties": {
@@ -1853,23 +1906,27 @@ TOOLS: list[types.Tool] = [
                     "type": "integer",
                     "description": "Código da filial"
                 },
+                "promotionCode": {
+                    "type": "integer",
+                    "description": "Código da promoção (veja totvs_search_promotions)"
+                },
                 "productCode": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Modo simples: código do produto a alterar"
                 },
-                "promotionPrice": {
-                    "type": "number"
+                "promotionValue": {
+                    "type": "number",
+                    "description": "Valor da promoção para o produto"
                 },
-                "startDate": {
-                    "type": "string"
-                },
-                "endDate": {
-                    "type": "string"
+                "items": {
+                    "type": "array",
+                    "description": "Modo lote: [{productCode, promotionValue}]",
+                    "items": {"type": "object"}
                 }
             },
             "required": [
                 "branchCode",
-                "productCode",
-                "promotionPrice"
+                "promotionCode"
             ]
         },
         annotations=WRITE_TOOL_ANNOTATIONS,
@@ -2403,6 +2460,7 @@ ROUTES: dict[str, str] = {
     "totvs_update_product_price": "update_product_price",
     "totvs_update_product_price_only": "update_product_price_only",
     "totvs_update_product_cost": "update_product_cost",
+    "totvs_search_promotions": "search_promotions",
     "totvs_update_promotion_price": "update_promotion_price",
     "totvs_search_product_codes": "search_product_codes",
     "totvs_search_product_costs": "search_costs",

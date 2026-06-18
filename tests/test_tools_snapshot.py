@@ -19,7 +19,7 @@ os.environ.setdefault("TOTVS_PASSWORD", "x")
 
 import server  # noqa: E402
 
-EXPECTED_COUNT = 212
+EXPECTED_COUNT = 213
 
 EXPECTED_TOOL_NAMES = [
     "totvs_search_orders",
@@ -93,6 +93,7 @@ EXPECTED_TOOL_NAMES = [
     "totvs_update_product_price",
     "totvs_update_product_price_only",
     "totvs_update_product_cost",
+    "totvs_search_promotions",
     "totvs_update_promotion_price",
     "totvs_search_product_codes",
     "totvs_search_product_costs",
@@ -254,7 +255,7 @@ def test_schema_hash_unchanged():
         ensure_ascii=False,
     )
     h = hashlib.sha256(snapshot.encode()).hexdigest()
-    assert h == "b1f5993c42abaa741d9693a2a9990e144e0f113c40af64239a2131ea2fcef704"
+    assert h == "5041077f69f04a76f41247b1ca69f2dab1126bfc19cf2867a18947b0f3467651"
 
 
 def test_no_duplicate_tool_names():
