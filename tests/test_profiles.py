@@ -33,14 +33,15 @@ async def test_leitura_profile_excludes_write_tools(monkeypatch):
     monkeypatch.setenv("TOTVS_PROFILE", "leitura")
 
     names = _tool_names(await server.handle_list_tools())
-    write_names = {tool.name for tool in server.TOOLS if getattr(tool, "annotations", None)}
+    write_names = server._write_tool_names()
 
-    assert len(write_names) == 7
+    assert {'totvs_pay_invoices', 'totvs_create_duplicate', 'totvs_create_order'} <= write_names
     assert names.isdisjoint(write_names)
 
 
 @pytest.mark.asyncio
 async def test_tools_extra_adds_write_to_leitura_and_allows_execution(monkeypatch):
+    monkeypatch.setenv('TOTVS_ENABLE_WRITES', 'true')
     async def cancel_order(args):
         return {"cancelled": args["orderCode"]}
 
@@ -73,6 +74,7 @@ async def test_tools_exclude_removes_tool_from_completo(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_default_profile_is_current_full_tool_list(monkeypatch):
+    monkeypatch.setenv('TOTVS_ENABLE_WRITES', 'true')
     monkeypatch.delenv("TOTVS_PROFILE", raising=False)
     monkeypatch.delenv("TOTVS_TOOLS_EXTRA", raising=False)
     monkeypatch.delenv("TOTVS_TOOLS_EXCLUDE", raising=False)
@@ -80,6 +82,21 @@ async def test_default_profile_is_current_full_tool_list(monkeypatch):
     tools = await server.handle_list_tools()
     assert len(tools) == len(server.TOOLS)
     assert _tool_names(tools) == {tool.name for tool in server.TOOLS}
+
+
+@pytest.mark.asyncio
+async def test_unconfigured_write_lock_cannot_be_bypassed_by_extra(monkeypatch):
+    monkeypatch.delenv('TOTVS_ENABLE_WRITES', raising=False)
+    monkeypatch.setenv('TOTVS_PROFILE', 'completo')
+    monkeypatch.setenv('TOTVS_TOOLS_EXTRA', 'totvs_pay_invoices,totvs_create_order')
+    def unexpected():
+        raise AssertionError('Não deve inicializar o cliente nem executar API')
+    monkeypatch.setattr(server, 'get_modules', unexpected)
+    names = _tool_names(await server.handle_list_tools())
+    assert names.isdisjoint(server._write_tool_names())
+    assert 'totvs_search_orders' in names
+    result = await server.handle_call_tool('totvs_pay_invoices', {})
+    assert 'não habilitada' in json.loads(result[0].text)['error']
 
 
 @pytest.mark.asyncio

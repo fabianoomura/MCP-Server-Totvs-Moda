@@ -16,6 +16,11 @@ Documentação destas convenções vive em 3 lugares (manter sincronizado ao mud
 
 ## Padrão para endpoints de escrita
 
+Escritas exigem `TOTVS_ENABLE_WRITES=true` no processo do servidor e confirmação
+operacional antes/depois. O perfil `completo` e `TOTVS_TOOLS_EXTRA` não anulam a trava.
+Declarar mutações com aviso `⚠️ ESCRITA` e `readOnlyHint=False`; tools legadas com
+aviso na descrição também são tratadas como escrita. A trava não é teto monetário.
+
 ### Create → fallback para Update
 Ao implementar um endpoint de **inclusão** (create/incluir), sempre tratar o caso em que o registro já existe:
 

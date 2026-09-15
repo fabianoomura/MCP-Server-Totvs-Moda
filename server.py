@@ -786,7 +786,12 @@ def _tool_names_from_env(name: str) -> set[str]:
 
 
 def _write_tool_names() -> set[str]:
-    return {tool.name for tool in TOOLS if getattr(tool, "annotations", None)}
+    # Algumas tools legadas só declaram escrita na descrição, sem annotations.
+    # Tratar avisos de mutação conservadoramente impede bypass pelo perfil leitura.
+    return {tool.name for tool in TOOLS
+            if (getattr(tool, 'annotations', None) and tool.annotations.readOnlyHint is not True)
+            or (tool.description or '').lstrip().startswith('⚠')
+            or 'ESCRITA' in (tool.description or '').upper()}
 
 
 def _profile_tool_names() -> set[str]:
@@ -811,6 +816,9 @@ def _profile_tool_names() -> set[str]:
 
     names |= _tool_names_from_env("TOTVS_TOOLS_EXTRA") & all_tool_names
     names -= _tool_names_from_env("TOTVS_TOOLS_EXCLUDE")
+    # Trava final: EXTRA/perfil completo não podem reabilitar escritas implicitamente.
+    if not _truthy_env('TOTVS_ENABLE_WRITES'):
+        names -= _write_tool_names()
     names |= SPECIAL_TOOL_NAMES & all_tool_names
     return names
 

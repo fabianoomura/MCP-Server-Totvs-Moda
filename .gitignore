@@ -48,3 +48,6 @@ test_phase2.py
 TEST_RESULTS.md
 TESTING_ROADMAP.md
 scripts_analysis.md
+
+.pytest_cache/
+.pytest-*-tmp/
