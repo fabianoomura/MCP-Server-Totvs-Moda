@@ -96,11 +96,24 @@ class FiscalTools:
     async def get_danfe(self, args: dict[str, Any]) -> Any:
         """POST /danfe-search — DANFE (PDF) via XML da NF-e.
 
+        Aceita `mainInvoiceXml` (XML cru ou base64) ou apenas `accessKey`
+        (44 dígitos) — neste caso busca o XML em /xml-contents antes.
         Por padrão decodifica o PDF e salva em arquivo (pasta de saída,
         ver TOTVS_OUTPUT_DIR), retornando o caminho — o base64 cru estoura
         o limite de tokens. Use returnBase64=true para receber o base64.
         """
-        body: dict[str, Any] = {"mainInvoiceXml": args["mainInvoiceXml"]}
+        xml = args.get("mainInvoiceXml")
+        if not xml:
+            # Atalho: só a chave de acesso → busca o XML (base64) e segue.
+            key = args.get("accessKey")
+            if not key:
+                raise ValueError("Informe mainInvoiceXml ou accessKey (44 dígitos).")
+            xml_result = await self.get_xml_content({"accessKey": key})
+            xml = xml_result.get("mainInvoiceXml") if isinstance(xml_result, dict) else None
+            if not xml:
+                return xml_result
+            args = {**args, "mainInvoiceXml": xml}
+        body: dict[str, Any] = {"mainInvoiceXml": xml}
         if args.get("nfeDocumentType"):
             body["nfeDocumentType"] = args["nfeDocumentType"]
         result = await self.client.post(f"{BASE}/danfe-search", body)
@@ -461,13 +474,17 @@ TOOLS: list[types.Tool] = [
     ),
     types.Tool(
         name="totvs_get_danfe",
-        description="DANFE (PDF) de uma NF-e a partir do XML. Por padrão salva o PDF em arquivo (pasta de saída, ver TOTVS_OUTPUT_DIR; default Downloads) e retorna o caminho. Use returnBase64=true para receber o base64 cru.",
+        description="DANFE (PDF) de uma NF-e. Informe accessKey (44 dígitos; busca o XML sozinho) OU mainInvoiceXml. Por padrão salva o PDF em arquivo (pasta de saída, ver TOTVS_OUTPUT_DIR; default Downloads) e retorna o caminho. Use returnBase64=true para receber o base64 cru.",
         inputSchema={
             "type": "object",
             "properties": {
+                "accessKey": {
+                    "type": "string",
+                    "description": "Chave de acesso da NF-e (44 dígitos). Alternativa a mainInvoiceXml — o XML é buscado automaticamente."
+                },
                 "mainInvoiceXml": {
                     "type": "string",
-                    "description": "Conteúdo XML da NF-e"
+                    "description": "Conteúdo XML da NF-e (cru ou base64). Opcional se accessKey for informado."
                 },
                 "nfeDocumentType": {
                     "type": "string",
@@ -482,9 +499,7 @@ TOOLS: list[types.Tool] = [
                     "description": "Se true, retorna o base64 cru em vez de salvar o arquivo"
                 }
             },
-            "required": [
-                "mainInvoiceXml"
-            ]
+            "required": []
         },
     ),
     types.Tool(

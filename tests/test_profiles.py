@@ -35,7 +35,8 @@ async def test_leitura_profile_excludes_write_tools(monkeypatch):
     names = _tool_names(await server.handle_list_tools())
     write_names = server._write_tool_names()
 
-    assert {'totvs_pay_invoices', 'totvs_create_duplicate', 'totvs_create_order'} <= write_names
+    assert {'totvs_pay_invoices', 'totvs_create_duplicate', 'totvs_create_order',
+            'totvs_create_or_update_legal_customer'} <= write_names
     assert names.isdisjoint(write_names)
 
 

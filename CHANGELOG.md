@@ -1,5 +1,67 @@
 # Changelog
 
+## [3.12.1] - 2026-07-02
+
+### Fixed
+- `totvs_create_or_update_individual_customer` e
+  `totvs_create_or_update_legal_customer` agora declaram no schema o contrato
+  real dos DTOs (`phones[]`, `emails[]`, `addresses[]`, `classifications[]`,
+  `observations[]`, `branchInsertCode`). Campos fora do schema chegavam como
+  string pelo cliente MCP e a API rejeitava com erro de conversão JSON.
+- Aliases planos (`email`, `phone`, `branchCode`, `corporateName`) passam a
+  ser convertidos para o contrato real (`emails[]`, `phones[]`,
+  `branchInsertCode`, `name`) em vez de enviados crus e ignorados pela API.
+- `totvs_create_or_update_legal_customer` agora carrega a anotação de escrita;
+  o perfil `leitura` a expunha indevidamente.
+
+### Tests
+- Adicionada cobertura para conversão de aliases e repasse das listas do DTO.
+- Suite agora possui 261 testes.
+
+## [3.12.0] - 2026-06-17
+
+### Added
+- `totvs_search_promotions` para consultar promoções por filial, código,
+  classificação, situação e período.
+
+### Fixed
+- Corrigido o contrato de `totvs_update_promotion_price` para enviar
+  `branchCode`, `promotionCode` e `items[]` com `productCode` e
+  `promotionValue`.
+- Mantido `promotionPrice` como alias compatível de `promotionValue`.
+
+### Tests
+- Adicionados testes de consulta e atualização de promoções.
+- Suite agora possui 257 testes.
+
+## [3.11.1] - 2026-06-17
+
+### Changed
+- Documentadas as convenções de DX da série 3.11 nas instruções do servidor,
+  em `AGENTS.md`, `CLAUDE.md` e `docs/FIELDS.md`.
+- As instruções de conexão agora explicam normalização de datas, avisos de
+  campos inválidos, arquivos grandes, contas a receber e visões compactas.
+
+## [3.11.0] - 2026-06-17
+
+### Added
+- Arquivos grandes de DANFE e imagens passam a ser salvos localmente por
+  padrão, com `returnBase64` como opt-in.
+- Filtros com a mesma data inicial e final são expandidos automaticamente para
+  o dia inteiro.
+- `apply_fields` passa a retornar `_fieldsWarning` para campos desconhecidos.
+- `totvs_invoice_360` enriquece produtos com valores dos itens da nota.
+- `withStatusFlags` adiciona indicadores e resumo às contas a receber.
+
+### Fixed
+- Contas a receber agora separam o lado da venda (`billingType` 1/2) do lado
+  de recebimento/caixa (3/4), evitando totais duplicados.
+
+### Tests
+- Adicionada cobertura para arquivos, datas, campos, enriquecimento 360 e
+  separação dos lados de contas a receber.
+- Suite passou de 224 para 253 testes.
+
 ## [3.10.0] - 2026-06-16
 
 ### Added
