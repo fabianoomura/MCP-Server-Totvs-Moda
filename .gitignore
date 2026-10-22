@@ -51,3 +51,6 @@ scripts_analysis.md
 
 .pytest_cache/
 .pytest-*-tmp/
+
+# exportações com dados de clientes/pedidos (não publicar)
+pedidos_*.csv
