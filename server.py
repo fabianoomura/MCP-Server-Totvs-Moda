@@ -1,8 +1,8 @@
 """
-TOTVS Moda MCP Server v3.10.0
+TOTVS Moda MCP Server v3.12.2
 =============================
 MCP server para API V2 do TOTVS Moda.
-15 módulos | 200+ tools | OAuth2 ROPC
+21 módulos | 213 tools | OAuth2 ROPC
 
 Author: ATL4S
 """
@@ -53,6 +53,7 @@ logging.basicConfig(
 logger = logging.getLogger("totvs-moda-mcp")
 
 server = Server("totvs-moda-mcp")
+SERVER_VERSION = "3.12.2"
 
 _client: TotvsClient | None = None
 _modules: dict[str, Any] = {}
@@ -786,7 +787,12 @@ def _tool_names_from_env(name: str) -> set[str]:
 
 
 def _write_tool_names() -> set[str]:
-    return {tool.name for tool in TOOLS if getattr(tool, "annotations", None)}
+    # Algumas tools legadas só declaram escrita na descrição, sem annotations.
+    # Tratar avisos de mutação conservadoramente impede bypass pelo perfil leitura.
+    return {tool.name for tool in TOOLS
+            if (getattr(tool, 'annotations', None) and tool.annotations.readOnlyHint is not True)
+            or (tool.description or '').lstrip().startswith('⚠')
+            or 'ESCRITA' in (tool.description or '').upper()}
 
 
 def _profile_tool_names() -> set[str]:
@@ -811,6 +817,9 @@ def _profile_tool_names() -> set[str]:
 
     names |= _tool_names_from_env("TOTVS_TOOLS_EXTRA") & all_tool_names
     names -= _tool_names_from_env("TOTVS_TOOLS_EXCLUDE")
+    # Trava final: EXTRA/perfil completo não podem reabilitar escritas implicitamente.
+    if not _truthy_env('TOTVS_ENABLE_WRITES'):
+        names -= _write_tool_names()
     names |= SPECIAL_TOOL_NAMES & all_tool_names
     return names
 
@@ -886,7 +895,10 @@ async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[types.T
 
 
 async def main() -> None:
-    logger.info(f"TOTVS Moda MCP Server v3.10.0 — {len(TOOLS)} tools | {len(get_modules())} módulos")
+    logger.info(
+        f"TOTVS Moda MCP Server v{SERVER_VERSION} — "
+        f"{len(TOOLS)} tools | {len(get_modules())} módulos"
+    )
     try:
         await context_cache.load_context(get_client())
     except Exception as e:
@@ -896,7 +908,7 @@ async def main() -> None:
             read_stream, write_stream,
             InitializationOptions(
                 server_name="totvs-moda-mcp",
-                server_version="3.10.0",
+                server_version=SERVER_VERSION,
                 instructions=_build_connect_instructions(),
                 capabilities=server.get_capabilities(
                     notification_options=NotificationOptions(),

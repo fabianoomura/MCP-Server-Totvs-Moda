@@ -110,6 +110,35 @@ async def test_get_danfe_return_base64_flag(client, token_route, tmp_path, monke
     assert not list(tmp_path.iterdir())  # nothing written
 
 
+@pytest.mark.asyncio
+@respx.mock
+async def test_get_danfe_by_access_key_fetches_xml(client, token_route, tmp_path, monkeypatch):
+    """Only accessKey given → XML is fetched from /xml-contents and forwarded."""
+    monkeypatch.setenv("TOTVS_OUTPUT_DIR", str(tmp_path))
+    token_route()
+    xml_b64 = base64.b64encode(f"<chNFe>{ACCESS_KEY}</chNFe>".encode()).decode()
+    xml_route = respx.get(f"{FISCAL}/xml-contents/{ACCESS_KEY}").mock(
+        return_value=Response(200, json={"invoiceStatus": "Authorized", "mainInvoiceXml": xml_b64})
+    )
+    danfe_route = respx.post(f"{FISCAL}/danfe-search").mock(
+        return_value=Response(200, json={"danfePdfBase64": PDF_B64})
+    )
+    tools = FiscalTools(client)
+    out = await tools.get_danfe({"accessKey": ACCESS_KEY})
+
+    assert xml_route.called
+    import json as _json
+    assert _json.loads(danfe_route.calls[0].request.content)["mainInvoiceXml"] == xml_b64
+    assert out["fileName"] == f"DANFE-{ACCESS_KEY}.pdf"
+    assert (tmp_path / f"DANFE-{ACCESS_KEY}.pdf").read_bytes() == PDF_BYTES
+
+
+@pytest.mark.asyncio
+async def test_get_danfe_requires_xml_or_key(client):
+    with pytest.raises(ValueError):
+        await FiscalTools(client).get_danfe({})
+
+
 # ── search_product_images ────────────────────────────────────────────────────
 
 @pytest.mark.asyncio

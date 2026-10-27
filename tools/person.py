@@ -38,6 +38,27 @@ def _search_body(args: dict[str, Any]) -> dict[str, Any]:
     return body
 
 
+def _customer_body(args: dict[str, Any]) -> dict[str, Any]:
+    """Converte aliases planos do schema no contrato real dos DTOs de upsert.
+
+    A API espera `name`, `branchInsertCode` e listas `emails[]`/`phones[]`;
+    os aliases planos (`corporateName`, `branchCode`, `email`, `phone`)
+    existem por compatibilidade com o schema anterior das tools.
+    """
+    body = {k: v for k, v in args.items() if v is not None}
+    if "corporateName" in body:
+        body.setdefault("name", body.pop("corporateName"))
+    if "branchCode" in body:
+        body.setdefault("branchInsertCode", body.pop("branchCode"))
+    email = body.pop("email", None)
+    if email and not body.get("emails"):
+        body["emails"] = [{"email": email, "isDefault": True}]
+    phone = body.pop("phone", None)
+    if phone and not body.get("phones"):
+        body["phones"] = [{"number": phone, "isDefault": True}]
+    return body
+
+
 class PersonTools:
     def __init__(self, client: TotvsClient) -> None:
         self.client = client
@@ -129,15 +150,13 @@ class PersonTools:
 
     async def create_or_update_individual_customer(self, args: dict[str, Any]) -> Any:
         """POST /individual-customers — ⚠️ Criar ou alterar cliente PF."""
-        body = {k: v for k, v in args.items() if v is not None}
-        result = await self.client.post(f"{BASE}/individual-customers", body)
+        result = await self.client.post(f"{BASE}/individual-customers", _customer_body(args))
         self._invalidate_after_write()
         return result
 
     async def create_or_update_legal_customer(self, args: dict[str, Any]) -> Any:
         """POST /legal-customers — ⚠️ Criar ou alterar cliente PJ."""
-        body = {k: v for k, v in args.items() if v is not None}
-        result = await self.client.post(f"{BASE}/legal-customers", body)
+        result = await self.client.post(f"{BASE}/legal-customers", _customer_body(args))
         self._invalidate_after_write()
         return result
 
@@ -185,6 +204,103 @@ WRITE_TOOL_ANNOTATIONS: dict[str, bool] = {
     "idempotentHint": False,
     "readOnlyHint": False,
     "openWorldHint": True,
+}
+
+# Campos comuns aos upserts de cliente PF/PJ (contrato *CustomerInDto).
+# Declarar os tipos aqui é obrigatório: campos fora do schema chegam como
+# string pelo cliente MCP e a API rejeita com erro de conversão JSON.
+_CUSTOMER_UPSERT_PROPS: dict[str, Any] = {
+    "branchInsertCode": {"type": "integer", "description": "Filial de inserção do cadastro"},
+    "phones": {
+        "type": "array",
+        "description": "Telefones (PhoneInDto). typeCode em totvs_get_phone_types.",
+        "items": {
+            "type": "object",
+            "properties": {
+                "typeCode": {"type": "integer"},
+                "number": {"type": "string", "description": "Somente dígitos, com DDD"},
+                "isDefault": {"type": "boolean"},
+            },
+        },
+    },
+    "emails": {
+        "type": "array",
+        "description": "E-mails (EmailInDto). typeCode em totvs_get_email_types.",
+        "items": {
+            "type": "object",
+            "properties": {
+                "typeCode": {"type": "integer"},
+                "email": {"type": "string"},
+                "isDefault": {"type": "boolean"},
+            },
+        },
+    },
+    "addresses": {
+        "type": "array",
+        "description": "Endereços (AddressInDto).",
+        "items": {
+            "type": "object",
+            "properties": {
+                "addressType": {
+                    "type": "string",
+                    "description": "Commercial, Residential, Billing, Shopping, Delivery, Mailing, ShowRoom, PickUp",
+                },
+                "sequence": {"type": "integer"},
+                "cep": {"type": "string"},
+                "cityName": {"type": "string"},
+                "stateAbbreviation": {"type": "string"},
+                "address": {"type": "string", "description": "Logradouro sem número"},
+                "number": {"type": "integer"},
+                "complement": {"type": "string"},
+                "neighborhood": {"type": "string"},
+            },
+        },
+    },
+    "classifications": {
+        "type": "array",
+        "description": (
+            'Classificações da pessoa. Ex.: [{"classificationTypeCode": 2, "classificationCode": "006"}]. '
+            "Códigos em totvs_get_person_classifications."
+        ),
+        "items": {
+            "type": "object",
+            "properties": {
+                "classificationTypeCode": {"type": "integer"},
+                "classificationCode": {"type": "string"},
+            },
+        },
+    },
+    "observations": {
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "observation": {"type": "string"},
+                "sequence": {"type": "integer"},
+            },
+        },
+    },
+    "preferences": {
+        "type": "object",
+        "description": (
+            "Preferências (PreferencesInDto) — aba Cliente → Preferências, usada pelo pedido de "
+            "venda: condição de pagamento, transportadora, tipo de frete, tabela de preço, "
+            "prioridade, portador. Precisa ser objeto JSON (string é rejeitada pela API)."
+        ),
+        "properties": {
+            "paymentConditionCode": {"type": "integer", "description": "totvs_get_payment_conditions"},
+            "shippingCompanyCode": {"type": "integer"},
+            "freightType": {"type": "string", "description": "CIF ou FOB"},
+            "bridgeShippingCompanyCode": {"type": "integer"},
+            "maximumAverageTerm": {"type": "integer"},
+            "priceTableCode": {"type": "integer"},
+            "orderPriority": {"type": "integer"},
+            "bearerCode": {"type": "integer"},
+        },
+    },
+    "email": {"type": "string", "description": "Alias: vira emails[0] com isDefault=true"},
+    "phone": {"type": "string", "description": "Alias: vira phones[0] com isDefault=true"},
+    "branchCode": {"type": "integer", "description": "Alias de branchInsertCode"},
 }
 
 TOOLS: list[types.Tool] = [
@@ -461,29 +577,19 @@ TOOLS: list[types.Tool] = [
     ),
     types.Tool(
         name="totvs_create_or_update_individual_customer",
-        description="⚠️ ESCRITA — Cria ou atualiza cliente PF no TOTVS.",
+        description=(
+            "⚠️ ESCRITA — Cria ou atualiza cliente PF no TOTVS (upsert por CPF). Exige confirmação "
+            "explícita do usuário. Aceita o contrato IndividualCustomerInDto completo: phones[], "
+            "emails[], addresses[], classifications[], observations[]; campos extras (rg, limits[], "
+            "additionalFields[]...) são repassados à API."
+        ),
         inputSchema={
             "type": "object",
             "properties": {
-                "cpf": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "birthDate": {
-                    "type": "string"
-                },
-                "branchCode": {
-                    "type": "integer",
-                    "description": "Código da filial"
-                }
+                "cpf": {"type": "string", "description": "Somente dígitos"},
+                "name": {"type": "string"},
+                "birthDate": {"type": "string", "description": "ISO 8601"},
+                **_CUSTOMER_UPSERT_PROPS,
             },
             "required": [
                 "cpf",
@@ -494,31 +600,27 @@ TOOLS: list[types.Tool] = [
     ),
     types.Tool(
         name="totvs_create_or_update_legal_customer",
-        description="⚠️ Cria ou atualiza cliente PJ no TOTVS.",
+        description=(
+            "⚠️ ESCRITA — Cria ou atualiza cliente PJ no TOTVS (upsert por CNPJ). Exige confirmação "
+            "explícita do usuário. A API usa name como razão social; corporateName é alias aceito. "
+            "Aceita o contrato LegalEntityCustomerInDto completo: phones[], emails[], addresses[], "
+            "classifications[], observations[]; campos extras são repassados à API."
+        ),
         inputSchema={
             "type": "object",
             "properties": {
-                "cnpj": {
-                    "type": "string"
-                },
-                "corporateName": {
-                    "type": "string"
-                },
-                "fantasyName": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "branchCode": {
-                    "type": "integer"
-                }
+                "cnpj": {"type": "string", "description": "Somente dígitos"},
+                "corporateName": {"type": "string", "description": "Razão social (alias de name)"},
+                "name": {"type": "string", "description": "Razão social"},
+                "fantasyName": {"type": "string"},
+                **_CUSTOMER_UPSERT_PROPS,
             },
             "required": [
                 "cnpj",
                 "corporateName"
             ]
         },
+        annotations=WRITE_TOOL_ANNOTATIONS,
     ),
     types.Tool(
         name="totvs_get_branches_list",

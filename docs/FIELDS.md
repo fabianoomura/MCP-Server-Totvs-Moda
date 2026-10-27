@@ -94,6 +94,18 @@ Os valores **por item** só vêm com `expand=items`, e usam nomes próprios:
 
 ---
 
+## Transações — `totvs_create_transaction`
+
+| Campo | Observação |
+|-------|-----------|
+| `transactionCode` | Gerado pela API — não informar (é descartado se enviado) |
+| `items[].value` | Valor unitário bruto; em acerto de estoque use o **custo** |
+| `totalAmountTransaction` | Soma de `quantity * value` dos itens (conferência) |
+| `status` | `TransactionStatusType`: 1=Em andamento (default), 2=BlockedForBilling, 3=InExternalProcess, 4=InExternalEdition |
+| `operationCode` | Acerto sem fiscal: 4 (AJUSTE ESTOQUE ENTRADA) / 528 (RETIRADA AJUSTE) |
+
+---
+
 ## Filtros de data
 
 Filtros de período exigem `start < end`. Para "vence hoje", passe a **mesma

@@ -1178,31 +1178,44 @@ TOOLS: list[types.Tool] = [
     ),
     types.Tool(
         name="totvs_create_order",
-        description="⚠️ Cria um pedido de venda B2C.",
+        description="⚠️ Cria um pedido de venda B2C (POST /sales-order/v2/b2c-orders). Aceita o payload completo do endpoint; campos extras nao listados sao repassados.",
         inputSchema={
             "type": "object",
             "properties": {
-                "branchCode": {
-                    "type": "integer"
-                },
-                "customerCode": {
-                    "type": "integer"
-                },
-                "operationCode": {
-                    "type": "integer"
-                },
-                "paymentConditionCode": {
-                    "type": "integer"
+                "orderId": {"type": "string"},
+                "branchCode": {"type": "integer"},
+                "customerOrderCode": {"type": "string"},
+                "integrationCode": {"type": "string"},
+                "orderDate": {"type": "string"},
+                "customerCode": {"type": "integer"},
+                "representativeCode": {"type": "integer"},
+                "representativeCpfCnpj": {"type": "string"},
+                "operationCode": {"type": "integer"},
+                "priceTableCode": {"type": "integer"},
+                "paymentConditionCode": {"type": "integer"},
+                "paymentBaseDate": {"type": "string"},
+                "shippingCompanyCode": {"type": "integer"},
+                "billingForecastDate": {"type": "string"},
+                "freightType": {"type": ["string", "integer"]},
+                "freightValue": {"type": "number"},
+                "totalAmountOrder": {"type": "number"},
+                "statusOrder": {"type": "string"},
+                "experienceType": {"type": "string"},
+                "chargeType": {"type": "string"},
+                "priorityCode": {"type": "integer"},
+                "classifications": {
+                    "type": "array",
+                    "items": {"type": "object"}
                 },
                 "items": {
                     "type": "array",
-                    "items": {
-                        "type": "object"
-                    }
+                    "items": {"type": "object"}
                 },
-                "orderDate": {
-                    "type": "string"
-                }
+                "payments": {
+                    "type": "array",
+                    "items": {"type": "object"}
+                },
+                "shippingAddress": {"type": "object"}
             },
             "required": [
                 "branchCode",

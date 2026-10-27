@@ -55,3 +55,9 @@ docs/SAVYON.md
 image004.png
 SAVYON*.CSV
 SAVYON*.csv
+
+.pytest_cache/
+.pytest-*-tmp/
+
+# exportações com dados de clientes/pedidos (não publicar)
+pedidos_*.csv

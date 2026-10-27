@@ -230,10 +230,28 @@ class ProductTools:
         return apply_fields(result, args)
 
     async def search_references(self, args: dict[str, Any]) -> Any:
-        """POST /references/search — Consulta referências."""
+        """POST /references/search — Consulta referências.
+
+        ReferenceInDto exige `filter` e `option` como campos irmãos no topo do
+        body (option.branchInfoCode é obrigatório); não são a mesma coisa.
+        """
         args = inject_branch_defaults(args)
-        flt = {k: v for k, v in args.items() if k not in ("page", "pageSize", "order", "fields") and v is not None}
-        body: dict[str, Any] = {"filter": flt, "page": args.get("page", 1), "pageSize": args.get("pageSize", 100)}
+        excluded = ("page", "pageSize", "order", "fields", "option", "expand", "branchCode", "branchCodeList")
+        flt = {k: v for k, v in args.items() if k not in excluded and v is not None}
+
+        option: dict[str, Any] = dict(args.get("option") or {})
+        if not option:
+            branch_list = args.get("branchCodeList")
+            option["branchInfoCode"] = branch_list[0] if isinstance(branch_list, list) else args.get("branchCode", 1)
+
+        body: dict[str, Any] = {
+            "filter": flt,
+            "option": option,
+            "page": args.get("page", 1),
+            "pageSize": args.get("pageSize", 100),
+        }
+        if args.get("expand"):
+            body["expand"] = args["expand"]
         if args.get("order"):
             body["order"] = args["order"]
         result = await self.client.post(f"{BASE}/references/search", body)
@@ -610,10 +628,12 @@ class ProductTools:
         return result
 
     async def create_reference(self, args: dict[str, Any]) -> Any:
-        """POST /references — ⚠️ Inclui nova referência de produto. NEW in v2.3.
+        """POST /references — ⚠️ Inclui nova referência de produto (InsertReferenceCommand).
 
-        Body fields per InsertReferenceCommand — common ones:
-        referenceCode, description, categoryCode, colorCode, grid, etc.
+        Contrato real: referenceSettingsCode, gridCode, groups[], branchs[], skus[]
+        são obrigatórios no nível raiz. referenceSettingsCode ("código da máscara",
+        campo "Código nível" do PRDFM236) só existe na tela de cadastro do TOTVS
+        desktop — não há endpoint de leitura que devolva esse valor.
         """
         body = {k: v for k, v in args.items() if v is not None}
         result = await self.client.post(f"{BASE}/references", body)
@@ -1228,6 +1248,18 @@ TOOLS: list[types.Tool] = [
                     "items": {
                         "type": "string"
                     }
+                },
+                "groupCodeList": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Códigos de grupo (último nível da referência)"
+                },
+                "expand": {
+                    "type": "string",
+                    "description": "observations,details,barCodes,classifications,additionalFields,composition,suppliers,manufacturers,referenceCodeSequences,webData,webDetail,referenceCategories,measurementTableOmni,branchesProductBlocked,conservationInstructions"
+                },
+                "order": {
+                    "type": "string"
                 },
                 "page": {
                     "type": "integer",
@@ -2282,27 +2314,139 @@ TOOLS: list[types.Tool] = [
     ),
     types.Tool(
         name="totvs_create_reference",
-        description="⚠️ ESCRITA — Cria nova referência de produto.",
+        description=(
+            "⚠️ ESCRITA — Cria nova referência de produto (InsertReferenceCommand). Exige "
+            "confirmação explícita do usuário. Campos obrigatórios: referenceSettingsCode, "
+            "gridCode, groups[], branchs[], skus[]. referenceSettingsCode (\"código da "
+            "máscara\", campo \"Código nível\" do PRDFM236) só existe na tela de cadastro do "
+            "TOTVS desktop — não há endpoint de leitura que o exponha; peça ao usuário."
+        ),
         inputSchema={
             "type": "object",
             "properties": {
-                "referenceCode": {
-                    "type": "string"
+                "referenceSettingsCode": {
+                    "type": "integer",
+                    "description": "Código da máscara de referência (\"Código nível\" no PRDFM236 do TOTVS desktop). Não é descobrível via API."
                 },
-                "description": {
-                    "type": "string"
+                "referenceName": {"type": "string", "description": "Nome/descrição da referência"},
+                "gridCode": {"type": "integer", "description": "Código da grade (consulte totvs_get_product_grid)"},
+                "observation": {"type": "string"},
+                "groups": {
+                    "type": "array",
+                    "description": "Hierarquia grupo/subgrupo/referência que compõe o código final concatenado (ex.: 66+241+21001 = 6624121001).",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "levelNumber": {"type": "integer", "description": "1=grupo, 2=subgrupo, 3=referência única, etc."},
+                            "groupCode": {"type": "string"},
+                            "groupName": {"type": "string"},
+                        },
+                    },
                 },
-                "categoryCode": {
-                    "type": "integer"
+                "branchs": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "branchCode": {"type": "integer"},
+                            "isOwnProduction": {"type": "boolean"},
+                            "isInactive": {"type": "boolean"},
+                            "isFinishedProduct": {"type": "boolean"},
+                            "isRawMaterial": {"type": "boolean"},
+                            "isBulkMaterial": {"type": "boolean"},
+                            "isFractionalQuantity": {"type": "boolean"},
+                        },
+                    },
                 },
-                "colorCode": {
-                    "type": "integer"
+                "skus": {
+                    "type": "array",
+                    "description": "Uma entrada por cor/tamanho (SKU) desta referência.",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "productCode": {"type": "integer", "description": "Omitir para auto-gerar"},
+                            "productName": {"type": "string"},
+                            "colorCode": {"type": "string"},
+                            "sizeName": {"type": "string"},
+                            "ncmCode": {"type": "string"},
+                            "measuredUnit": {"type": "string"},
+                            "cstCode": {
+                                "type": "string",
+                                "description": "National, Foreing, ForeingDomesticallyAcquired, NationalWithImportContent, NationalProduction, NationalWithLowerImportContent, ForeingDirectImport, ForeingAcquiredInternally, NationalWithSuperiorImportContent",
+                            },
+                            "weight": {"type": "number"},
+                            "prefixEanGtin": {"type": "string"},
+                            "cestCode": {"type": "string"},
+                            "conservationInstructionCode": {"type": "integer"},
+                            "classifications": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "typeCode": {"type": "integer"},
+                                        "code": {"type": "string"},
+                                    },
+                                },
+                            },
+                            "suppliers": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "supplierCpfCnpj": {"type": "string"},
+                                        "originalCode": {"type": "string", "description": "Código do produto no fornecedor"},
+                                        "isMainSupplier": {"type": "boolean"},
+                                    },
+                                },
+                            },
+                            "barCodes": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {"type": "string"},
+                                        "quantity": {"type": "number"},
+                                        "isMainCode": {"type": "boolean"},
+                                    },
+                                },
+                            },
+                            "values": {
+                                "type": "array",
+                                "description": "Preço/custo do SKU.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "branchCode": {"type": "integer"},
+                                        "valueType": {"type": "string", "description": "Cost ou Price"},
+                                        "valueCode": {"type": "integer"},
+                                        "value": {"type": "number"},
+                                    },
+                                },
+                            },
+                        },
+                        "required": ["colorCode", "measuredUnit", "productName", "sizeName"],
+                    },
                 },
-                "grid": {
-                    "type": "object"
-                }
-            }
+                "referenceWeb": {
+                    "type": "object",
+                    "description": "Dados de webservice/e-commerce da referência.",
+                    "properties": {
+                        "status": {"type": "integer", "description": "1 = Ativo, 2 = Bloqueado (enum numérico na API real, apesar do Swagger listar nomes)"},
+                        "description": {"type": "string"},
+                        "weight": {"type": "number"},
+                        "height": {"type": "number"},
+                        "width": {"type": "number"},
+                        "length": {"type": "number"},
+                        "packWeight": {"type": "number"},
+                        "packHeight": {"type": "number"},
+                        "packWidth": {"type": "number"},
+                        "packLength": {"type": "number"},
+                    },
+                },
+            },
+            "required": ["referenceSettingsCode", "gridCode", "groups", "branchs", "skus"],
         },
+        annotations=WRITE_TOOL_ANNOTATIONS,
     ),
     types.Tool(
         name="totvs_create_classification_type",

@@ -96,12 +96,12 @@ Este projeto tenta reduzir essa distância.
 
 ## Cobertura
 
-**200+ tools** organizadas por módulos da API V2:
+**213 tools** organizadas em 21 módulos da API V2:
 
 * Harness de endpoints: `251/251` caminhos mapeados na matriz derivada
 * Núcleo não-Analytics: `190/190`
 * Analytics/painéis: `61/61` via gateway opcional, desabilitado por padrão
-* Suite local: `252` testes automatizados
+* Suite local: `266` testes automatizados
 
 | Módulo                    | Principais operações                                                                                  |
 | ------------------------- | ----------------------------------------------------------------------------------------------------- |
