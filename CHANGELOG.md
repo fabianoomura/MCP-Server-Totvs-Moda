@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.12.2] - 2026-10-27
+
+### Fixed
+- `totvs_create_transaction` agora declara no schema o contrato real do
+  `InsertCompleteTransactionCommand` (`operationCode`, `customerCode`/
+  `customerCpfCnpj`, `sellerCode`, `paymentConditionCode`,
+  `totalAmountTransaction`, `items[]`, `observations[]`). O schema antigo exigia
+  `transactionCode`, que é gerado pela API.
+- `transactionCode` deixa de ser enviado no corpo; `status` assume `1`
+  (Em andamento) quando não informado.
+- Descrição da tool marcada como `⚠️ ESCRITA`, com o uso típico de acerto de
+  estoque sem fiscal (operações 4 e 528).
+
 ## [3.12.1] - 2026-07-02
 
 ### Fixed

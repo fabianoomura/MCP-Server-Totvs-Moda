@@ -98,7 +98,8 @@ class GeneralTools:
     async def create_transaction(self, args: dict[str, Any]) -> Any:
         """POST /transactions — ⚠️ Inclui transação."""
         args = inject_branch_defaults(args)
-        body = {k: v for k, v in args.items() if v is not None}
+        body = {k: v for k, v in args.items() if v is not None and k != "transactionCode"}
+        body.setdefault("status", 1)
         return await self.client.post(f"{BASE}/transactions", body)
 
     async def create_product_count(self, args: dict[str, Any]) -> Any:
@@ -362,24 +363,49 @@ TOOLS: list[types.Tool] = [
     ),
     types.Tool(
         name="totvs_create_transaction",
-        description="⚠️ Inclui uma transação.",
+        description=(
+            "⚠️ ESCRITA — Inclui transação (POST /transactions, InsertCompleteTransactionCommand). "
+            "Exige confirmação explícita. O número da transação é gerado pela API (não informar). "
+            "Uso típico: acerto de estoque sem fiscal com operationCode 4 (AJUSTE ESTOQUE ENTRADA) ou "
+            "528 (RETIRADA AJUSTE), customerCode 110000001, sellerCode 50, paymentConditionCode 1, "
+            "items[].value = custo. totalAmountTransaction = soma de quantity*value (conferência)."
+        ),
         inputSchema={
             "type": "object",
             "properties": {
-                "branchCode": {
-                    "type": "integer"
+                "branchCode": {"type": "integer"},
+                "transactionDate": {"type": "string", "description": "YYYY-MM-DD"},
+                "operationCode": {"type": "integer"},
+                "customerCode": {"type": "integer"},
+                "customerCpfCnpj": {"type": "string"},
+                "sellerCode": {"type": "integer"},
+                "paymentConditionCode": {"type": "integer"},
+                "status": {"type": "integer", "description": "TransactionStatusType: 1=Em andamento (InProgress), 2=BlockedForBilling, 3=InExternalProcess, 4=InExternalEdition. Default 1."},
+                "totalAmountTransaction": {"type": "number", "description": "Valor total líquido (conferência da soma dos itens)"},
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "productCode": {"type": "integer"},
+                            "productSku": {"type": "string"},
+                            "cfop": {"type": "integer"},
+                            "taxRoleCode": {"type": "integer"},
+                            "sellerCode": {"type": "integer"},
+                            "quantity": {"type": "number"},
+                            "value": {"type": "number", "description": "Preço/valor unitário bruto"},
+                            "discountValue": {"type": "number"},
+                            "priceTableCode": {"type": "integer"}
+                        },
+                        "required": ["quantity", "value"]
+                    }
                 },
-                "transactionCode": {
-                    "type": "integer"
-                },
-                "transactionDate": {
-                    "type": "string"
+                "observations": {
+                    "type": "array",
+                    "items": {"type": "object", "properties": {"observation": {"type": "string"}}}
                 }
             },
-            "required": [
-                "branchCode",
-                "transactionCode"
-            ]
+            "required": ["branchCode", "operationCode", "items", "totalAmountTransaction"]
         },
     ),
     types.Tool(

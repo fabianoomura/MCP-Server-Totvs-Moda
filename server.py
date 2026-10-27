@@ -1,5 +1,5 @@
 """
-TOTVS Moda MCP Server v3.12.1
+TOTVS Moda MCP Server v3.12.2
 =============================
 MCP server para API V2 do TOTVS Moda.
 21 módulos | 213 tools | OAuth2 ROPC
@@ -53,7 +53,7 @@ logging.basicConfig(
 logger = logging.getLogger("totvs-moda-mcp")
 
 server = Server("totvs-moda-mcp")
-SERVER_VERSION = "3.12.1"
+SERVER_VERSION = "3.12.2"
 
 _client: TotvsClient | None = None
 _modules: dict[str, Any] = {}
