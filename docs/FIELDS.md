@@ -71,6 +71,10 @@ Os valores **por item** só vêm com `expand=items`, e usam nomes próprios:
 | Despesa / centro de custo | `expense[].expenseName` / `expense[].costCenterCode` |
 | Situação | `status` (N=Normal, C=Cancelada, A=Agrupada…) |
 
+> **Limite de página:** `duplicates/search` recusa `pageSize` acima de **100**
+> (`400 FieldValueGreaterThan`). O contas a receber aceita 500. Em listagens de
+> resposta, `totalItems` é o tamanho da página, não o total: pagine por `hasNext`.
+
 ---
 
 ## Pedidos de venda — `totvs_search_orders`
