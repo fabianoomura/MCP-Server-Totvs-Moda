@@ -38,6 +38,21 @@ BASE_SALES = "/api/totvsmoda/sales-order/v2"
 BASE_PRODUCT = "/api/totvsmoda/product/v2"
 BASE_AR = "/api/totvsmoda/accounts-receivable/v2"
 BASE_AP = "/api/totvsmoda/accounts-payable/v2"
+BASE_PERSON = "/api/totvsmoda/person/v2"
+
+# Limites de página aceitos pela API. O contas a pagar recusa pageSize > 100 com
+# 400 FieldValueGreaterThan; antes o erro era engolido e o total a pagar saía 0.
+AP_MAX_PAGE_SIZE = 100
+AR_MAX_PAGE_SIZE = 500
+
+BILLING_TYPE_LABELS = {
+    1: "Venda à vista",
+    2: "Venda a prazo",
+    3: "Recebimento à vista",
+    4: "Recebimento a prazo",
+    12: "Renegociação",
+    13: "Cobrança cartão",
+}
 BASE_PO = "/api/totvsmoda/purchase-order/v2"
 BASE_PROD_ORDER = "/api/totvsmoda/production-order/v2"
 BASE_FISCAL = "/api/totvsmoda/fiscal/v2"
@@ -65,6 +80,94 @@ class AggregatorTools:
     @staticmethod
     def _items(resp: Any) -> list[dict[str, Any]]:
         return resp.get("items", []) if isinstance(resp, dict) else []
+
+    async def _collect_pages(
+        self,
+        path: str,
+        base_body: dict[str, Any],
+        *,
+        page_size: int,
+        max_pages: int = 50,
+    ) -> dict[str, Any]:
+        """Lê página a página seguindo `hasNext` (ou `totalPages`).
+
+        Não usa `totalItems`: no contas a receber ele traz o tamanho da página, não o total.
+        Devolve {items, pages, truncated, error}. Um erro nunca vira lista vazia silenciosa:
+        quem chama decide como avisar.
+        """
+        items: list[dict[str, Any]] = []
+        page = 1
+        try:
+            while True:
+                resp = await self.client.post(path, {**base_body, "page": page, "pageSize": page_size})
+                if not isinstance(resp, dict):
+                    break
+                items.extend(resp.get("items") or [])
+                has_next = resp.get("hasNext")
+                if has_next is None:
+                    total_pages = resp.get("totalPages")
+                    has_next = bool(total_pages) and page < int(total_pages)
+                if not has_next:
+                    break
+                if page >= max_pages:
+                    return {"items": items, "pages": page, "truncated": True, "error": None}
+                page += 1
+        except Exception as exc:
+            return {"items": items, "pages": page, "truncated": False, "error": str(exc)}
+        return {"items": items, "pages": page, "truncated": False, "error": None}
+
+    async def _person_names(self, codes: Any) -> dict[int, str]:
+        """Nome (razão social) por código de pessoa, buscando PJ e PF. Falha vira mapa vazio."""
+        wanted = sorted({int(c) for c in codes if c is not None})
+        if not wanted:
+            return {}
+        chunks = [wanted[i:i + 100] for i in range(0, len(wanted), 100)]
+
+        async def _one(kind: str, chunk: list[int]) -> list[dict[str, Any]]:
+            try:
+                resp = await self.client.post(
+                    f"{BASE_PERSON}/{kind}/search",
+                    {"filter": {"personCodeList": chunk}, "page": 1, "pageSize": len(chunk)},
+                )
+            except Exception:
+                return []
+            return self._items(resp)
+
+        results = await asyncio.gather(*(_one(kind, ch) for kind in ("legal-entities", "individuals") for ch in chunks))
+        names: dict[int, str] = {}
+        for items in results:
+            for person in items:
+                code = person.get("code", person.get("personCode"))
+                name = person.get("name") or person.get("personName") or ""
+                if code is not None and name:
+                    names.setdefault(int(code), name)
+        return names
+
+    @staticmethod
+    def _fetch_status(fetch: dict[str, Any], label: str, warnings: list[str]) -> dict[str, Any]:
+        """Metadados de leitura de um lado (receber/pagar) e aviso quando o número não é confiável."""
+        if fetch["error"]:
+            warnings.append(
+                f"{label}: a consulta falhou ({fetch['error'][:200]}). O total é DESCONHECIDO, não zero."
+            )
+        elif fetch["truncated"]:
+            warnings.append(
+                f"{label}: parou em {fetch['pages']} páginas (maxPages). O total está INCOMPLETO; aumente maxPages."
+            )
+        return {
+            "complete": not fetch["error"] and not fetch["truncated"],
+            "pagesRead": fetch["pages"],
+            "error": fetch["error"],
+        }
+
+    @staticmethod
+    def _open_balance(item: dict[str, Any], gross_keys: tuple[str, ...]) -> float:
+        """Saldo em aberto: balanceValue se vier; senão bruto − pago (nunca negativo)."""
+        if item.get("balanceValue") is not None:
+            return float(item.get("balanceValue") or 0)
+        gross = next((item.get(key) for key in gross_keys if item.get(key) is not None), 0)
+        paid = float(item.get("paidValue", item.get("settledValue", 0)) or 0)
+        return max(float(gross or 0) - paid, 0.0)
 
     @staticmethod
     def _count_collection(resp: Any, *keys: str) -> int:
@@ -1329,192 +1432,251 @@ class AggregatorTools:
     async def overdue_financial_summary(self, args: dict[str, Any]) -> Any:
         """Overdue accounts receivable and payable summary for financial managers."""
         args = inject_branch_defaults(args)
-        as_of = args.get("asOfDate") or date.today().isoformat()
+        as_of = (args.get("asOfDate") or date.today().isoformat())[:10]
         branches = args.get("branchCodeList", [1])
         top_n = int(args.get("topN", 20))
-        page_size = int(args.get("pageSize", 500))
+        requested = int(args.get("pageSize", AR_MAX_PAGE_SIZE))
+        max_pages = int(args.get("maxPages", 50))
         start_date = args.get("startDate", "2000-01-01")
 
-        cache_key = {"fn": "overdue_financial_summary", "asOf": as_of, "start": start_date, "branches": branches, "topN": top_n}
+        cache_key = {"fn": "overdue_financial_summary", "asOf": as_of, "start": start_date, "branches": branches,
+                     "topN": top_n, "maxPages": max_pages}
         cached = cache.get("overdue_financial", cache_key, cache.FINANCIAL)
         if cached is not None:
             return cached
 
-        receivable_task = self.client.post(f"{BASE_AR}/documents/search", {
-            "filter": {
+        ar_fetch, ap_fetch = await asyncio.gather(
+            self._collect_pages(f"{BASE_AR}/documents/search", {"filter": {
                 "branchCodeList": branches,
                 "startExpiredDate": start_date,
                 "endExpiredDate": as_of,
                 "statusList": [1],
                 "hasOpenInvoices": True,
-            },
-            "page": 1,
-            "pageSize": page_size,
-            "order": "-expiredDate",
-        })
-        payable_task = self.client.post(f"{BASE_AP}/duplicates/search", {
-            "filter": {
+            }}, page_size=max(1, min(requested, AR_MAX_PAGE_SIZE)), max_pages=max_pages),
+            self._collect_pages(f"{BASE_AP}/duplicates/search", {"filter": {
                 "branchCodeList": branches,
                 "startExpiredDate": start_date,
                 "endExpiredDate": as_of,
                 "status": "Normal",
-            },
-            "page": 1,
-            "pageSize": page_size,
-            "order": "-expiredDate",
-        })
-        receivable_resp, payable_resp = await asyncio.gather(
-            self._safe(receivable_task),
-            self._safe(payable_task),
+            }}, page_size=max(1, min(requested, AP_MAX_PAGE_SIZE)), max_pages=max_pages),
         )
-
-        def _amount(item: dict[str, Any], gross_keys: tuple[str, ...]) -> float:
-            if item.get("balanceValue") is not None:
-                return float(item.get("balanceValue") or 0)
-            gross = next((item.get(key) for key in gross_keys if item.get(key) is not None), 0)
-            paid = float(item.get("paidValue", item.get("settledValue", 0)) or 0)
-            return max(float(gross or 0) - paid, 0.0)
+        warnings: list[str] = []
+        ar_status = self._fetch_status(ar_fetch, "Contas a receber", warnings)
+        ap_status = self._fetch_status(ap_fetch, "Contas a pagar", warnings)
 
         receivables = []
         by_customer: dict[str, dict[str, Any]] = defaultdict(lambda: {"customerCode": None, "customerName": "", "count": 0, "amount": 0.0})
-        for item in self._items(receivable_resp):
-            amount = _amount(item, ("installmentValue", "documentValue"))
+        by_billing: dict[Any, dict[str, Any]] = defaultdict(lambda: {"billingType": None, "label": "", "count": 0, "amount": 0.0})
+        by_bearer: dict[str, dict[str, Any]] = defaultdict(lambda: {"bearerName": "", "count": 0, "amount": 0.0})
+        for item in ar_fetch["items"]:
+            due = (item.get("expiredDate") or item.get("dueDate") or "")[:10]
+            if due and due > as_of:
+                continue
+            amount = self._open_balance(item, ("installmentValue", "documentValue"))
             if amount <= 0:
                 continue
             customer_code = item.get("customerCode")
             customer_name = item.get("customerName") or ""
             key = str(customer_code) if customer_code is not None else customer_name or "Nao informado"
             by_customer[key]["customerCode"] = customer_code
-            by_customer[key]["customerName"] = customer_name
+            by_customer[key]["customerName"] = by_customer[key]["customerName"] or customer_name
             by_customer[key]["count"] += 1
             by_customer[key]["amount"] += amount
+            bt = item.get("billingType")
+            by_billing[bt]["billingType"] = bt
+            by_billing[bt]["label"] = BILLING_TYPE_LABELS.get(bt, f"Tipo {bt}")
+            by_billing[bt]["count"] += 1
+            by_billing[bt]["amount"] += amount
+            bearer = item.get("bearerName") or "Não informado"
+            by_bearer[bearer]["bearerName"] = bearer
+            by_bearer[bearer]["count"] += 1
+            by_bearer[bearer]["amount"] += amount
             receivables.append({
                 "customerCode": customer_code,
                 "customerName": customer_name,
                 "receivableCode": item.get("receivableCode") or item.get("documentCode"),
-                "dueDate": (item.get("expiredDate") or item.get("dueDate") or "")[:10],
+                "dueDate": due,
                 "amount": amount,
+                "billingType": bt,
+                "bearerName": item.get("bearerName"),
             })
 
         payables = []
         by_supplier: dict[str, dict[str, Any]] = defaultdict(lambda: {"supplierCode": None, "supplierName": "", "count": 0, "amount": 0.0})
-        for item in self._items(payable_resp):
-            amount = _amount(item, ("duplicateValue", "documentValue"))
+        for item in ap_fetch["items"]:
+            due = (item.get("expiredDate") or item.get("dueDate") or "")[:10]
+            if due and due > as_of:
+                continue
+            amount = self._open_balance(item, ("duplicateValue", "documentValue"))
             if amount <= 0:
                 continue
             supplier_code = item.get("supplierCode")
             supplier_name = item.get("supplierName") or item.get("name") or ""
             key = str(supplier_code) if supplier_code is not None else supplier_name or "Nao informado"
             by_supplier[key]["supplierCode"] = supplier_code
-            by_supplier[key]["supplierName"] = supplier_name
+            by_supplier[key]["supplierName"] = by_supplier[key]["supplierName"] or supplier_name
             by_supplier[key]["count"] += 1
             by_supplier[key]["amount"] += amount
+            expense = item.get("expense") or [{}]
             payables.append({
                 "supplierCode": supplier_code,
                 "supplierName": supplier_name,
                 "duplicateCode": item.get("duplicateCode") or item.get("documentCode"),
-                "dueDate": (item.get("expiredDate") or item.get("dueDate") or "")[:10],
+                "dueDate": due,
                 "amount": amount,
+                "expenseName": (expense[0] or {}).get("expenseName", "") if expense else "",
             })
 
         receivables.sort(key=lambda x: x["amount"], reverse=True)
         payables.sort(key=lambda x: x["amount"], reverse=True)
+        top_docs_r = receivables[:top_n]
+        top_docs_p = payables[:top_n]
+        top_customers = sorted(by_customer.values(), key=lambda x: x["amount"], reverse=True)[:top_n]
+        top_suppliers = sorted(by_supplier.values(), key=lambda x: x["amount"], reverse=True)[:top_n]
+
+        # a API não traz o nome no título: completa só o que vai na resposta
+        missing = [r["customerCode"] for r in top_docs_r + top_customers if not r["customerName"]]
+        missing += [p["supplierCode"] for p in top_docs_p + top_suppliers if not p["supplierName"]]
+        names = await self._person_names(missing)
+        for row in top_docs_r + top_customers:
+            if not row["customerName"] and row["customerCode"] is not None:
+                row["customerName"] = names.get(int(row["customerCode"]), "")
+        for row in top_docs_p + top_suppliers:
+            if not row["supplierName"] and row["supplierCode"] is not None:
+                row["supplierName"] = names.get(int(row["supplierCode"]), "")
+
+        ar_total = None if ar_fetch["error"] else sum(item["amount"] for item in receivables)
+        ap_total = None if ap_fetch["error"] else sum(item["amount"] for item in payables)
         result = {
             "asOfDate": as_of,
             "branchCodeList": branches,
             "receivable": {
-                "count": len(receivables),
-                "totalOverdue": sum(item["amount"] for item in receivables),
-                "topDocuments": receivables[:top_n],
-                "topCustomers": sorted(by_customer.values(), key=lambda x: x["amount"], reverse=True)[:top_n],
+                **ar_status,
+                "count": None if ar_fetch["error"] else len(receivables),
+                "totalOverdue": ar_total,
+                "byBillingType": sorted(by_billing.values(), key=lambda x: x["amount"], reverse=True),
+                "byBearer": sorted(by_bearer.values(), key=lambda x: x["amount"], reverse=True)[:top_n],
+                "topDocuments": top_docs_r,
+                "topCustomers": top_customers,
             },
             "payable": {
-                "count": len(payables),
-                "totalOverdue": sum(item["amount"] for item in payables),
-                "topDocuments": payables[:top_n],
-                "topSuppliers": sorted(by_supplier.values(), key=lambda x: x["amount"], reverse=True)[:top_n],
+                **ap_status,
+                "count": None if ap_fetch["error"] else len(payables),
+                "totalOverdue": ap_total,
+                "topDocuments": top_docs_p,
+                "topSuppliers": top_suppliers,
             },
+            "netOverduePosition": None if ar_total is None or ap_total is None else ar_total - ap_total,
+            "warnings": warnings,
         }
-        result["netOverduePosition"] = result["receivable"]["totalOverdue"] - result["payable"]["totalOverdue"]
-        cache.put("overdue_financial", cache_key, result)
+        if not warnings:
+            cache.put("overdue_financial", cache_key, result)
         return result
 
     async def cash_flow_forecast(self, args: dict[str, Any]) -> Any:
         """Receivable/payable forecast grouped by due date."""
         args = inject_branch_defaults(args)
-        start = args.get("startDate") or date.today().isoformat()
+        start = (args.get("startDate") or date.today().isoformat())[:10]
         days = int(args.get("days", 7))
-        end = args.get("endDate") or (date.fromisoformat(start[:10]) + timedelta(days=days - 1)).isoformat()
+        end = (args.get("endDate") or (date.fromisoformat(start) + timedelta(days=days - 1)).isoformat())[:10]
         branches = args.get("branchCodeList", [1])
-        page_size = int(args.get("pageSize", 500))
+        requested = int(args.get("pageSize", AR_MAX_PAGE_SIZE))
+        max_pages = int(args.get("maxPages", 50))
+        top_n = int(args.get("topN", 10))
 
-        cache_key = {"fn": "cash_flow_forecast", "start": start, "end": end, "branches": branches}
+        cache_key = {"fn": "cash_flow_forecast", "start": start, "end": end, "branches": branches,
+                     "maxPages": max_pages, "topN": top_n}
         cached = cache.get("cash_flow", cache_key, cache.FINANCIAL)
         if cached is not None:
             return cached
 
-        receivable_task = self.client.post(f"{BASE_AR}/documents/search", {
-            "filter": {
+        ar_fetch, ap_fetch = await asyncio.gather(
+            self._collect_pages(f"{BASE_AR}/documents/search", {"filter": {
                 "branchCodeList": branches,
                 "startExpiredDate": start,
                 "endExpiredDate": end,
                 "statusList": [1],
                 "hasOpenInvoices": True,
-            },
-            "page": 1,
-            "pageSize": page_size,
-        })
-        payable_task = self.client.post(f"{BASE_AP}/duplicates/search", {
-            "filter": {
+            }}, page_size=max(1, min(requested, AR_MAX_PAGE_SIZE)), max_pages=max_pages),
+            self._collect_pages(f"{BASE_AP}/duplicates/search", {"filter": {
                 "branchCodeList": branches,
                 "startExpiredDate": start,
                 "endExpiredDate": end,
                 "status": "Normal",
-            },
-            "page": 1,
-            "pageSize": page_size,
-        })
-        receivable_resp, payable_resp = await asyncio.gather(self._safe(receivable_task), self._safe(payable_task))
+            }}, page_size=max(1, min(requested, AP_MAX_PAGE_SIZE)), max_pages=max_pages),
+        )
+        warnings: list[str] = []
+        ar_status = self._fetch_status(ar_fetch, "Contas a receber", warnings)
+        ap_status = self._fetch_status(ap_fetch, "Contas a pagar", warnings)
+
         by_day: dict[str, dict[str, Any]] = defaultdict(lambda: {"date": "", "receivable": 0.0, "payable": 0.0, "net": 0.0})
+        by_billing: dict[Any, dict[str, Any]] = defaultdict(lambda: {"billingType": None, "label": "", "count": 0, "amount": 0.0})
+        by_expense: dict[str, dict[str, Any]] = defaultdict(lambda: {"expenseName": "", "count": 0, "amount": 0.0})
 
-        for item in self._items(receivable_resp):
+        for item in ar_fetch["items"]:
             day = (item.get("expiredDate") or item.get("dueDate") or "")[:10]
-            if not day:
+            if not day or not (start <= day <= end):
                 continue
-            value = float(item.get("balanceValue", item.get("installmentValue", item.get("documentValue", 0))) or 0)
-            by_day[day]["date"] = day
+            value = self._open_balance(item, ("installmentValue", "documentValue"))
+            if value <= 0:
+                continue
             by_day[day]["receivable"] += value
+            bt = item.get("billingType")
+            by_billing[bt]["billingType"] = bt
+            by_billing[bt]["label"] = BILLING_TYPE_LABELS.get(bt, f"Tipo {bt}")
+            by_billing[bt]["count"] += 1
+            by_billing[bt]["amount"] += value
 
-        for item in self._items(payable_resp):
+        for item in ap_fetch["items"]:
             day = (item.get("expiredDate") or item.get("dueDate") or "")[:10]
-            if not day:
+            if not day or not (start <= day <= end):
                 continue
-            value = float(item.get("balanceValue", item.get("duplicateValue", item.get("documentValue", 0))) or 0)
-            by_day[day]["date"] = day
+            value = self._open_balance(item, ("duplicateValue", "documentValue"))
+            if value <= 0:
+                continue                                   # já liquidada
             by_day[day]["payable"] += value
+            expense = item.get("expense") or [{}]
+            name = ((expense[0] or {}).get("expenseName") or "Sem despesa").strip() if expense else "Sem despesa"
+            by_expense[name]["expenseName"] = name
+            by_expense[name]["count"] += 1
+            by_expense[name]["amount"] += value
 
+        ar_ok, ap_ok = not ar_fetch["error"], not ap_fetch["error"]
         daily = []
-        cursor = date.fromisoformat(start[:10])
-        end_date = date.fromisoformat(end[:10])
+        cursor = date.fromisoformat(start)
+        end_date = date.fromisoformat(end)
         while cursor <= end_date:
             key = cursor.isoformat()
             row = by_day[key]
-            row["date"] = key
-            row["net"] = row["receivable"] - row["payable"]
-            daily.append(row)
+            receivable = row["receivable"] if ar_ok else None
+            payable = row["payable"] if ap_ok else None
+            daily.append({
+                "date": key,
+                "receivable": receivable,
+                "payable": payable,
+                "net": receivable - payable if ar_ok and ap_ok else None,
+            })
             cursor += timedelta(days=1)
 
+        total_r = sum(row["receivable"] for row in daily) if ar_ok else None
+        total_p = sum(row["payable"] for row in daily) if ap_ok else None
         result = {
             "period": {"startDate": start, "endDate": end, "days": len(daily)},
             "branchCodeList": branches,
             "totals": {
-                "receivable": sum(row["receivable"] for row in daily),
-                "payable": sum(row["payable"] for row in daily),
-                "net": sum(row["net"] for row in daily),
+                "receivable": total_r,
+                "payable": total_p,
+                "net": total_r - total_p if ar_ok and ap_ok else None,
             },
+            "receivableStatus": ar_status,
+            "payableStatus": ap_status,
+            "receivableByBillingType": sorted(by_billing.values(), key=lambda x: x["amount"], reverse=True),
+            "payableByExpense": sorted(by_expense.values(), key=lambda x: x["amount"], reverse=True)[:top_n],
             "daily": daily,
+            "warnings": warnings,
         }
-        cache.put("cash_flow", cache_key, result)
+        if not warnings:
+            cache.put("cash_flow", cache_key, result)
         return result
 
     async def product_stock_by_kind_summary(self, args: dict[str, Any]) -> Any:
@@ -2388,7 +2550,10 @@ TOOLS: list[types.Tool] = [
     types.Tool(
         name="totvs_overdue_financial_summary",
         description=(
-            "Titulos em atraso no contas a receber e contas a pagar. Use para gerente financeiro/diretoria: inadimplencia, maiores clientes em atraso, fornecedores vencidos e posicao liquida vencida."
+            "Titulos em atraso no contas a receber e contas a pagar. Use para gerente financeiro/diretoria: inadimplencia, maiores clientes em atraso, fornecedores vencidos e posicao liquida vencida. "
+            "Le todas as paginas (contas a pagar em paginas de 100, limite da API). O a receber vem quebrado por "
+            "billingType e por portador (byBearer): titulo em carteira x cobranca bancaria. Se um lado falhar ou "
+            "ficar incompleto, o total dele vem null e o motivo em warnings[] - nunca trate null como zero."
         ),
         inputSchema={
             "type": "object",
@@ -2413,7 +2578,11 @@ TOOLS: list[types.Tool] = [
                 },
                 "pageSize": {
                     "type": "integer",
-                    "description": "Titulos lidos por lado (default 500)"
+                    "description": "Titulos por pagina (default 500; contas a pagar limitado a 100 pela API)"
+                },
+                "maxPages": {
+                    "type": "integer",
+                    "description": "Limite de paginas por lado (default 50); se atingido, o lado vem marcado como incompleto"
                 }
             }
         },
@@ -2421,7 +2590,10 @@ TOOLS: list[types.Tool] = [
     types.Tool(
         name="totvs_cash_flow_forecast",
         description=(
-            "Fluxo de caixa previsto por vencimento: contas a receber, contas a pagar e saldo liquido por dia. Use para 'quanto tenho para receber/pagar nos proximos dias'."
+            "Fluxo de caixa previsto por vencimento: contas a receber, contas a pagar e saldo liquido por dia. Use para 'quanto tenho para receber/pagar nos proximos dias'. "
+            "Considera o saldo em aberto de cada titulo (valor - pago), le todas as paginas e traz payableByExpense "
+            "(maiores despesas a pagar) e receivableByBillingType. Se um lado falhar ou ficar incompleto, os valores "
+            "dele vem null e o motivo em warnings[] - nunca trate null como zero."
         ),
         inputSchema={
             "type": "object",
@@ -2446,7 +2618,15 @@ TOOLS: list[types.Tool] = [
                 },
                 "pageSize": {
                     "type": "integer",
-                    "description": "Titulos lidos por lado (default 500)"
+                    "description": "Titulos por pagina (default 500; contas a pagar limitado a 100 pela API)"
+                },
+                "maxPages": {
+                    "type": "integer",
+                    "description": "Limite de paginas por lado (default 50); se atingido, o lado vem marcado como incompleto"
+                },
+                "topN": {
+                    "type": "integer",
+                    "description": "Quantidade de despesas em payableByExpense (default 10)"
                 }
             }
         },

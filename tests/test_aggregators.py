@@ -801,3 +801,148 @@ async def test_stock_available_maps_finished_product_kind(client):
     assert result["totalSkus"] == 1
     assert result["pageStats"]["pages"] == 1
     assert result["products"][0]["productCode"] == 14679
+
+
+# ── financeiro: paginação, erro explícito e saldo em aberto ─────────────────
+
+AR_URL = f"{TOTVS_BASE}/api/totvsmoda/accounts-receivable/v2/documents/search"
+AP_URL = f"{TOTVS_BASE}/api/totvsmoda/accounts-payable/v2/duplicates/search"
+PAGE_SIZE_ERROR = [{"code": "FieldValueGreaterThan",
+                    "message": "Value 500 of the field PageSize greater than limit of 100."}]
+
+
+def _ap_pages(pages):
+    """Responde o contas a pagar por página, recusando pageSize > 100 como a API real."""
+    def handler(request):
+        body = _json_request(request)
+        if body["pageSize"] > 100:
+            return Response(400, json=PAGE_SIZE_ERROR)
+        page = body["page"]
+        return Response(200, json={"items": pages[page - 1], "hasNext": page < len(pages)})
+    return handler
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_overdue_reads_every_payable_page_within_api_limit(client):
+    _mock_token()
+    respx.post(AR_URL).mock(return_value=Response(200, json={"items": [], "hasNext": False}))
+    ap_route = respx.post(AP_URL).mock(side_effect=_ap_pages([
+        [{"supplierCode": 5, "supplierName": "F", "dueDate": "2026-05-20", "duplicateValue": 100, "paidValue": 0}],
+        [{"supplierCode": 6, "supplierName": "G", "dueDate": "2026-05-21", "duplicateValue": 50, "paidValue": 0}],
+    ]))
+
+    result = await AggregatorTools(client).overdue_financial_summary({"asOfDate": "2026-05-27"})
+
+    assert all(json.loads(c.request.content)["pageSize"] <= 100 for c in ap_route.calls)
+    assert ap_route.call_count == 2
+    assert result["payable"]["totalOverdue"] == 150
+    assert result["payable"]["complete"] is True
+    assert result["warnings"] == []
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_overdue_payable_failure_is_unknown_not_zero(client):
+    _mock_token()
+    respx.post(AR_URL).mock(return_value=Response(200, json={"items": [
+        {"customerCode": 1, "customerName": "A", "expiredDate": "2026-05-20", "installmentValue": 80, "billingType": 2},
+    ], "hasNext": False}))
+    respx.post(AP_URL).mock(return_value=Response(400, json=PAGE_SIZE_ERROR))
+
+    result = await AggregatorTools(client).overdue_financial_summary({"asOfDate": "2026-05-27"})
+
+    assert result["receivable"]["totalOverdue"] == 80
+    assert result["payable"]["totalOverdue"] is None
+    assert result["payable"]["complete"] is False
+    assert result["netOverduePosition"] is None
+    assert any("Contas a pagar" in w and "DESCONHECIDO" in w for w in result["warnings"])
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_overdue_flags_truncation_and_breaks_down_receivables(client):
+    _mock_token()
+    respx.post(AR_URL).mock(return_value=Response(200, json={"items": [
+        {"customerCode": 1, "customerName": "A", "expiredDate": "2026-05-20", "installmentValue": 900,
+         "billingType": 1, "bearerName": "TITULO EM CARTEIRA"},
+        {"customerCode": 2, "customerName": "B", "expiredDate": "2026-05-21", "installmentValue": 100,
+         "billingType": 2, "bearerName": "BANCO"},
+        {"customerCode": 3, "customerName": "C", "expiredDate": "2026-06-30", "installmentValue": 999,
+         "billingType": 2, "bearerName": "BANCO"},
+    ], "hasNext": True}))
+    respx.post(AP_URL).mock(return_value=Response(200, json={"items": [], "hasNext": False}))
+
+    result = await AggregatorTools(client).overdue_financial_summary({"asOfDate": "2026-05-27", "maxPages": 1})
+
+    rec = result["receivable"]
+    assert rec["totalOverdue"] == 1000          # o título que vence depois de asOfDate fica fora
+    assert rec["complete"] is False
+    assert any("INCOMPLETO" in w for w in result["warnings"])
+    assert [(b["billingType"], b["amount"]) for b in rec["byBillingType"]] == [(1, 900), (2, 100)]
+    assert rec["byBillingType"][0]["label"] == "Venda à vista"
+    assert rec["byBearer"][0] == {"bearerName": "TITULO EM CARTEIRA", "count": 1, "amount": 900}
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_overdue_fills_missing_customer_and_supplier_names(client):
+    _mock_token()
+    respx.post(AR_URL).mock(return_value=Response(200, json={"items": [
+        {"customerCode": 10, "customerName": "", "expiredDate": "2026-05-20", "installmentValue": 80},
+    ], "hasNext": False}))
+    respx.post(AP_URL).mock(return_value=Response(200, json={"items": [
+        {"supplierCode": 20, "dueDate": "2026-05-20", "duplicateValue": 30, "paidValue": 0},
+    ], "hasNext": False}))
+    respx.post(f"{TOTVS_BASE}/api/totvsmoda/person/v2/legal-entities/search").mock(
+        return_value=Response(200, json={"items": [{"code": 10, "name": "Cliente Dez"}, {"code": 20, "name": "Fornecedor Vinte"}]})
+    )
+    respx.post(f"{TOTVS_BASE}/api/totvsmoda/person/v2/individuals/search").mock(
+        return_value=Response(200, json={"items": []})
+    )
+
+    result = await AggregatorTools(client).overdue_financial_summary({"asOfDate": "2026-05-27"})
+
+    assert result["receivable"]["topCustomers"][0]["customerName"] == "Cliente Dez"
+    assert result["receivable"]["topDocuments"][0]["customerName"] == "Cliente Dez"
+    assert result["payable"]["topSuppliers"][0]["supplierName"] == "Fornecedor Vinte"
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_cash_flow_uses_open_balance_and_groups_expenses(client):
+    _mock_token()
+    respx.post(AR_URL).mock(return_value=Response(200, json={"items": [
+        {"expiredDate": "2026-05-27", "installmentValue": 1000, "paidValue": 400, "billingType": 2},
+    ], "hasNext": False}))
+    ap_route = respx.post(AP_URL).mock(side_effect=_ap_pages([[
+        {"dueDate": "2026-05-27", "duplicateValue": 300, "paidValue": 0, "expense": [{"expenseName": "MATERIA PRIMA"}]},
+        {"dueDate": "2026-05-28", "duplicateValue": 200, "paidValue": 50, "expense": [{"expenseName": "MATERIA PRIMA"}]},
+        {"dueDate": "2026-05-28", "duplicateValue": 90, "paidValue": 90, "expense": [{"expenseName": "ENERGIA"}]},
+    ]]))
+
+    result = await AggregatorTools(client).cash_flow_forecast({"startDate": "2026-05-27", "days": 2})
+
+    assert _body(ap_route)["pageSize"] == 100
+    assert result["totals"] == {"receivable": 600.0, "payable": 450.0, "net": 150.0}
+    assert result["payableByExpense"] == [{"expenseName": "MATERIA PRIMA", "count": 2, "amount": 450.0}]
+    assert result["receivableByBillingType"][0]["label"] == "Venda a prazo"
+    assert result["payableStatus"]["complete"] is True
+    assert result["warnings"] == []
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_cash_flow_payable_failure_returns_null_not_zero(client):
+    _mock_token()
+    respx.post(AR_URL).mock(return_value=Response(200, json={"items": [
+        {"expiredDate": "2026-05-27", "installmentValue": 1000},
+    ], "hasNext": False}))
+    respx.post(AP_URL).mock(return_value=Response(400, json=PAGE_SIZE_ERROR))
+
+    result = await AggregatorTools(client).cash_flow_forecast({"startDate": "2026-05-27", "days": 2})
+
+    assert result["totals"] == {"receivable": 1000.0, "payable": None, "net": None}
+    assert result["daily"][0] == {"date": "2026-05-27", "receivable": 1000.0, "payable": None, "net": None}
+    assert result["payableStatus"]["complete"] is False
+    assert result["warnings"]

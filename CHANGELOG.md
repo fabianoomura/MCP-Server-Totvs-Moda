@@ -1,5 +1,34 @@
 # Changelog
 
+## [3.12.3] - 2026-11-08
+
+### Fixed
+- `totvs_cash_flow_forecast` e `totvs_overdue_financial_summary` devolviam
+  **contas a pagar = 0** em qualquer base: pediam `pageSize` 500 e o
+  `accounts-payable/duplicates/search` só aceita até 100 (`400
+  FieldValueGreaterThan`). O erro era engolido e o lado a pagar saía vazio,
+  deixando o fluxo de caixa positivo e a posição vencida sem fornecedores.
+- As duas tools agora leem **todas as páginas** seguindo `hasNext` (antes só a
+  página 1). O contas a pagar usa páginas de 100; o a receber, de 500.
+- Lado que falha ou para no limite de páginas vem com total `null` e o motivo
+  em `warnings[]`, em vez de um zero que parece verdadeiro. O cache não guarda
+  resultado com aviso.
+- O fluxo de caixa passa a usar o **saldo em aberto** do título (valor − pago);
+  parcelas já liquidadas dentro da janela não somam mais.
+- A posição vencida ignora títulos com vencimento posterior a `asOfDate`.
+
+### Added
+- `totvs_cash_flow_forecast`: `payableByExpense` (maiores despesas a pagar),
+  `receivableByBillingType`, `receivableStatus`/`payableStatus`, `maxPages`, `topN`.
+- `totvs_overdue_financial_summary`: `byBillingType` e `byBearer` no a receber
+  (separa título em carteira de cobrança bancária), status de leitura por lado,
+  `maxPages`, e nome de cliente/fornecedor preenchido pelo cadastro de pessoa
+  quando o título não traz.
+
+### Tests
+- Regressões para página de 100 no a pagar, erro virando `null`, lista
+  incompleta, saldo em aberto, quebra por tipo/portador e nomes.
+
 ## [3.12.2] - 2026-10-27
 
 ### Fixed

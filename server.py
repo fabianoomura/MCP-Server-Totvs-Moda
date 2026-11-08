@@ -1,5 +1,5 @@
 """
-TOTVS Moda MCP Server v3.12.2
+TOTVS Moda MCP Server v3.12.3
 =============================
 MCP server para API V2 do TOTVS Moda.
 21 módulos | 213 tools | OAuth2 ROPC
@@ -53,7 +53,7 @@ logging.basicConfig(
 logger = logging.getLogger("totvs-moda-mcp")
 
 server = Server("totvs-moda-mcp")
-SERVER_VERSION = "3.12.2"
+SERVER_VERSION = "3.12.3"
 
 _client: TotvsClient | None = None
 _modules: dict[str, Any] = {}
@@ -311,6 +311,7 @@ Se uma informação não estiver disponível via tools, informe ao usuário em v
 - **Datas de "dia"**: para "vence hoje", "emitidas hoje" etc., pode passar a MESMA data em início e fim (ou só uma data) — a tool expande para o dia inteiro automaticamente (não precisa montar `00:00:00`/`23:59:59`).
 - **Arquivos grandes (DANFE/imagem)**: `totvs_get_danfe` e `totvs_search_product_images` salvam o arquivo na pasta de saída (`TOTVS_OUTPUT_DIR`, default Downloads) e retornam o caminho, em vez do base64 (que estoura o limite de tokens). Use `returnBase64=true` se precisar do conteúdo cru.
 - **Contas a receber sem somar em dobro**: a busca retorna o lado VENDA (a receber, `billingType` 1/2) e o lado RECEBIMENTO (caixa, 3/4) — não some os dois. Passe `withStatusFlags=true` para receber `billingSide`, `isOpen`/`isSettled`/`openValue` e o `receivableSummary {open, settled, receiptSide}`.
+- **Totais financeiros `null`**: `totvs_cash_flow_forecast` e `totvs_overdue_financial_summary` devolvem `null` (não zero) no lado que falhou ou ficou incompleto, com o motivo em `warnings[]`. Nunca apresente `null` como zero; diga que o valor é desconhecido.
 - **Campos (`fields=`)**: se um nome não existir na resposta, vem um aviso em `_fieldsWarning`. Nomes que costumam confundir (ex.: `totalValue` x `value`, status da NF em `eletronic.electronicInvoiceStatus`, valor de item em `netValue`) estão documentados em `docs/FIELDS.md`.
 """
 
