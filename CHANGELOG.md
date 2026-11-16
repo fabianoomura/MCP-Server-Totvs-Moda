@@ -1,5 +1,28 @@
 # Changelog
 
+## [3.13.0] - 2026-11-16
+
+### Added
+- `totvs_create_production_order` (⚠️ escrita): inclui ordem de produção pelo
+  `POST /production-order/v2/orders`, recém-liberado na API. Aceita itens com
+  matérias-primas e serviços, programação (por código ou por locais), pedidos
+  de venda vinculados, classificações e observações. O número da OP é gerado
+  pela API.
+- A tool rejeita, antes de chamar a API, os pares que o contrato trata como
+  exclusivos: `productCode` x `barCode` (item e matéria-prima),
+  `quantityConsumption` x `totalQuantityConsumption`, `quantity` x
+  `totalQuantity` (serviço) e `programmingCode` x `locations`.
+- Após incluir, invalida o cache de `totvs_open_production_orders`.
+
+### Notes
+- O endpoint ainda não está no Swagger local (`json/ordem de producao.json`),
+  então a matriz `docs/API_ENDPOINT_MATRIX.*` não lista o caminho. O contrato
+  veio da documentação de liberação da TOTVS.
+
+### Tests
+- Cobertura do contrato completo, do default de `programming.branchCode` e de
+  cada par exclusivo rejeitado. Suite agora possui 282 testes.
+
 ## [3.12.3] - 2026-11-08
 
 ### Fixed

@@ -19,7 +19,7 @@ os.environ.setdefault("TOTVS_PASSWORD", "x")
 
 import server  # noqa: E402
 
-EXPECTED_COUNT = 213
+EXPECTED_COUNT = 214
 
 EXPECTED_TOOL_NAMES = [
     "totvs_search_orders",
@@ -196,6 +196,7 @@ EXPECTED_TOOL_NAMES = [
     "totvs_search_production_orders",
     "totvs_get_pending_material_consumption",
     "totvs_create_material_movement",
+    "totvs_create_production_order",
     "totvs_search_product_images",
     "totvs_upload_product_image",
     "totvs_import_image_no_link",
@@ -255,7 +256,7 @@ def test_schema_hash_unchanged():
         ensure_ascii=False,
     )
     h = hashlib.sha256(snapshot.encode()).hexdigest()
-    assert h == "d7d5647d87019813a29049daf6e92e2468bb78293084b33df17f82cbac987b08"
+    assert h == "006ccfc9a08cf95a05f60f7f78f502b6b22c415dbb7a55cebdd4d57c2d0f7d76"
 
 
 def test_no_duplicate_tool_names():

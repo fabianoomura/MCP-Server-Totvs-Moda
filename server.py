@@ -1,5 +1,5 @@
 """
-TOTVS Moda MCP Server v3.12.3
+TOTVS Moda MCP Server v3.13.0
 =============================
 MCP server para API V2 do TOTVS Moda.
 21 módulos | 213 tools | OAuth2 ROPC
@@ -53,7 +53,7 @@ logging.basicConfig(
 logger = logging.getLogger("totvs-moda-mcp")
 
 server = Server("totvs-moda-mcp")
-SERVER_VERSION = "3.12.3"
+SERVER_VERSION = "3.13.0"
 
 _client: TotvsClient | None = None
 _modules: dict[str, Any] = {}
@@ -275,6 +275,7 @@ Se uma informação não estiver disponível via tools, informe ao usuário em v
 - `totvs_stock_available` — **todos os produtos com estoque > 0 (já filtrado, pronta entrega)**
 - `totvs_get_kardex_movement` — movimentações de estoque
 - `totvs_create_material_movement` — movimentação de material
+- `totvs_create_production_order` — ⚠️ inclui ordem de produção (OP); número gerado pela API
 
 ### Painéis rápidos (1 chamada = resposta completa)
 - `totvs_daily_dashboard` — **vendas + receber + pagar do dia, tudo junto**
@@ -620,6 +621,7 @@ _TOOL_ORDER: list[str] = [
     "totvs_search_production_orders",
     "totvs_get_pending_material_consumption",
     "totvs_create_material_movement",
+    "totvs_create_production_order",
     "totvs_search_product_images",
     "totvs_upload_product_image",
     "totvs_import_image_no_link",

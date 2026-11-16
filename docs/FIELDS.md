@@ -110,6 +110,19 @@ Os valores **por item** só vêm com `expand=items`, e usam nomes próprios:
 
 ---
 
+## Ordem de produção — `totvs_create_production_order`
+
+| Campo | Observação |
+|-------|-----------|
+| `status` | Só 5 (Bloqueada) ou 10 (Aguardando liberação) na inclusão |
+| `personCode` | Cliente da OP (quem encomenda), obrigatório |
+| `items[].productCode` / `barCode` | Um ou outro, nunca os dois |
+| `materials[].quantityConsumption` | Consumo **unitário**: a API multiplica pela quantidade do item. Use `totalQuantityConsumption` para informar o total (um ou outro) |
+| `services[].quantity` / `totalQuantity` | Mesma regra: unitário ou total |
+| `programming` | `programmingCode` (programação existente) **ou** `locations[]`; `branchCode` assume a empresa da OP |
+
+---
+
 ## Filtros de data
 
 Filtros de período exigem `start < end`. Para "vence hoje", passe a **mesma

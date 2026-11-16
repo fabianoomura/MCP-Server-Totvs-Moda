@@ -4,6 +4,7 @@ Management, Location, and Production Order Tools
 """
 import logging
 from typing import Any
+import response_cache as cache
 from totvs_client import TotvsClient
 from tools._fields import apply_fields
 from tools._defaults import inject_branch_defaults
@@ -125,6 +126,51 @@ class ProductionOrderTools:
         """POST /materials/movement — ⚠️ Movimentação de matéria prima."""
         body = {k: v for k, v in args.items() if v is not None}
         return await self.client.post(f"{self.BASE}/materials/movement", body)
+
+    async def create_production_order(self, args: dict[str, Any]) -> Any:
+        """POST /orders — ⚠️ Inclui ordem de produção.
+
+        O contrato tem pares mutuamente exclusivos (produto x código de barras,
+        consumo unitário x total, programação por código x por locais). A API
+        não documenta qual prevalece quando os dois vêm, então rejeitamos antes.
+        """
+        args = inject_branch_defaults(args)
+
+        def exactly_one(obj: dict[str, Any], a: str, b: str, where: str) -> None:
+            has_a, has_b = obj.get(a) is not None, obj.get(b) is not None
+            if has_a == has_b:
+                raise ValueError(f"{where}: informe {a} ou {b} (exatamente um).")
+
+        def at_most_one(obj: dict[str, Any], a: str, b: str, where: str) -> None:
+            if obj.get(a) is not None and obj.get(b) is not None:
+                raise ValueError(f"{where}: informe {a} ou {b}, não os dois.")
+
+        if not args.get("items"):
+            raise ValueError("items: informe ao menos um produto para a OP.")
+        for i, item in enumerate(args["items"], 1):
+            exactly_one(item, "productCode", "barCode", f"items[{i}]")
+            for j, mat in enumerate(item.get("materials") or [], 1):
+                where = f"items[{i}].materials[{j}]"
+                exactly_one(mat, "materialCode", "barCode", where)
+                exactly_one(mat, "quantityConsumption", "totalQuantityConsumption", where)
+            for j, svc in enumerate(item.get("services") or [], 1):
+                at_most_one(svc, "quantity", "totalQuantity", f"items[{i}].services[{j}]")
+
+        programming = args.get("programming")
+        if programming:
+            by_code = programming.get("programmingCode") is not None
+            if by_code == bool(programming.get("locations")):
+                raise ValueError(
+                    "programming: informe programmingCode (programação existente) "
+                    "ou locations (locais), não os dois nem nenhum."
+                )
+            if by_code:
+                programming.setdefault("branchCode", args["branchCode"])
+
+        body = {k: v for k, v in args.items() if v is not None}
+        result = await self.client.post(f"{self.BASE}/orders", body)
+        cache.invalidate("open_production_orders")
+        return result
 
 
 # ------------------------------------------------------------------------
@@ -424,10 +470,117 @@ PRODUCTION_ORDER_TOOLS: list[types.Tool] = [
             ]
         },
     ),
+    types.Tool(
+        name="totvs_create_production_order",
+        description=(
+            "⚠️ ESCRITA — Inclui ordem de produção (POST /production-order/v2/orders). "
+            "Exige confirmação explícita. O número da OP é gerado pela API. "
+            "Obrigatórios: branchCode, cycleCode, personCode (cliente da OP), finalizationOperation, "
+            "rawMaterialRemovalOperation, rawMaterialReturnOperation, status (5=Bloqueada, "
+            "10=Aguardando liberação) e items[]. Em cada item informe productCode OU barCode; em cada "
+            "matéria-prima, materialCode OU barCode e quantityConsumption (unitário, multiplicado pela "
+            "quantidade do item) OU totalQuantityConsumption. Pares informados juntos são rejeitados."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "branchCode": {"type": "integer", "description": "Empresa da OP"},
+                "cycleCode": {"type": "integer", "description": "Ciclo da OP"},
+                "personOrderCode": {"type": "string", "description": "Código da OP do cliente"},
+                "personCode": {"type": "integer", "description": "Cliente da OP"},
+                "finalizationOperation": {"type": "integer", "description": "Operação de finalização da OP"},
+                "rawMaterialRemovalOperation": {"type": "integer", "description": "Operação de baixa de MP"},
+                "rawMaterialReturnOperation": {"type": "integer", "description": "Operação de retorno de MP"},
+                "startMovimentDate": {"type": "string", "description": "Data do movimento inicial (YYYY-MM-DD)"},
+                "estimatedDeliveryDate": {"type": "string", "description": "Previsão de entrega (YYYY-MM-DD)"},
+                "priority": {"type": "integer", "description": "Código de prioridade"},
+                "status": {"type": "integer", "enum": [5, 10], "description": "5=Bloqueada, 10=Aguardando liberação"},
+                "category": {"type": "integer", "description": "Código de categoria"},
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "productCode": {"type": "integer", "description": "SKU TOTVS do produto (ou barCode)"},
+                            "barCode": {"type": "string", "description": "Código de barras do produto (ou productCode)"},
+                            "quantity": {"type": "number"},
+                            "materials": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "materialCode": {"type": "integer", "description": "SKU TOTVS da MP (ou barCode)"},
+                                        "barCode": {"type": "string", "description": "Código de barras da MP (ou materialCode)"},
+                                        "quantityConsumption": {"type": "number", "description": "Consumo unitário (ou totalQuantityConsumption)"},
+                                        "totalQuantityConsumption": {"type": "number", "description": "Consumo total (ou quantityConsumption)"}
+                                    }
+                                }
+                            },
+                            "services": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "serviceCode": {"type": "integer"},
+                                        "quantity": {"type": "number", "description": "Quantidade unitária (ou totalQuantity)"},
+                                        "totalQuantity": {"type": "number", "description": "Quantidade total (ou quantity)"},
+                                        "value": {"type": "number", "description": "Valor unitário do serviço"}
+                                    }
+                                }
+                            }
+                        },
+                        "required": ["quantity"]
+                    }
+                },
+                "programming": {
+                    "type": "object",
+                    "description": "Programação: programmingCode (existente) OU locations[] (locais), não os dois",
+                    "properties": {
+                        "branchCode": {"type": "integer", "description": "Empresa da programação (default: a da OP)"},
+                        "programmingCode": {"type": "integer"},
+                        "locations": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "orderSequence": {"type": "integer"},
+                                    "locationCode": {"type": "integer"}
+                                }
+                            }
+                        }
+                    }
+                },
+                "salesOrders": {
+                    "type": "array",
+                    "description": "Pedidos de venda vinculados",
+                    "items": {
+                        "type": "object",
+                        "properties": {"branchCode": {"type": "integer"}, "orderCode": {"type": "integer"}}
+                    }
+                },
+                "classifications": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {"typeCode": {"type": "integer"}, "classificationCode": {"type": "string"}}
+                    }
+                },
+                "observations": {
+                    "type": "array",
+                    "items": {"type": "object", "properties": {"observation": {"type": "string"}}}
+                }
+            },
+            "required": [
+                "branchCode", "cycleCode", "personCode", "finalizationOperation",
+                "rawMaterialRemovalOperation", "rawMaterialReturnOperation", "status", "items"
+            ]
+        },
+    ),
 ]
 
 PRODUCTION_ORDER_ROUTES: dict[str, str] = {
     "totvs_search_production_orders": "search_production_orders",
     "totvs_get_pending_material_consumption": "get_pending_material_consumption",
     "totvs_create_material_movement": "create_material_movement",
+    "totvs_create_production_order": "create_production_order",
 }
