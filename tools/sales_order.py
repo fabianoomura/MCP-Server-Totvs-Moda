@@ -413,6 +413,20 @@ TOOLS: list[types.Tool] = [
                     },
                     "description": "Códigos de integração ex: SHP-1234"
                 },
+                "orderIdList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "orderId informado na inclusão do pedido (chave do sistema de origem, ex.: SITE-1234). Útil para conferir se uma gravação sem resposta chegou ao TOTVS"
+                },
+                "customerOrderCodeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Código do pedido no cliente/origem (customerOrderCode)"
+                },
                 "customerCpfCnpjList": {
                     "type": "array",
                     "items": {

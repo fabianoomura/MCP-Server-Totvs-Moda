@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.13.1] - 2026-11-24
+
+### Fixed
+- `totvs_search_orders` não declarava `orderIdList` nem `customerOrderCodeList`
+  no schema (o código já repassava os dois para o filtro). Sem o tipo, o cliente
+  mandava a lista como texto e a API recusava com `400 The JSON value could not be
+  converted to List<String>`. Os dois agora são `string[]`. Testado direto na API:
+  `orderIdList` acha o pedido pelo `orderId` da inclusão e devolve vazio para um
+  que não existe; `customerOrderCodeList` também filtra.
+
 ## [3.13.0] - 2026-11-16
 
 ### Added
