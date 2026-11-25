@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.13.2] - 2026-11-25
+
+### Fixed
+- `totvs_update_order_header` declarava campos que o `POST /sales-order/v2/header`
+  não tem (`paymentConditionCode`, `representativeCode`, `observation`) e não
+  declarava os que tem. Schema alinhado ao Swagger Sales Order 2.8.35:
+  `averagePaymentPeriod`, `operationCode`, `priceTableCode`, `priorityCode`, com o
+  pedido por `orderCode` ou `orderId`. A tool exige um dos dois identificadores e
+  ao menos um campo a alterar, e manda só os campos do contrato.
+- A descrição avisa que a previsão de faturamento da capa não muda por essa rota
+  (só entra na inclusão); a do item muda em `totvs_update_order_items_additional`.
+
 ## [3.13.1] - 2026-11-24
 
 ### Fixed

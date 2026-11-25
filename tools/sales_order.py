@@ -345,10 +345,15 @@ class SalesOrderTools:
     async def update_order_header(self, args: dict[str, Any]) -> Any:
         """
         POST /header
-        Altera dados de capa do pedido.
+        Altera dados de capa do pedido (prazo médio, operação, tabela de preço, prioridade).
         """
         args = inject_branch_defaults(args)
-        body = {k: v for k, v in args.items() if v is not None}
+        campos = ("averagePaymentPeriod", "operationCode", "priceTableCode", "priorityCode")
+        if bool(args.get("orderCode")) == bool(args.get("orderId")):
+            raise ValueError("informe orderCode ou orderId (um dos dois)")
+        if not any(args.get(c) is not None for c in campos):
+            raise ValueError("informe ao menos um campo a alterar: " + ", ".join(campos))
+        body = {k: args[k] for k in ("branchCode", "orderCode", "orderId") + campos if args.get(k) is not None}
         result = await self.client.post(f"{BASE}/header", body)
         self._invalidate_after_write()
         return result
@@ -1241,29 +1246,46 @@ TOOLS: list[types.Tool] = [
     ),
     types.Tool(
         name="totvs_update_order_header",
-        description="⚠️ Altera dados de capa (cabeçalho) do pedido.",
+        description=(
+            "⚠️ ESCRITA — Altera dados de capa (cabeçalho) do pedido: prazo médio, operação, tabela de preço "
+            "e prioridade (Swagger Sales Order 2.8.35). Identifique o pedido por orderCode OU orderId. "
+            "A API não altera aqui condição de pagamento, representante, observação nem a data de previsão "
+            "de faturamento da capa (essa só entra na criação; a do item muda em totvs_update_order_items_additional)."
+        ),
         inputSchema={
             "type": "object",
             "properties": {
                 "branchCode": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Empresa do pedido."
                 },
                 "orderCode": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Número do pedido. Não informar junto com orderId."
                 },
-                "paymentConditionCode": {
-                    "type": "integer"
+                "orderId": {
+                    "type": "string",
+                    "description": "Identificador único do pedido (Cód. único). Alternativa a orderCode."
                 },
-                "representativeCode": {
-                    "type": "integer"
+                "averagePaymentPeriod": {
+                    "type": "integer",
+                    "description": "Prazo médio para pagamento (dias)."
                 },
-                "observation": {
-                    "type": "string"
+                "operationCode": {
+                    "type": "integer",
+                    "description": "Código da operação."
+                },
+                "priceTableCode": {
+                    "type": "integer",
+                    "description": "Código da tabela de preço."
+                },
+                "priorityCode": {
+                    "type": "integer",
+                    "description": "Código da prioridade."
                 }
             },
             "required": [
-                "branchCode",
-                "orderCode"
+                "branchCode"
             ]
         },
     ),
